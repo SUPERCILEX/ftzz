@@ -7,6 +7,7 @@ use std::{
 
 use anyhow::{anyhow, Context};
 use futures::future::join_all;
+use log::{debug, info};
 use num_format::{SystemLocale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
@@ -191,7 +192,9 @@ fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
         .with_context(|| "Failed to create tokio runtime")
         .with_code(exitcode::OSERR)?;
 
-    runtime.block_on(run_generator_async(config.into()))
+    let state = config.into();
+    info!("Starting state: {:?}", state);
+    runtime.block_on(run_generator_async(state))
 }
 
 async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats> {
@@ -202,6 +205,11 @@ async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats>
     } else {
         state.dirs_per_dir.num_to_generate(&mut random)
     };
+
+    debug!(
+        "Creating {} files and {} directories in {:?}",
+        num_files_to_generate, num_dirs_to_generate, state.root_dir
+    );
 
     let tasks = task::spawn_blocking(move || -> CliResult<_> {
         let mut dir_tasks = Vec::with_capacity(num_dirs_to_generate);
