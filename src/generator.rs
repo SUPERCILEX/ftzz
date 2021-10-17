@@ -64,7 +64,11 @@ fn validated_options(options: Generate) -> CliResult<Configuration> {
         .count()
         != 0
     {
-        return Err(anyhow!("The root directory must be empty.")).with_code(exitcode::DATAERR);
+        return Err(anyhow!(format!(
+            "The root directory {:?} must be empty.",
+            options.root_dir,
+        )))
+            .with_code(exitcode::DATAERR);
     }
 
     if options.max_depth == 0 {
@@ -85,10 +89,11 @@ fn validated_options(options: Generate) -> CliResult<Configuration> {
         .file_to_dir_ratio
         .unwrap_or_else(|| max(options.num_files / 1000, 1));
     if ratio > options.num_files {
-        return Err(anyhow!(
-            "The file to dir ratio cannot be larger than the number of files to generate."
-        ))
-            .with_code(exitcode::DATAERR);
+        return Err(anyhow!(format!(
+            "The file to dir ratio ({}) cannot be larger than the number of files to generate ({}).",
+            ratio,
+            options.num_files,
+        ))).with_code(exitcode::DATAERR);
     }
 
     let num_dirs = options.num_files as f64 / ratio as f64;
