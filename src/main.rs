@@ -55,6 +55,10 @@ pub struct Generate {
     /// meaning not all directories will have N files) (default: 1000:1)
     #[structopt(short = "r", long = "ftd_ratio", parse(try_from_str = file_to_dir_ratio_parser))]
     file_to_dir_ratio: Option<usize>,
+
+    /// Add some additional entropy to the starting seed of our PRNG
+    #[structopt(long = "entropy", default_value = "0")]
+    entropy: u64,
 }
 
 fn main() {

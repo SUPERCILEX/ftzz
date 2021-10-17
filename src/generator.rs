@@ -32,6 +32,7 @@ struct Configuration {
     files_per_dir: f64,
     dirs_per_dir: f64,
     max_depth: u32,
+    entropy: u64,
 
     informational_dirs_per_dir: usize,
     informational_total_dirs: usize,
@@ -72,6 +73,7 @@ fn validated_options(options: Generate) -> CliResult<Configuration> {
             files_per_dir: options.num_files as f64,
             dirs_per_dir: 0.,
             max_depth: 0,
+            entropy: options.entropy,
 
             informational_dirs_per_dir: 0,
             informational_total_dirs: 1,
@@ -99,6 +101,7 @@ fn validated_options(options: Generate) -> CliResult<Configuration> {
         files_per_dir: ratio as f64,
         dirs_per_dir,
         max_depth: options.max_depth,
+        entropy: options.entropy,
 
         informational_dirs_per_dir: dirs_per_dir.round() as usize,
         informational_total_dirs: num_dirs.round() as usize,
@@ -175,8 +178,9 @@ impl From<Configuration> for GeneratorState {
             max_depth: config.max_depth,
 
             root_dir: config.root_dir,
-            seed: (config.files.wrapping_add(config.max_depth as usize) as f64
-                * (config.files_per_dir + config.dirs_per_dir)) as u64,
+            seed: ((config.files.wrapping_add(config.max_depth as usize) as f64
+                * (config.files_per_dir + config.dirs_per_dir)) as u64)
+                .wrapping_add(config.entropy),
         }
     }
 }
