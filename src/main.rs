@@ -52,7 +52,7 @@ pub struct Generate {
     max_depth: u32,
 
     /// The number of files to generate per directory (this value is probabilistically respected,
-    /// meaning not all directories will have N files) (default: 1000:1)
+    /// meaning not all directories will have N files) (default: files / 1000)
     #[structopt(short = "r", long = "ftd_ratio", parse(try_from_str = file_to_dir_ratio_parser))]
     file_to_dir_ratio: Option<usize>,
 
