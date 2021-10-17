@@ -1,0 +1,29 @@
+[package]
+name = "ftzz"
+version = "0.1.0"
+authors = ["Alex Saveau <saveau.alexandre@gmail.com>"]
+edition = "2018"
+description = "File Tree Fuzzer allows you to create a pseudo-random directory hierarchy and generate files to go into that structure."
+repository = "https://github.com/SUPERCILEX/ftzz"
+keywords = ["tools", "files", "fuzz"]
+categories = ["command-line-utilities", "development-tools", "development-tools::testing", "filesystem"]
+license = "Apache-2.0"
+
+[dependencies]
+anyhow = "1.0.44"
+clap-verbosity-flag = "0.3.2"
+exitcode = "1.1.2"
+log = "0.4.14"
+simple_logger = "1.13.0"
+structopt = "0.3.23"
+futures = "0.3.17"
+tokio = { version = "1.12.0", features = ["full"] }
+rand_distr = "0.4.2"
+rand = "0.8.4"
+clap-num = "0.2.0"
+num-format = { version = "0.4.0", features = ["with-system-locale"] }
+rand_xorshift = "0.3.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
