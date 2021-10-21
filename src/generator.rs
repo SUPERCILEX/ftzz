@@ -162,14 +162,14 @@ struct GeneratorState {
     max_depth: u32,
 
     root_dir: PathBuf,
-    seed: u64,
+    seed: <XorShiftRng as SeedableRng>::Seed,
 }
 
 impl GeneratorState {
-    fn next(&self, root_dir: PathBuf, random: &mut impl RngCore) -> GeneratorState {
+    fn next(&self, root_dir: PathBuf, random: &mut XorShiftRng) -> GeneratorState {
         GeneratorState {
             root_dir,
-            seed: random.next_u64(),
+            seed: random.next_seed(),
             max_depth: self.max_depth - 1,
             ..*self
         }
@@ -184,9 +184,11 @@ impl From<Configuration> for GeneratorState {
             max_depth: config.max_depth,
 
             root_dir: config.root_dir,
-            seed: ((config.files.wrapping_add(config.max_depth as usize) as f64
-                * (config.files_per_dir + config.dirs_per_dir)) as u64)
-                .wrapping_add(config.entropy),
+            seed: XorShiftRng::seed_from_u64(
+                ((config.files.wrapping_add(config.max_depth as usize) as f64
+                    * (config.files_per_dir + config.dirs_per_dir)) as u64)
+                    .wrapping_add(config.entropy)
+            ).next_seed(),
         }
     }
 }
@@ -203,7 +205,7 @@ fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
 }
 
 async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats> {
-    let mut random = XorShiftRng::seed_from_u64(state.seed);
+    let mut random = XorShiftRng::from_seed(state.seed);
     let num_files_to_generate = state.files_per_dir.num_to_generate(&mut random);
     let num_dirs_to_generate = if state.max_depth == 0 {
         0
@@ -276,5 +278,25 @@ impl GeneratorUtils for f64 {
         };
 
         sample.round() as usize
+    }
+}
+
+trait RandomUtils {
+    type Seed;
+
+    fn next_seed(&mut self) -> Self::Seed;
+}
+
+impl RandomUtils for XorShiftRng {
+    type Seed = <XorShiftRng as SeedableRng>::Seed;
+
+    fn next_seed(&mut self) -> Self::Seed {
+        let seed = [
+            self.next_u32(),
+            self.next_u32(),
+            self.next_u32(),
+            self.next_u32(),
+        ].as_ptr() as *const [u8; 16];
+        unsafe { *seed }
     }
 }
