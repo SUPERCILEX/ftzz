@@ -187,8 +187,9 @@ impl From<Configuration> for GeneratorState {
             seed: XorShiftRng::seed_from_u64(
                 ((config.files.wrapping_add(config.max_depth as usize) as f64
                     * (config.files_per_dir + config.dirs_per_dir)) as u64)
-                    .wrapping_add(config.entropy)
-            ).next_seed(),
+                    .wrapping_add(config.entropy),
+            )
+                .next_seed(),
         }
     }
 }
@@ -296,7 +297,8 @@ impl RandomUtils for XorShiftRng {
             self.next_u32(),
             self.next_u32(),
             self.next_u32(),
-        ].as_ptr() as *const [u8; 16];
+        ]
+            .as_ptr() as *const [u8; 16];
         unsafe { *seed }
     }
 }

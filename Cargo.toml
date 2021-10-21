@@ -2,7 +2,7 @@
 name = "ftzz"
 version = "0.1.1"
 authors = ["Alex Saveau <saveau.alexandre@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "File Tree Fuzzer allows you to create a pseudo-random directory hierarchy filled with some number of files."
 repository = "https://github.com/SUPERCILEX/ftzz"
 keywords = ["tools", "files", "fuzz"]
