@@ -117,9 +117,9 @@ fn validated_options(options: Generate) -> CliResult<Configuration> {
 fn print_configuration_info(config: &Configuration) {
     let locale = SystemLocale::new().unwrap();
     println!(
-        "{} {files_maybe_plural} will be generated in approximately {} {directories_maybe_plural} \
-        distributed across a tree of maximum depth {} where each directory contains approximately \
-        {} other {dpd_directories_maybe_plural}.",
+        "About {} {files_maybe_plural} will be generated in approximately \
+        {} {directories_maybe_plural} distributed across a tree of maximum depth {} where each \
+        directory contains approximately {} other {dpd_directories_maybe_plural}.",
         config.files.to_formatted_string(&locale),
         config.informational_total_dirs.to_formatted_string(&locale),
         config.max_depth.to_formatted_string(&locale),
