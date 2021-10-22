@@ -6,7 +6,6 @@ use std::{
 };
 
 use anyhow::{anyhow, Context};
-use futures::future::join_all;
 use log::{debug, info};
 use num_format::{SystemLocale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
@@ -251,8 +250,9 @@ async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats>
         dirs: num_dirs_to_generate,
     };
 
-    for result in join_all(tasks).await {
-        stats += result
+    for task in tasks {
+        stats += task
+            .await
             .with_context(|| "Failed to retrieve task result")
             .with_code(exitcode::SOFTWARE)??;
     }
