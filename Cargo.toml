@@ -11,17 +11,23 @@ license = "Apache-2.0"
 
 [dependencies]
 anyhow = "1.0.44"
+clap-num = "0.2.0"
 clap-verbosity-flag = "0.3.2"
+derive-new = "0.5.9"
 exitcode = "1.1.2"
 log = "0.4.14"
+num-format = { version = "0.4.0", features = ["with-system-locale"] }
+rand = "0.8.4"
+rand_distr = "0.4.2"
+rand_xorshift = "0.3.0"
 simple_logger = "1.13.0"
 structopt = "0.3.23"
 tokio = { version = "1.12.0", features = ["full"] }
-rand_distr = "0.4.2"
-rand = "0.8.4"
-clap-num = "0.2.0"
-num-format = { version = "0.4.0", features = ["with-system-locale"] }
-rand_xorshift = "0.3.0"
+
+[dev-dependencies]
+rstest = "0.11.0"
+sha3 = "0.9.1"
+tempfile = "3.2.0"
 
 [profile.release]
 lto = true

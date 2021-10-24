@@ -6,17 +6,65 @@ use std::{
 };
 
 use anyhow::{anyhow, Context};
+use clap_num::si_number;
+use derive_new::new;
 use log::{debug, info};
 use num_format::{SystemLocale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
 use rand_xorshift::XorShiftRng;
+use structopt::StructOpt;
 use tokio::{runtime::Builder, task, task::JoinHandle};
 
-use crate::{
-    errors::{CliExitAnyhowWrapper, CliResult},
-    Generate,
-};
+use crate::errors::{CliExitAnyhowWrapper, CliResult};
+
+#[derive(Debug, StructOpt, new)]
+pub struct Generate {
+    /// The directory in which to generate files (will be created if it does not exist)
+    root_dir: PathBuf,
+
+    /// The number of files to generate (this value is probabilistically respected, meaning any
+    /// number of files may be generated so long as we attempt to get close to N)
+    #[structopt(short = "n", long = "files", parse(try_from_str = num_files_parser))]
+    num_files: usize,
+
+    /// The maximum directory tree depth
+    #[structopt(short = "d", long = "depth", default_value = "5")]
+    max_depth: u32,
+
+    /// The number of files to generate per directory (this value is probabilistically respected,
+    /// meaning not all directories will have N files) (default: files / 1000)
+    #[structopt(short = "r", long = "ftd_ratio", parse(try_from_str = file_to_dir_ratio_parser))]
+    file_to_dir_ratio: Option<usize>,
+
+    /// Add some additional entropy to the starting seed of our PRNG
+    #[structopt(long = "entropy", default_value = "0")]
+    entropy: u64,
+}
+
+fn num_files_parser(s: &str) -> Result<usize, String> {
+    let files = lenient_si_number(s)?;
+    if files > 0 {
+        Ok(files)
+    } else {
+        Err(String::from("At least one file must be generated."))
+    }
+}
+
+fn file_to_dir_ratio_parser(s: &str) -> Result<usize, String> {
+    let ratio = lenient_si_number(s)?;
+    if ratio > 0 {
+        Ok(ratio)
+    } else {
+        Err(String::from("Cannot have no files per directory."))
+    }
+}
+
+fn lenient_si_number(s: &str) -> Result<usize, String> {
+    let mut s = s.replace("K", "k");
+    s.remove_matches(",");
+    si_number(&s)
+}
 
 pub fn generate(options: Generate) -> CliResult<()> {
     let options = validated_options(options)?;
