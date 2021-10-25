@@ -8,6 +8,7 @@ use std::{
 use anyhow::{anyhow, Context};
 use clap_num::si_number;
 use derive_new::new;
+use futures::{stream::FuturesUnordered, StreamExt};
 use log::{debug, info};
 use num_format::{SystemLocale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
@@ -298,9 +299,11 @@ async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats>
         dirs: num_dirs_to_generate,
     };
 
-    for task in tasks {
+    // We want to poll every future continuously instead of going one-by-one because each future
+    // recursively spawns more I/O bound children that wouldn't otherwise get a head start.
+    let mut tasks = tasks.into_iter().collect::<FuturesUnordered<_>>();
+    while let Some(task) = tasks.next().await {
         stats += task
-            .await
             .with_context(|| "Failed to retrieve task result")
             .with_code(exitcode::SOFTWARE)??;
     }
