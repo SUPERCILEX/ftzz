@@ -1,8 +1,9 @@
 use std::{
     cmp::max,
     fs::{create_dir, create_dir_all, File},
+    mem::ManuallyDrop,
     ops::AddAssign,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use anyhow::{anyhow, Context};
@@ -211,6 +212,7 @@ struct GeneratorState {
 
     root_dir: PathBuf,
     seed: <XorShiftRng as SeedableRng>::Seed,
+    cache: FileNameCache,
 }
 
 impl GeneratorState {
@@ -231,6 +233,7 @@ impl From<Configuration> for GeneratorState {
             dirs_per_dir: config.dirs_per_dir,
             max_depth: config.max_depth,
 
+            cache: FileNameCache::alloc(&config),
             root_dir: config.root_dir,
             seed: XorShiftRng::seed_from_u64(
                 ((config.files.wrapping_add(config.max_depth as usize) as f64
@@ -242,15 +245,116 @@ impl From<Configuration> for GeneratorState {
     }
 }
 
+/// Specialized cache for file names that takes advantage of our monotonically increasing integer
+/// naming scheme.
+///
+/// We intentionally use a thread-*un*safe raw fixed-size buffer to eliminate an Arc.
+#[derive(Debug, Copy, Clone)]
+struct FileNameCache {
+    file_cache: (*mut String, usize),
+    dir_cache: (*mut String, usize),
+}
+
+unsafe impl Send for FileNameCache {}
+
+impl FileNameCache {
+    fn alloc(config: &Configuration) -> Self {
+        let num_cache_entries = config.files_per_dir + config.dirs_per_dir;
+        let files_percentage = config.files_per_dir / num_cache_entries;
+
+        // Overestimate since the cache can't grow
+        let num_cache_entries = 1.5 * num_cache_entries;
+        // Max out the cache size at 1MiB
+        let num_cache_entries = f64::min((1 << 20) as f64, num_cache_entries);
+
+        let file_entries = files_percentage * num_cache_entries;
+        let dir_entries = num_cache_entries - file_entries;
+
+        let mut file_cache =
+            ManuallyDrop::new(Vec::<String>::with_capacity(file_entries.round() as usize));
+        let mut dir_cache =
+            ManuallyDrop::new(Vec::<String>::with_capacity(dir_entries.round() as usize));
+        unsafe {
+            let cap = file_cache.capacity();
+            file_cache.set_len(cap);
+            let cap = dir_cache.capacity();
+            dir_cache.set_len(cap);
+
+            for i in 0..file_cache.len() {
+                file_cache
+                    .as_mut_ptr()
+                    .add(i)
+                    .write(FileNameCache::file_name(i));
+            }
+            for i in 0..dir_cache.len() {
+                dir_cache
+                    .as_mut_ptr()
+                    .add(i)
+                    .write(FileNameCache::dir_name(i));
+            }
+        }
+
+        FileNameCache {
+            file_cache: (file_cache.as_mut_ptr(), file_cache.len()),
+            dir_cache: (dir_cache.as_mut_ptr(), dir_cache.len()),
+        }
+    }
+
+    fn free(self) {
+        unsafe {
+            Vec::from_raw_parts(self.file_cache.0, self.file_cache.1, self.file_cache.1);
+            Vec::from_raw_parts(self.dir_cache.0, self.dir_cache.1, self.dir_cache.1);
+        }
+    }
+
+    fn push_file_name(self, i: usize, path: &mut PathBuf) {
+        if i >= self.file_cache.1 {
+            path.push(FileNameCache::file_name(i));
+            return;
+        }
+
+        let file_cache = ManuallyDrop::new(unsafe {
+            Vec::from_raw_parts(self.file_cache.0, self.file_cache.1, self.file_cache.1)
+        });
+        path.push(&file_cache[i]);
+    }
+
+    fn join_dir_name(self, i: usize, path: &Path) -> PathBuf {
+        if i >= self.dir_cache.1 {
+            return path.join(FileNameCache::dir_name(i));
+        }
+
+        let dir_cache = ManuallyDrop::new(unsafe {
+            Vec::from_raw_parts(self.dir_cache.0, self.dir_cache.1, self.dir_cache.1)
+        });
+        path.join(&dir_cache[i])
+    }
+
+    #[inline]
+    fn file_name(i: usize) -> String {
+        i.to_string()
+    }
+
+    #[inline]
+    fn dir_name(i: usize) -> String {
+        format!("{}.dir", i)
+    }
+}
+
 fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
     let runtime = Builder::new_current_thread()
         .build()
         .with_context(|| "Failed to create tokio runtime")
         .with_code(exitcode::OSERR)?;
 
-    let state = config.into();
+    let state: GeneratorState = config.into();
     info!("Starting state: {:?}", state);
-    runtime.block_on(run_generator_async(state))
+
+    let cache = state.cache;
+    let results = runtime.block_on(run_generator_async(state));
+    cache.free();
+
+    results
 }
 
 async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats> {
@@ -271,7 +375,7 @@ async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats>
         let mut dir_tasks = Vec::with_capacity(num_dirs_to_generate);
 
         for i in 0..num_dirs_to_generate {
-            let dir = state.root_dir.join(format!("{}.dir", i));
+            let dir = state.cache.join_dir_name(i, &state.root_dir);
 
             create_dir(&dir)
                 .with_context(|| format!("Failed to create directory {:?}", dir))
@@ -281,7 +385,7 @@ async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats>
 
         let mut file = state.root_dir;
         for i in 0..num_files_to_generate {
-            file.push(i.to_string());
+            state.cache.push_file_name(i, &mut file);
             File::create(&file)
                 .with_context(|| format!("Failed to create file {:?}", file))
                 .with_code(exitcode::IOERR)?;
