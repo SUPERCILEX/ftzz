@@ -15,6 +15,7 @@ use ftzz::generator::{generate, Generate};
 #[case(1_000)]
 #[case(10_000)]
 #[case(100_000)]
+#[case(1_000_000)]
 fn simple_create_files(#[case] num_files: usize) {
     let dir = tempdir().unwrap();
     println!("Using dir {:?}", dir.path());
@@ -39,7 +40,9 @@ fn simple_create_files(#[case] num_files: usize) {
     } else {
         let mut expected_hash = Vec::new();
         File::open(hash_file)
-            .unwrap()
+            .expect(
+                "Regenerate test files with `RUSTFLAGS=\"--cfg regenerate_testdata\" cargo test`",
+            )
             .read_to_end(&mut expected_hash)
             .unwrap();
 
