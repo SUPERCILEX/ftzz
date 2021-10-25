@@ -1,0 +1,153 @@
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main, Throughput};
+use tempfile::tempdir;
+
+use ftzz::generator::{generate, Generate};
+
+fn simple_generate(c: &mut Criterion) {
+    let mut group = c.benchmark_group("simple_generate");
+
+    for num_files in [1_000, 10_000, 100_000] {
+        group.throughput(Throughput::Elements(num_files));
+        group.bench_with_input(
+            BenchmarkId::from_parameter(num_files),
+            &num_files,
+            |b, num_files| {
+                b.iter_with_large_drop(|| {
+                    let dir = tempdir().unwrap();
+
+                    generate(Generate::new(
+                        dir.path().to_path_buf(),
+                        *num_files as usize,
+                        5,
+                        None,
+                        0,
+                    ))
+                        .unwrap();
+
+                    dir
+                })
+            },
+        );
+    }
+}
+
+fn deep_generate(c: &mut Criterion) {
+    let mut group = c.benchmark_group("deep_generate");
+
+    let num_files = 10_000;
+    group.throughput(Throughput::Elements(num_files));
+    group.bench_with_input(
+        BenchmarkId::from_parameter(num_files),
+        &num_files,
+        |b, num_files| {
+            b.iter_with_large_drop(|| {
+                let dir = tempdir().unwrap();
+
+                generate(Generate::new(
+                    dir.path().to_path_buf(),
+                    *num_files as usize,
+                    100,
+                    None,
+                    0,
+                ))
+                    .unwrap();
+
+                dir
+            })
+        },
+    );
+}
+
+fn shallow_generate(c: &mut Criterion) {
+    let mut group = c.benchmark_group("deep_generate");
+
+    let num_files = 10_000;
+    group.throughput(Throughput::Elements(num_files));
+    group.bench_with_input(
+        BenchmarkId::from_parameter(num_files),
+        &num_files,
+        |b, num_files| {
+            b.iter_with_large_drop(|| {
+                let dir = tempdir().unwrap();
+
+                generate(Generate::new(
+                    dir.path().to_path_buf(),
+                    *num_files as usize,
+                    0,
+                    None,
+                    0,
+                ))
+                    .unwrap();
+
+                dir
+            })
+        },
+    );
+}
+
+fn sparse_generate(c: &mut Criterion) {
+    let mut group = c.benchmark_group("sparse_generate");
+
+    let num_files = 10_000;
+    group.throughput(Throughput::Elements(num_files));
+    group.bench_with_input(
+        BenchmarkId::from_parameter(num_files),
+        &num_files,
+        |b, num_files| {
+            b.iter_with_large_drop(|| {
+                let dir = tempdir().unwrap();
+
+                generate(Generate::new(
+                    dir.path().to_path_buf(),
+                    *num_files as usize,
+                    5,
+                    Some(1),
+                    0,
+                ))
+                    .unwrap();
+
+                dir
+            })
+        },
+    );
+}
+
+fn dense_generate(c: &mut Criterion) {
+    let mut group = c.benchmark_group("dense_generate");
+
+    let num_files = 10_000;
+    group.throughput(Throughput::Elements(num_files));
+    group.bench_with_input(
+        BenchmarkId::from_parameter(num_files),
+        &num_files,
+        |b, num_files| {
+            b.iter_with_large_drop(|| {
+                let dir = tempdir().unwrap();
+
+                let num_files = *num_files as usize;
+                generate(Generate::new(
+                    dir.path().to_path_buf(),
+                    num_files,
+                    5,
+                    Some(num_files),
+                    0,
+                ))
+                    .unwrap();
+
+                dir
+            })
+        },
+    );
+}
+
+criterion_group! {
+    name = benches;
+    config = Criterion::default().noise_threshold(0.005);
+    targets =
+    simple_generate,
+    deep_generate,
+    shallow_generate,
+    sparse_generate,
+    dense_generate,
+}
+criterion_main!(benches);
