@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main, Throughput};
 use tempfile::tempdir;
 
@@ -171,7 +173,7 @@ fn dense_generate(c: &mut Criterion) {
 
 criterion_group! {
     name = benches;
-    config = Criterion::default().noise_threshold(0.005);
+    config = Criterion::default().noise_threshold(0.005).warm_up_time(Duration::from_secs(1));
     targets =
     deep_generate,
     dense_generate,

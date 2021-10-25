@@ -441,6 +441,7 @@ dependencies = [
  "log",
  "nix",
  "num-format",
+ "num_cpus",
  "rand",
  "rand_distr",
  "rand_xorshift",

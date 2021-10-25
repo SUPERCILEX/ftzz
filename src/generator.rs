@@ -357,6 +357,7 @@ impl FileNameCache {
 
 fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
     let runtime = Builder::new_current_thread()
+        .max_blocking_threads(num_cpus::get())
         .build()
         .with_context(|| "Failed to create tokio runtime")
         .with_code(exitcode::OSERR)?;
