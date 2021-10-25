@@ -31,6 +31,35 @@ fn simple_generate(c: &mut Criterion) {
     }
 }
 
+fn huge_generate(c: &mut Criterion) {
+    let mut group = c.benchmark_group("huge_generate");
+
+    let num_files = 1_000_000;
+    group
+        .sample_size(10)
+        .throughput(Throughput::Elements(num_files));
+    group.bench_with_input(
+        BenchmarkId::from_parameter(num_files),
+        &num_files,
+        |b, num_files| {
+            b.iter_with_large_drop(|| {
+                let dir = tempdir().unwrap();
+
+                generate(Generate::new(
+                    dir.path().to_path_buf(),
+                    *num_files as usize,
+                    5,
+                    None,
+                    0,
+                ))
+                    .unwrap();
+
+                dir
+            })
+        },
+    );
+}
+
 fn deep_generate(c: &mut Criterion) {
     let mut group = c.benchmark_group("deep_generate");
 
@@ -59,7 +88,7 @@ fn deep_generate(c: &mut Criterion) {
 }
 
 fn shallow_generate(c: &mut Criterion) {
-    let mut group = c.benchmark_group("deep_generate");
+    let mut group = c.benchmark_group("shallow_generate");
 
     let num_files = 10_000;
     group.throughput(Throughput::Elements(num_files));
@@ -144,10 +173,11 @@ criterion_group! {
     name = benches;
     config = Criterion::default().noise_threshold(0.005);
     targets =
-    simple_generate,
     deep_generate,
-    shallow_generate,
-    sparse_generate,
     dense_generate,
+    huge_generate,
+    shallow_generate,
+    simple_generate,
+    sparse_generate,
 }
 criterion_main!(benches);
