@@ -1,12 +1,13 @@
 use std::{
     collections::VecDeque,
     fs::File,
+    hash::Hasher,
     io::{Read, Write},
     path::{Path, PathBuf},
 };
 
 use rstest::rstest;
-use sha3::{Digest, Sha3_256};
+use seahash::SeaHasher;
 use tempfile::tempdir;
 
 use ftzz::generator::{generate, Generate};
@@ -36,7 +37,10 @@ fn simple_create_files(#[case] num_files: usize) {
     ));
 
     if cfg!(regenerate_testdata) {
-        File::create(hash_file).unwrap().write_all(&hash).unwrap()
+        File::create(hash_file)
+            .unwrap()
+            .write_all(&hash.to_be_bytes())
+            .unwrap()
     } else {
         let mut expected_hash = Vec::new();
         File::open(hash_file)
@@ -46,13 +50,13 @@ fn simple_create_files(#[case] num_files: usize) {
             .read_to_end(&mut expected_hash)
             .unwrap();
 
-        assert_eq!(hash, expected_hash);
+        assert_eq!(hash.to_be_bytes(), expected_hash.as_slice());
     }
 }
 
 /// Recursively hashes the file and directory names in dir
-fn hash_dir(dir: &Path) -> Vec<u8> {
-    let mut hasher = Sha3_256::new();
+fn hash_dir(dir: &Path) -> u64 {
+    let mut hasher = SeaHasher::new();
 
     let mut queue = VecDeque::from([dir.to_path_buf()]);
     while let Some(path) = queue.pop_front() {
@@ -61,9 +65,9 @@ fn hash_dir(dir: &Path) -> Vec<u8> {
             if entry.file_type().unwrap().is_dir() {
                 queue.push_back(entry.path())
             }
-            hasher.update(entry.file_name().to_str().unwrap());
+            hasher.write(entry.file_name().to_str().unwrap().as_bytes());
         }
     }
 
-    hasher.finalize().to_vec()
+    hasher.finish()
 }
