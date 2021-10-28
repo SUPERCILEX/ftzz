@@ -9,6 +9,8 @@ files.
 $ cargo +nightly install ftzz
 ```
 
+> To install cargo, see [these instructions](https://doc.rust-lang.org/cargo/getting-started/installation.html).
+
 ## Usage
 
 Generate a reproducibly random tree in the current directory with about 1 million files:
