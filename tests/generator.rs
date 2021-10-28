@@ -28,7 +28,7 @@ fn simple_create_files(#[case] num_files: usize) {
         None,
         0,
     ))
-        .unwrap();
+    .unwrap();
 
     let hash = hash_dir(dir.path());
     let hash_file = PathBuf::from(format!(

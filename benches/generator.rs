@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use tempfile::tempdir;
 
 use ftzz::generator::{generate, Generate};
@@ -24,7 +24,7 @@ fn simple_generate(c: &mut Criterion) {
                         None,
                         0,
                     ))
-                        .unwrap();
+                    .unwrap();
 
                     dir
                 })
@@ -54,7 +54,7 @@ fn huge_generate(c: &mut Criterion) {
                     None,
                     0,
                 ))
-                    .unwrap();
+                .unwrap();
 
                 dir
             })
@@ -81,7 +81,7 @@ fn deep_generate(c: &mut Criterion) {
                     None,
                     0,
                 ))
-                    .unwrap();
+                .unwrap();
 
                 dir
             })
@@ -108,7 +108,7 @@ fn shallow_generate(c: &mut Criterion) {
                     None,
                     0,
                 ))
-                    .unwrap();
+                .unwrap();
 
                 dir
             })
@@ -135,7 +135,7 @@ fn sparse_generate(c: &mut Criterion) {
                     Some(1),
                     0,
                 ))
-                    .unwrap();
+                .unwrap();
 
                 dir
             })
@@ -163,7 +163,7 @@ fn dense_generate(c: &mut Criterion) {
                     Some(num_files),
                     0,
                 ))
-                    .unwrap();
+                .unwrap();
 
                 dir
             })

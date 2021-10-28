@@ -122,7 +122,7 @@ fn validated_options(options: Generate) -> CliResult<Configuration> {
             "The root directory {:?} must be empty.",
             options.root_dir,
         )))
-            .with_code(exitcode::DATAERR);
+        .with_code(exitcode::DATAERR);
     }
 
     let use_mknod = match mknodat(libc::AT_FDCWD, "/", SFlag::S_IFREG, Mode::empty(), 0) {
@@ -254,7 +254,7 @@ impl From<Configuration> for GeneratorState {
                     * (config.files_per_dir + config.dirs_per_dir)) as u64)
                     .wrapping_add(config.entropy),
             )
-                .next_seed(),
+            .next_seed(),
         }
     }
 }
@@ -410,8 +410,8 @@ async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats>
                     Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
                     0,
                 )
-                    .with_context(|| format!("Failed to create file {:?}", file))
-                    .with_code(exitcode::IOERR)?;
+                .with_context(|| format!("Failed to create file {:?}", file))
+                .with_code(exitcode::IOERR)?;
             } else {
                 File::create(&file)
                     .with_context(|| format!("Failed to create file {:?}", file))
@@ -423,9 +423,9 @@ async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats>
 
         Ok(dir_tasks)
     })
-        .await
-        .with_context(|| "Failed to retrieve task result")
-        .with_code(exitcode::SOFTWARE)??;
+    .await
+    .with_context(|| "Failed to retrieve task result")
+    .with_code(exitcode::SOFTWARE)??;
 
     let mut stats = GeneratorStats {
         files: num_files_to_generate,
@@ -482,7 +482,7 @@ impl RandomUtils for XorShiftRng {
             self.next_u32(),
             self.next_u32(),
         ]
-            .as_ptr() as *const [u8; 16];
+        .as_ptr() as *const [u8; 16];
         unsafe { *seed }
     }
 }
