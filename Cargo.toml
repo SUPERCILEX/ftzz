@@ -1,3 +1,5 @@
+cargo-features = ["strip"]
+
 [package]
 name = "ftzz"
 version = "0.1.3"
@@ -40,3 +42,4 @@ harness = false
 [profile.release]
 lto = true
 codegen-units = 1
+strip = true
