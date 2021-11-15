@@ -40,25 +40,15 @@ rust_binary(
     srcs = [
         "src/main.rs",
     ],
-    deps = [
-        ":ftzz_lib",
-        "//third_party/cargo:clap_verbosity_flag",
-        "//third_party/cargo:simple_logger",
-        "//third_party/cargo:structopt",
-    ],
-)
-
-rust_binary(
-    name = "ftzz_release",
-    srcs = [
-        "src/main.rs",
-    ],
-    rustc_flags = [
-        "-Copt-level=3",
-        "-Clto",
-        "-Ccodegen-units=1",
-        "-Zstrip=symbols",
-    ],
+    rustc_flags = select({
+        "//tools/config:release_build": [
+            "-Copt-level=3",
+            "-Clto",
+            "-Ccodegen-units=1",
+            "-Zstrip=symbols",
+        ],
+        "//conditions:default": [],
+    }),
     deps = [
         ":ftzz_lib",
         "//third_party/cargo:clap_verbosity_flag",
@@ -76,9 +66,11 @@ rust_test(
     proc_macro_deps = [
         "//third_party/cargo:rstest",
     ],
+    rustc_flags = ["--cfg=bazel"],
     deps = [
         ":ftzz_lib",
         "//third_party/cargo:seahash",
         "//third_party/cargo:tempfile",
+        "@rules_rust//tools/runfiles",
     ],
 )

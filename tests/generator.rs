@@ -31,6 +31,12 @@ fn simple_create_files(#[case] num_files: usize) {
     .unwrap();
 
     let hash = hash_dir(dir.path());
+    #[cfg(bazel)]
+    let hash_file: PathBuf = runfiles::Runfiles::create().unwrap().rlocation(format!(
+        "__main__/ftzz/testdata/generator/simple_create_files_{}.hash",
+        num_files
+    ));
+    #[cfg(not(bazel))]
     let hash_file = PathBuf::from(format!(
         "testdata/generator/simple_create_files_{}.hash",
         num_files
