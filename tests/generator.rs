@@ -16,7 +16,6 @@ use ftzz::generator::{generate, Generate};
 #[case(1_000)]
 #[case(10_000)]
 #[case(100_000)]
-#[case(1_000_000)]
 fn simple_create_files(#[case] num_files: usize) {
     let dir = tempdir().unwrap();
     println!("Using dir {:?}", dir.path());
