@@ -68,15 +68,21 @@ fn simple_create_files(#[case] num_files: usize) {
 fn hash_dir(dir: &Path) -> u64 {
     let mut hasher = SeaHasher::new();
 
+    let mut entries = Vec::new();
     let mut queue = VecDeque::from([dir.to_path_buf()]);
     while let Some(path) = queue.pop_front() {
         for entry in path.read_dir().unwrap() {
-            let entry = entry.unwrap();
+            entries.push(entry.unwrap());
+        }
+
+        entries.sort_by_key(|e| e.file_name());
+        for entry in &entries {
             if entry.file_type().unwrap().is_dir() {
                 queue.push_back(entry.path())
             }
             hasher.write(entry.file_name().to_str().unwrap().as_bytes());
         }
+        entries.clear();
     }
 
     hasher.finish()
