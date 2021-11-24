@@ -1,6 +1,6 @@
 use std::{
     cmp::max,
-    fs::{create_dir, create_dir_all, File},
+    fs::{create_dir, create_dir_all},
     mem::ManuallyDrop,
     ops::AddAssign,
     path::{Path, PathBuf},
@@ -11,10 +11,6 @@ use clap_num::si_number;
 use derive_new::new;
 use futures::{stream::FuturesUnordered, StreamExt};
 use log::{debug, info};
-use nix::{
-    libc,
-    sys::stat::{mknodat, Mode, SFlag},
-};
 use num_format::{SystemLocale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
@@ -87,7 +83,6 @@ struct Configuration {
     dirs_per_dir: f64,
     max_depth: u32,
     entropy: u64,
-    use_mknod: bool,
 
     informational_dirs_per_dir: usize,
     informational_total_dirs: usize,
@@ -125,11 +120,6 @@ fn validated_options(options: Generate) -> CliResult<Configuration> {
         .with_code(exitcode::DATAERR);
     }
 
-    let use_mknod = match mknodat(libc::AT_FDCWD, "/", SFlag::S_IFREG, Mode::empty(), 0) {
-        Ok(_) => true,
-        Err(e) => e != nix::Error::ENOSYS,
-    };
-
     if options.max_depth == 0 {
         return Ok(Configuration {
             root_dir: options.root_dir,
@@ -138,7 +128,6 @@ fn validated_options(options: Generate) -> CliResult<Configuration> {
             dirs_per_dir: 0.,
             max_depth: 0,
             entropy: options.entropy,
-            use_mknod,
 
             informational_dirs_per_dir: 0,
             informational_total_dirs: 1,
@@ -168,7 +157,6 @@ fn validated_options(options: Generate) -> CliResult<Configuration> {
         dirs_per_dir,
         max_depth: options.max_depth,
         entropy: options.entropy,
-        use_mknod,
 
         informational_dirs_per_dir: dirs_per_dir.round() as usize,
         informational_total_dirs: num_dirs.round() as usize,
@@ -221,7 +209,6 @@ struct GeneratorState {
     files_per_dir: f64,
     dirs_per_dir: f64,
     max_depth: u32,
-    use_mknod: bool,
 
     root_dir: PathBuf,
     seed: <XorShiftRng as SeedableRng>::Seed,
@@ -245,7 +232,6 @@ impl From<Configuration> for GeneratorState {
             files_per_dir: config.files_per_dir,
             dirs_per_dir: config.dirs_per_dir,
             max_depth: config.max_depth,
-            use_mknod: config.use_mknod,
 
             cache: FileNameCache::alloc(&config),
             root_dir: config.root_dir,
@@ -402,9 +388,10 @@ async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats>
         for i in 0..num_files_to_generate {
             state.cache.push_file_name(i, &mut file);
 
-            if state.use_mknod {
-                mknodat(
-                    libc::AT_FDCWD,
+            #[cfg(target_os = "linux")]
+            {
+                use nix::sys::stat::{mknod, Mode, SFlag};
+                mknod(
                     &file,
                     SFlag::S_IFREG,
                     Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
@@ -412,7 +399,10 @@ async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats>
                 )
                 .with_context(|| format!("Failed to create file {:?}", file))
                 .with_code(exitcode::IOERR)?;
-            } else {
+            }
+            #[cfg(not(target_os = "linux"))]
+            {
+                use std::fs::File;
                 File::create(&file)
                     .with_context(|| format!("Failed to create file {:?}", file))
                     .with_code(exitcode::IOERR)?;
