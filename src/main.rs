@@ -117,3 +117,260 @@ fn lenient_si_number(s: &str) -> Result<usize, String> {
     s.remove_matches(",");
     si_number(&s)
 }
+
+#[cfg(test)]
+mod cli_tests {
+    use clap::{
+        ErrorKind::{
+            DisplayHelpOnMissingArgumentOrSubcommand, MissingRequiredArgument, UnknownArgument,
+        },
+        FromArgMatches, IntoApp,
+    };
+
+    use super::*;
+
+    #[test]
+    fn verify_app() {
+        Ftzz::into_app().debug_assert();
+    }
+
+    #[test]
+    fn empty_args_displays_help() {
+        let f = Ftzz::try_parse_from(Vec::<String>::new());
+
+        assert!(f.is_err());
+        assert_eq!(
+            f.unwrap_err().kind,
+            DisplayHelpOnMissingArgumentOrSubcommand
+        );
+    }
+
+    #[test]
+    fn generate_empty_args_displays_error() {
+        let f = Ftzz::try_parse_from(vec!["ftzz", "generate"]);
+
+        assert!(f.is_err());
+        assert_eq!(f.unwrap_err().kind, MissingRequiredArgument);
+    }
+
+    #[test]
+    fn generate_minimal_use_case_uses_defaults() {
+        let m = Ftzz::into_app().get_matches_from(vec!["ftzz", "generate", "-n", "1", "dir"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.root_dir, PathBuf::from("dir"));
+        assert_eq!(g.num_files, 1);
+        assert_eq!(g.max_depth, 5);
+        assert_eq!(g.file_to_dir_ratio, None);
+        assert_eq!(g.entropy, 0);
+    }
+
+    #[test]
+    fn generate_num_files_rejects_negatives() {
+        let f = Ftzz::try_parse_from(vec!["ftzz", "generate", "-n", "-1", "dir"]);
+
+        assert!(f.is_err());
+        assert_eq!(f.unwrap_err().kind, UnknownArgument);
+    }
+
+    #[test]
+    fn generate_num_files_accepts_plain_nums() {
+        let m =
+            Ftzz::into_app().get_matches_from(vec!["ftzz", "generate", "--files", "1000", "dir"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_files, 1000);
+    }
+
+    #[test]
+    fn generate_short_num_files_accepts_plain_nums() {
+        let m = Ftzz::into_app().get_matches_from(vec!["ftzz", "generate", "-n", "1000", "dir"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_files, 1000);
+    }
+
+    #[test]
+    fn generate_num_files_accepts_si_numbers() {
+        let m = Ftzz::into_app().get_matches_from(vec!["ftzz", "generate", "--files", "1K", "dir"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_files, 1000);
+    }
+
+    #[test]
+    fn generate_num_files_accepts_commas() {
+        let m =
+            Ftzz::into_app().get_matches_from(vec!["ftzz", "generate", "--files", "1,000", "dir"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_files, 1000);
+    }
+
+    #[test]
+    fn generate_max_depth_rejects_negatives() {
+        let f = Ftzz::try_parse_from(vec!["ftzz", "generate", "--depth", "-1", "-n", "1", "dir"]);
+
+        assert!(f.is_err());
+        assert_eq!(f.unwrap_err().kind, UnknownArgument);
+    }
+
+    #[test]
+    fn generate_max_depth_accepts_plain_nums() {
+        let m = Ftzz::into_app()
+            .get_matches_from(vec!["ftzz", "generate", "--depth", "123", "-n", "1", "dir"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.max_depth, 123);
+    }
+
+    #[test]
+    fn generate_short_max_depth_accepts_plain_nums() {
+        let m = Ftzz::into_app()
+            .get_matches_from(vec!["ftzz", "generate", "-d", "123", "-n", "1", "dir"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.max_depth, 123);
+    }
+
+    #[test]
+    fn generate_ratio_rejects_negatives() {
+        let f = Ftzz::try_parse_from(vec![
+            "ftzz",
+            "generate",
+            "--ftd-ratio",
+            "-1",
+            "-n",
+            "1",
+            "dir",
+        ]);
+
+        assert!(f.is_err());
+        assert_eq!(f.unwrap_err().kind, UnknownArgument);
+    }
+
+    #[test]
+    fn generate_ratio_accepts_plain_nums() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "--ftd-ratio",
+            "1000",
+            "-n",
+            "1",
+            "dir",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.file_to_dir_ratio, Some(1000));
+    }
+
+    #[test]
+    fn generate_short_ratio_accepts_plain_nums() {
+        let m = Ftzz::into_app()
+            .get_matches_from(vec!["ftzz", "generate", "-r", "321", "-n", "1", "dir"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.file_to_dir_ratio, Some(321));
+    }
+
+    #[test]
+    fn generate_ratio_accepts_si_numbers() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "--ftd-ratio",
+            "1K",
+            "-n",
+            "1",
+            "dir",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.file_to_dir_ratio, Some(1000));
+    }
+
+    #[test]
+    fn generate_ratio_accepts_commas() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "--ftd-ratio",
+            "1,000",
+            "-n",
+            "1",
+            "dir",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.file_to_dir_ratio, Some(1000));
+    }
+
+    #[test]
+    fn generate_entropy_rejects_negatives() {
+        let f = Ftzz::try_parse_from(vec![
+            "ftzz",
+            "generate",
+            "--entropy",
+            "-1",
+            "-n",
+            "1",
+            "dir",
+        ]);
+
+        assert!(f.is_err());
+        assert_eq!(f.unwrap_err().kind, UnknownArgument);
+    }
+
+    #[test]
+    fn generate_entropy_accepts_plain_nums() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "--entropy",
+            "231",
+            "-n",
+            "1",
+            "dir",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.entropy, 231);
+    }
+}
