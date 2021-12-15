@@ -7,72 +7,33 @@ use std::{
 };
 
 use anyhow::{anyhow, Context};
-use clap_num::si_number;
-use derive_new::new;
+use derive_builder::Builder;
 use futures::{stream::FuturesUnordered, StreamExt};
 use log::{debug, info};
 use num_format::{SystemLocale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
 use rand_xorshift::XorShiftRng;
-use structopt::StructOpt;
-use tokio::{runtime::Builder, task, task::JoinHandle};
+use tokio::{task, task::JoinHandle};
 
 use crate::errors::{CliExitAnyhowWrapper, CliResult};
 
-#[derive(Debug, StructOpt, new)]
-pub struct Generate {
-    /// The directory in which to generate files (will be created if it does not exist)
+#[derive(Builder, Debug)]
+pub struct Generator {
     root_dir: PathBuf,
-
-    /// The number of files to generate (this value is probabilistically respected, meaning any
-    /// number of files may be generated so long as we attempt to get close to N)
-    #[structopt(short = "n", long = "files", parse(try_from_str = num_files_parser))]
     num_files: usize,
-
-    /// The maximum directory tree depth
-    #[structopt(short = "d", long = "depth", default_value = "5")]
     max_depth: u32,
-
-    /// The number of files to generate per directory (this value is probabilistically respected,
-    /// meaning not all directories will have N files) (default: files / 1000)
-    #[structopt(short = "r", long = "ftd_ratio", parse(try_from_str = file_to_dir_ratio_parser))]
     file_to_dir_ratio: Option<usize>,
-
-    /// Add some additional entropy to the starting seed of our PRNG
-    #[structopt(long = "entropy", default_value = "0")]
     entropy: u64,
 }
 
-fn num_files_parser(s: &str) -> Result<usize, String> {
-    let files = lenient_si_number(s)?;
-    if files > 0 {
-        Ok(files)
-    } else {
-        Err(String::from("At least one file must be generated."))
+impl Generator {
+    pub fn generate(self) -> CliResult<()> {
+        let options = validated_options(self)?;
+        print_configuration_info(&options);
+        print_stats(run_generator(options)?);
+        Ok(())
     }
-}
-
-fn file_to_dir_ratio_parser(s: &str) -> Result<usize, String> {
-    let ratio = lenient_si_number(s)?;
-    if ratio > 0 {
-        Ok(ratio)
-    } else {
-        Err(String::from("Cannot have no files per directory."))
-    }
-}
-
-fn lenient_si_number(s: &str) -> Result<usize, String> {
-    let mut s = s.replace("K", "k");
-    s.remove_matches(",");
-    si_number(&s)
-}
-
-pub fn generate(options: Generate) -> CliResult<()> {
-    let options = validated_options(options)?;
-    print_configuration_info(&options);
-    print_stats(run_generator(options)?);
-    Ok(())
 }
 
 #[derive(Debug)]
@@ -101,62 +62,62 @@ impl AddAssign for GeneratorStats {
     }
 }
 
-fn validated_options(options: Generate) -> CliResult<Configuration> {
-    create_dir_all(&options.root_dir)
-        .with_context(|| format!("Failed to create directory {:?}", options.root_dir))
+fn validated_options(generator: Generator) -> CliResult<Configuration> {
+    create_dir_all(&generator.root_dir)
+        .with_context(|| format!("Failed to create directory {:?}", generator.root_dir))
         .with_code(exitcode::IOERR)?;
-    if options
+    if generator
         .root_dir
         .read_dir()
-        .with_context(|| format!("Failed to read directory {:?}", options.root_dir))
+        .with_context(|| format!("Failed to read directory {:?}", generator.root_dir))
         .with_code(exitcode::IOERR)?
         .count()
         != 0
     {
         return Err(anyhow!(format!(
             "The root directory {:?} must be empty.",
-            options.root_dir,
+            generator.root_dir,
         )))
         .with_code(exitcode::DATAERR);
     }
 
-    if options.max_depth == 0 {
+    if generator.max_depth == 0 {
         return Ok(Configuration {
-            root_dir: options.root_dir,
-            files: options.num_files,
-            files_per_dir: options.num_files as f64,
+            root_dir: generator.root_dir,
+            files: generator.num_files,
+            files_per_dir: generator.num_files as f64,
             dirs_per_dir: 0.,
             max_depth: 0,
-            entropy: options.entropy,
+            entropy: generator.entropy,
 
             informational_dirs_per_dir: 0,
             informational_total_dirs: 1,
         });
     }
 
-    let ratio = options
+    let ratio = generator
         .file_to_dir_ratio
-        .unwrap_or_else(|| max(options.num_files / 1000, 1));
-    if ratio > options.num_files {
+        .unwrap_or_else(|| max(generator.num_files / 1000, 1));
+    if ratio > generator.num_files {
         return Err(anyhow!(format!(
             "The file to dir ratio ({}) cannot be larger than the number of files to generate ({}).",
             ratio,
-            options.num_files,
+            generator.num_files,
         ))).with_code(exitcode::DATAERR);
     }
 
-    let num_dirs = options.num_files as f64 / ratio as f64;
+    let num_dirs = generator.num_files as f64 / ratio as f64;
     // This formula was derived from the following equation:
     // num_dirs = unknown_num_dirs_per_dir^max_depth
-    let dirs_per_dir = 2f64.powf(num_dirs.log2() / options.max_depth as f64);
+    let dirs_per_dir = 2f64.powf(num_dirs.log2() / generator.max_depth as f64);
 
     Ok(Configuration {
-        root_dir: options.root_dir,
-        files: options.num_files,
+        root_dir: generator.root_dir,
+        files: generator.num_files,
         files_per_dir: ratio as f64,
         dirs_per_dir,
-        max_depth: options.max_depth,
-        entropy: options.entropy,
+        max_depth: generator.max_depth,
+        entropy: generator.entropy,
 
         informational_dirs_per_dir: dirs_per_dir.round() as usize,
         informational_total_dirs: num_dirs.round() as usize,
@@ -342,7 +303,7 @@ impl FileNameCache {
 }
 
 fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
-    let runtime = Builder::new_current_thread()
+    let runtime = tokio::runtime::Builder::new_current_thread()
         .max_blocking_threads(num_cpus::get())
         .build()
         .with_context(|| "Failed to create tokio runtime")

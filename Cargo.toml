@@ -12,10 +12,11 @@ categories = ["command-line-utilities", "development-tools", "development-tools:
 license = "Apache-2.0"
 
 [dependencies]
-anyhow = "1.0.48"
+anyhow = "1.0.51"
+clap = { version = "3.0.0-rc.4", features = ["derive", "wrap_help"] }
 clap-num = "0.2.0"
 clap-verbosity-flag = "0.3.2"
-derive-new = "0.5.9"
+derive_builder = "0.10.2"
 exitcode = "1.1.2"
 futures = "0.3.18"
 log = "0.4.14"
@@ -24,8 +25,7 @@ num_cpus = "1.13.0"
 rand = "0.8.4"
 rand_distr = "0.4.2"
 rand_xorshift = "0.3.0"
-simple_logger = "1.13.0"
-structopt = "0.3.25"
+simple_logger = "1.15.1"
 tokio = { version = "1.14.0", features = ["full"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
@@ -33,7 +33,7 @@ nix = "0.23.0"
 
 [dev-dependencies]
 criterion = "0.3.5"
-rstest = "0.11.0"
+rstest = "0.12.0"
 seahash = "4.1.0"
 tempfile = "3.2.0"
 

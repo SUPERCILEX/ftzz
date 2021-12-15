@@ -10,7 +10,7 @@ use rstest::rstest;
 use seahash::SeaHasher;
 use tempfile::tempdir;
 
-use ftzz::generator::{generate, Generate};
+use ftzz::generator::GeneratorBuilder;
 
 #[rstest]
 #[case(1_000)]
@@ -20,14 +20,16 @@ fn simple_create_files(#[case] num_files: usize) {
     let dir = tempdir().unwrap();
     println!("Using dir {:?}", dir.path());
 
-    generate(Generate::new(
-        dir.path().to_path_buf(),
-        num_files,
-        5,
-        None,
-        0,
-    ))
-    .unwrap();
+    GeneratorBuilder::default()
+        .root_dir(dir.path().to_path_buf())
+        .num_files(num_files)
+        .max_depth(5)
+        .file_to_dir_ratio(None)
+        .entropy(0)
+        .build()
+        .unwrap()
+        .generate()
+        .unwrap();
 
     let hash = hash_dir(dir.path());
     #[cfg(bazel)]
