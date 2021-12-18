@@ -24,8 +24,6 @@ fn simple_create_files(#[case] num_files: usize) {
         .root_dir(dir.path().to_path_buf())
         .num_files(num_files)
         .max_depth(5)
-        .file_to_dir_ratio(None)
-        .entropy(0)
         .build()
         .unwrap()
         .generate()

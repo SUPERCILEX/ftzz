@@ -19,12 +19,100 @@ use tokio::{task, task::JoinHandle};
 use crate::errors::{CliExitAnyhowWrapper, CliResult};
 
 #[derive(Builder, Debug)]
+#[builder(build_fn(validate = "Self::validate"))]
 pub struct Generator {
     root_dir: PathBuf,
     num_files: usize,
+    #[builder(default = "5")]
     max_depth: u32,
-    file_to_dir_ratio: Option<usize>,
+    #[builder(default = "self.default_ftd_ratio()")]
+    file_to_dir_ratio: usize,
+    #[builder(default = "0")]
     entropy: u64,
+}
+
+impl GeneratorBuilder {
+    fn validate(&self) -> Result<(), String> {
+        // TODO use if let chains once that feature is stabilized
+        if let Some(n) = self.num_files {
+            if n < 1 {
+                return Err("num_files must be strictly positive".to_string());
+            }
+        }
+        if let Some(ratio) = self.file_to_dir_ratio {
+            if ratio < 1 {
+                return Err("file_to_dir_ratio must be strictly positive".to_string());
+            }
+
+            if let Some(num_files) = self.num_files {
+                if ratio > num_files {
+                    return Err(format!(
+                        "The file to dir ratio ({}) cannot be larger than the number of files to generate ({}).",
+                        ratio,
+                        num_files,
+                    ));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn default_ftd_ratio(&self) -> usize {
+        max(self.num_files.unwrap() / 1000, 1)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn minimal_params_succeeds() {
+        let g = GeneratorBuilder::default()
+            .root_dir(PathBuf::from("abc"))
+            .num_files(1)
+            .build()
+            .unwrap();
+
+        assert_eq!(g.root_dir, PathBuf::from("abc"));
+        assert_eq!(g.num_files, 1);
+        assert_eq!(g.max_depth, 5);
+        assert_eq!(g.file_to_dir_ratio, 1);
+        assert_eq!(g.entropy, 0);
+    }
+
+    #[test]
+    fn zero_files_fails() {
+        let g = GeneratorBuilder::default()
+            .root_dir(PathBuf::from("abc"))
+            .num_files(0)
+            .build();
+
+        assert!(g.is_err());
+    }
+
+    #[test]
+    fn zero_ratio_fails() {
+        let g = GeneratorBuilder::default()
+            .root_dir(PathBuf::from("abc"))
+            .num_files(1)
+            .file_to_dir_ratio(0)
+            .build();
+
+        assert!(g.is_err());
+    }
+
+    #[test]
+    fn ratio_greater_than_num_files_fails() {
+        let g = GeneratorBuilder::default()
+            .root_dir(PathBuf::from("abc"))
+            .num_files(1)
+            .file_to_dir_ratio(2)
+            .build();
+
+        assert!(g.is_err());
+    }
 }
 
 impl Generator {
@@ -95,17 +183,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
         });
     }
 
-    let ratio = generator
-        .file_to_dir_ratio
-        .unwrap_or_else(|| max(generator.num_files / 1000, 1));
-    if ratio > generator.num_files {
-        return Err(anyhow!(format!(
-            "The file to dir ratio ({}) cannot be larger than the number of files to generate ({}).",
-            ratio,
-            generator.num_files,
-        ))).with_code(exitcode::DATAERR);
-    }
-
+    let ratio = generator.file_to_dir_ratio;
     let num_dirs = generator.num_files as f64 / ratio as f64;
     // This formula was derived from the following equation:
     // num_dirs = unknown_num_dirs_per_dir^max_depth

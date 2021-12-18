@@ -2,10 +2,14 @@
 
 use std::{path::PathBuf, process::exit};
 
+use anyhow::Context;
 use clap::{AppSettings, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 
-use ftzz::{errors::CliResult, generator::GeneratorBuilder};
+use ftzz::{
+    errors::{CliExitAnyhowWrapper, CliResult},
+    generator::GeneratorBuilder,
+};
 
 /// A random file and directory generator
 #[derive(Parser, Debug)]
@@ -82,15 +86,22 @@ fn wrapped_main() -> CliResult<()> {
     //     .unwrap();
 
     match args.cmd {
-        Cmd::Generate(options) => GeneratorBuilder::default()
-            .root_dir(options.root_dir)
-            .num_files(options.num_files)
-            .max_depth(options.max_depth)
-            .file_to_dir_ratio(options.file_to_dir_ratio)
-            .entropy(options.entropy)
-            .build()
-            .unwrap()
-            .generate(),
+        Cmd::Generate(options) => {
+            let mut builder = GeneratorBuilder::default();
+            builder
+                .root_dir(options.root_dir)
+                .num_files(options.num_files)
+                .max_depth(options.max_depth);
+            if let Some(ratio) = options.file_to_dir_ratio {
+                builder.file_to_dir_ratio(ratio);
+            }
+            builder
+                .entropy(options.entropy)
+                .build()
+                .context("Input validation failed")
+                .with_code(exitcode::DATAERR)?
+                .generate()
+        }
     }
 }
 
@@ -113,7 +124,7 @@ fn file_to_dir_ratio_parser(s: &str) -> Result<usize, String> {
 }
 
 fn lenient_si_number(s: &str) -> Result<usize, String> {
-    let mut s = s.replace("K", "k");
+    let mut s = s.replace('K', "k");
     s.remove_matches(",");
     si_number(&s)
 }
