@@ -1,6 +1,7 @@
 use std::{
+    cmp::max,
     collections::VecDeque,
-    fs::File,
+    fs::{create_dir, File},
     hash::Hasher,
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -11,6 +12,53 @@ use seahash::SeaHasher;
 use tempfile::tempdir;
 
 use ftzz::generator::GeneratorBuilder;
+
+#[test]
+fn gen_in_empty_existing_dir_is_allowed() {
+    let dir = tempdir().unwrap();
+    let empty = dir.path().join("empty");
+    create_dir(&empty).unwrap();
+
+    GeneratorBuilder::default()
+        .root_dir(empty)
+        .num_files(1)
+        .build()
+        .unwrap()
+        .generate()
+        .unwrap();
+}
+
+#[test]
+fn gen_in_non_emtpy_existing_dir_is_disallowed() {
+    let dir = tempdir().unwrap();
+    let non_empty = dir.path().join("nonempty");
+    create_dir(&non_empty).unwrap();
+    File::create(non_empty.join("file")).unwrap();
+
+    let result = GeneratorBuilder::default()
+        .root_dir(non_empty)
+        .num_files(1)
+        .build()
+        .unwrap()
+        .generate();
+
+    assert!(result.is_err());
+}
+
+#[test]
+fn gen_creates_new_dir_if_not_present() {
+    let dir = tempdir().unwrap();
+
+    GeneratorBuilder::default()
+        .root_dir(dir.path().join("new"))
+        .num_files(1)
+        .build()
+        .unwrap()
+        .generate()
+        .unwrap();
+
+    assert!(dir.path().join("new").exists());
+}
 
 #[rstest]
 #[case(1_000)]
@@ -64,6 +112,26 @@ fn simple_create_files(#[case] num_files: usize) {
     }
 }
 
+#[rstest]
+#[case(0)]
+#[case(1)]
+#[case(2)]
+#[case(10)]
+#[case(100)]
+fn max_depth_is_respected(#[case] max_depth: u32) {
+    let dir = tempdir().unwrap();
+    GeneratorBuilder::default()
+        .root_dir(dir.path().to_path_buf())
+        .num_files(10_000)
+        .max_depth(max_depth)
+        .build()
+        .unwrap()
+        .generate()
+        .unwrap();
+
+    assert!(find_max_depth(dir.path()) <= max_depth);
+}
+
 /// Recursively hashes the file and directory names in dir
 fn hash_dir(dir: &Path) -> u64 {
     let mut hasher = SeaHasher::new();
@@ -86,4 +154,15 @@ fn hash_dir(dir: &Path) -> u64 {
     }
 
     hasher.finish()
+}
+
+fn find_max_depth(dir: &Path) -> u32 {
+    let mut depth = 0;
+    for entry in dir.read_dir().unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            depth = max(depth, find_max_depth(&path) + 1);
+        }
+    }
+    depth
 }
