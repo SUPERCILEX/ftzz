@@ -494,6 +494,7 @@ dependencies = [
  "exitcode",
  "futures",
  "log",
+ "more-asserts",
  "nix",
  "num-format",
  "num_cpus",
@@ -809,6 +810,12 @@ checksum = "b9f1c5b025cda876f66ef43a113f91ebc9f4ccef34843000e0adf6ebbab84e21"
 dependencies = [
  "winapi",
 ]
+
+[[package]]
+name = "more-asserts"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7843ec2de400bcbc6a6328c958dc38e5359da6e93e72e37bc5246bf1ae776389"
 
 [[package]]
 name = "nix"

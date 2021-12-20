@@ -1,3 +1,4 @@
+use more_asserts::assert_le;
 use std::{
     cmp::max,
     collections::VecDeque,
@@ -120,6 +121,8 @@ fn simple_create_files(#[case] num_files: usize) {
 #[case(100)]
 fn max_depth_is_respected(#[case] max_depth: u32) {
     let dir = tempdir().unwrap();
+    println!("Using dir {:?}", dir.path());
+
     GeneratorBuilder::default()
         .root_dir(dir.path().to_path_buf())
         .num_files(10_000)
@@ -129,7 +132,7 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
         .generate()
         .unwrap();
 
-    assert!(find_max_depth(dir.path()) <= max_depth);
+    assert_le!(find_max_depth(dir.path()), max_depth);
 }
 
 /// Recursively hashes the file and directory names in dir
