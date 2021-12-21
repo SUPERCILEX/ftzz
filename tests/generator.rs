@@ -1,6 +1,5 @@
-use more_asserts::assert_le;
 use std::{
-    cmp::max,
+    cmp::{max, min},
     collections::VecDeque,
     fs::{create_dir, File},
     hash::Hasher,
@@ -8,6 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use more_asserts::assert_le;
 use rstest::rstest;
 use seahash::SeaHasher;
 use tempfile::tempdir;
@@ -72,7 +72,6 @@ fn simple_create_files(#[case] num_files: usize) {
     GeneratorBuilder::default()
         .root_dir(dir.path().to_path_buf())
         .num_files(num_files)
-        .max_depth(5)
         .build()
         .unwrap()
         .generate()
@@ -90,27 +89,41 @@ fn simple_create_files(#[case] num_files: usize) {
         num_files
     ));
 
-    if cfg!(regenerate_testdata) {
-        File::create(hash_file)
-            .unwrap()
-            .write_all(&hash.to_be_bytes())
-            .unwrap()
-    } else {
-        let mut expected_hash = Vec::new();
-        File::open(&hash_file)
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Regenerate test files with \
-                    `RUSTFLAGS=\"--cfg regenerate_testdata\" cargo test`\
-                    \n{}: {:?}",
-                    e, hash_file
-                )
-            })
-            .read_to_end(&mut expected_hash)
-            .unwrap();
+    assert_matching_hashes(hash, &hash_file)
+}
 
-        assert_eq!(hash.to_be_bytes(), expected_hash.as_slice());
-    }
+#[rstest]
+fn advanced_create_files(
+    #[values(1, 1_000, 10_000)] num_files: usize,
+    #[values(0, 1, 10)] max_depth: u32,
+    #[values(1, 100, 1_000)] ftd_ratio: usize,
+) {
+    let dir = tempdir().unwrap();
+    println!("Using dir {:?}", dir.path());
+
+    GeneratorBuilder::default()
+        .root_dir(dir.path().to_path_buf())
+        .num_files(num_files)
+        .max_depth(max_depth)
+        .file_to_dir_ratio(min(num_files, ftd_ratio))
+        .build()
+        .unwrap()
+        .generate()
+        .unwrap();
+
+    let hash = hash_dir(dir.path());
+    #[cfg(bazel)]
+    let hash_file: PathBuf = runfiles::Runfiles::create().unwrap().rlocation(format!(
+        "__main__/ftzz/testdata/generator/advanced_create_files_{}_{}_{}.hash",
+        num_files, max_depth, ftd_ratio,
+    ));
+    #[cfg(not(bazel))]
+    let hash_file = PathBuf::from(format!(
+        "testdata/generator/advanced_create_files_{}_{}_{}.hash",
+        num_files, max_depth, ftd_ratio,
+    ));
+
+    assert_matching_hashes(hash, &hash_file)
 }
 
 #[rstest]
@@ -157,6 +170,30 @@ fn hash_dir(dir: &Path) -> u64 {
     }
 
     hasher.finish()
+}
+
+fn assert_matching_hashes(hash: u64, hash_file: &Path) {
+    if cfg!(regenerate_testdata) {
+        File::create(hash_file)
+            .unwrap()
+            .write_all(&hash.to_be_bytes())
+            .unwrap()
+    } else {
+        let mut expected_hash = Vec::new();
+        File::open(&hash_file)
+            .unwrap_or_else(|e| {
+                panic!(
+                    "Regenerate test files with \
+                    `RUSTFLAGS=\"--cfg regenerate_testdata\" cargo test`\
+                    \n{}: {:?}",
+                    e, hash_file
+                )
+            })
+            .read_to_end(&mut expected_hash)
+            .unwrap();
+
+        assert_eq!(hash.to_be_bytes(), expected_hash.as_slice());
+    }
 }
 
 fn find_max_depth(dir: &Path) -> u32 {

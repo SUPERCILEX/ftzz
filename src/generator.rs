@@ -1,20 +1,19 @@
 use std::{
     cmp::max,
-    fs::{create_dir, create_dir_all},
+    collections::VecDeque,
+    fs::create_dir_all,
     mem::ManuallyDrop,
-    ops::AddAssign,
     path::{Path, PathBuf},
 };
 
 use anyhow::{anyhow, Context};
 use derive_builder::Builder;
-use futures::{stream::FuturesUnordered, StreamExt};
 use log::{debug, info};
 use num_format::{SystemLocale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
 use rand_xorshift::XorShiftRng;
-use tokio::{task, task::JoinHandle};
+use tokio::task;
 
 use crate::errors::{CliExitAnyhowWrapper, CliResult};
 
@@ -143,13 +142,6 @@ struct GeneratorStats {
     dirs: usize,
 }
 
-impl AddAssign for GeneratorStats {
-    fn add_assign(&mut self, rhs: Self) {
-        self.files += rhs.files;
-        self.dirs += rhs.dirs;
-    }
-}
-
 fn validated_options(generator: Generator) -> CliResult<Configuration> {
     create_dir_all(&generator.root_dir)
         .with_context(|| format!("Failed to create directory {:?}", generator.root_dir))
@@ -243,47 +235,6 @@ fn print_stats(stats: GeneratorStats) {
     );
 }
 
-#[derive(Debug)]
-struct GeneratorState {
-    files_per_dir: f64,
-    dirs_per_dir: f64,
-    max_depth: u32,
-
-    root_dir: PathBuf,
-    seed: <XorShiftRng as SeedableRng>::Seed,
-    cache: FileNameCache,
-}
-
-impl GeneratorState {
-    fn next(&self, root_dir: PathBuf, random: &mut XorShiftRng) -> GeneratorState {
-        GeneratorState {
-            root_dir,
-            seed: random.next_seed(),
-            max_depth: self.max_depth - 1,
-            ..*self
-        }
-    }
-}
-
-impl From<Configuration> for GeneratorState {
-    fn from(config: Configuration) -> Self {
-        GeneratorState {
-            files_per_dir: config.files_per_dir,
-            dirs_per_dir: config.dirs_per_dir,
-            max_depth: config.max_depth,
-
-            cache: FileNameCache::alloc(&config),
-            root_dir: config.root_dir,
-            seed: XorShiftRng::seed_from_u64(
-                ((config.files.wrapping_add(config.max_depth as usize) as f64
-                    * (config.files_per_dir + config.dirs_per_dir)) as u64)
-                    .wrapping_add(config.entropy),
-            )
-            .next_seed(),
-        }
-    }
-}
-
 /// Specialized cache for file names that takes advantage of our monotonically increasing integer
 /// naming scheme.
 ///
@@ -358,15 +309,16 @@ impl FileNameCache {
         path.push(&file_cache[i]);
     }
 
-    fn join_dir_name(self, i: usize, path: &Path) -> PathBuf {
+    fn push_dir_name(self, i: usize, path: &mut PathBuf) {
         if i >= self.dir_cache.1 {
-            return path.join(FileNameCache::dir_name(i));
+            path.push(FileNameCache::dir_name(i));
+            return;
         }
 
         let dir_cache = ManuallyDrop::new(unsafe {
             Vec::from_raw_parts(self.dir_cache.0, self.dir_cache.1, self.dir_cache.1)
         });
-        path.join(&dir_cache[i])
+        path.push(&dir_cache[i]);
     }
 
     #[inline]
@@ -387,94 +339,151 @@ fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
         .with_context(|| "Failed to create tokio runtime")
         .with_code(exitcode::OSERR)?;
 
-    let state: GeneratorState = config.into();
-    info!("Starting state: {:?}", state);
-
-    let cache = state.cache;
-    let results = runtime.block_on(run_generator_async(state));
-    cache.free();
-
-    results
+    info!("Starting config: {:?}", config);
+    runtime.block_on(run_generator_async(config))
 }
 
-async fn run_generator_async(state: GeneratorState) -> CliResult<GeneratorStats> {
-    let mut random = XorShiftRng::from_seed(state.seed);
-    let num_files_to_generate = state.files_per_dir.num_to_generate(&mut random);
-    let num_dirs_to_generate = if state.max_depth == 0 {
-        0
-    } else {
-        state.dirs_per_dir.num_to_generate(&mut random)
-    };
-
-    debug!(
-        "Creating {} files and {} directories in {:?}",
-        num_files_to_generate, num_dirs_to_generate, state.root_dir
+async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats> {
+    let cache = FileNameCache::alloc(&config);
+    let mut random = XorShiftRng::seed_from_u64(
+        ((config.files.wrapping_add(config.max_depth as usize) as f64
+            * (config.files_per_dir + config.dirs_per_dir)) as u64)
+            .wrapping_add(config.entropy),
     );
+    let mut stack = VecDeque::with_capacity(config.max_depth as usize);
+    let mut tasks = Vec::with_capacity(config.files); // TODO add min
+    let mut target_dir = config.root_dir;
+    let mut stats = GeneratorStats { files: 0, dirs: 0 };
 
-    let tasks = task::spawn_blocking(move || -> CliResult<_> {
-        let mut dir_tasks = Vec::with_capacity(num_dirs_to_generate);
+    'outer: loop {
+        let num_files_to_generate = config.files_per_dir.num_to_generate(&mut random);
+        let num_dirs_to_generate = if stack.len() < config.max_depth as usize {
+            config.dirs_per_dir.num_to_generate(&mut random)
+        } else {
+            0
+        };
 
-        for i in 0..num_dirs_to_generate {
-            let dir = state.cache.join_dir_name(i, &state.root_dir);
+        {
+            stats.files += num_files_to_generate;
+            stats.dirs += num_dirs_to_generate;
 
-            create_dir(&dir)
-                .with_context(|| format!("Failed to create directory {:?}", dir))
-                .with_code(exitcode::IOERR)?;
-            dir_tasks.push(spawn_run_generator_async(state.next(dir, &mut random)))
-        }
-
-        let mut file = state.root_dir;
-        for i in 0..num_files_to_generate {
-            state.cache.push_file_name(i, &mut file);
-
-            #[cfg(target_os = "linux")]
-            {
-                use nix::sys::stat::{mknod, Mode, SFlag};
-                mknod(
-                    &file,
-                    SFlag::S_IFREG,
-                    Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
-                    0,
+            let target_dir = target_dir.clone();
+            tasks.push(task::spawn_blocking(move || {
+                create_files_and_dirs(
+                    target_dir,
+                    num_files_to_generate,
+                    num_dirs_to_generate,
+                    cache,
                 )
-                .with_context(|| format!("Failed to create file {:?}", file))
-                .with_code(exitcode::IOERR)?;
-            }
-            #[cfg(not(target_os = "linux"))]
-            {
-                use std::fs::File;
-                File::create(&file)
-                    .with_context(|| format!("Failed to create file {:?}", file))
-                    .with_code(exitcode::IOERR)?;
-            }
-
-            file.pop();
+            }));
         }
 
-        Ok(dir_tasks)
-    })
-    .await
-    .with_context(|| "Failed to retrieve task result")
-    .with_code(exitcode::SOFTWARE)??;
+        if num_dirs_to_generate > 0 {
+            stack.push_front((num_dirs_to_generate - 1, num_dirs_to_generate));
+            cache.push_dir_name(0, &mut target_dir);
+        } else {
+            loop {
+                if let Some((dirs_left, tot_dirs)) = stack.front_mut() {
+                    target_dir.pop();
+                    if *dirs_left > 0 {
+                        *dirs_left -= 1;
+                        cache.push_dir_name(*tot_dirs - *dirs_left, &mut target_dir);
+                        break;
+                    } else {
+                        stack.pop_front();
+                    }
+                } else {
+                    break 'outer;
+                }
+            }
+        }
+    }
 
-    let mut stats = GeneratorStats {
-        files: num_files_to_generate,
-        dirs: num_dirs_to_generate,
-    };
-
-    // We want to poll every future continuously instead of going one-by-one because each future
-    // recursively spawns more I/O bound children that wouldn't otherwise get a head start.
-    let mut tasks = tasks.into_iter().collect::<FuturesUnordered<_>>();
-    while let Some(task) = tasks.next().await {
-        stats += task
+    for task in tasks {
+        task.await
             .with_context(|| "Failed to retrieve task result")
             .with_code(exitcode::SOFTWARE)??;
     }
 
+    cache.free();
     Ok(stats)
 }
 
-fn spawn_run_generator_async(state: GeneratorState) -> JoinHandle<CliResult<GeneratorStats>> {
-    task::spawn(run_generator_async(state))
+fn create_files_and_dirs(
+    root_dir: PathBuf,
+    num_files: usize,
+    num_dirs: usize,
+    cache: FileNameCache,
+) -> CliResult<()> {
+    debug!(
+        "Creating {} files and {} directories in {:?}",
+        num_files, num_dirs, root_dir,
+    );
+
+    let mut file = root_dir;
+
+    for i in 0..num_dirs {
+        cache.push_dir_name(i, &mut file);
+
+        create_dir_all(&file)
+            .with_context(|| format!("Failed to create directory {:?}", file))
+            .with_code(exitcode::IOERR)?;
+
+        file.pop();
+    }
+
+    let mut start_file = 0;
+    if num_files > 0 {
+        cache.push_file_name(0, &mut file);
+
+        if let Err(e) = create_file(&file) {
+            #[cfg(target_os = "linux")]
+            let is_dir_missing = e == nix::errno::Errno::ENOENT;
+            #[cfg(not(target_os = "linux"))]
+            let is_dir_missing = e.kind() == std::io::ErrorKind::NotFound;
+
+            if is_dir_missing {
+                file.pop();
+                create_dir_all(&file)
+                    .with_context(|| format!("Failed to create directory {:?}", file))
+                    .with_code(exitcode::IOERR)?;
+            } else {
+                return Err(e)
+                    .with_context(|| format!("Failed to create file {:?}", file))
+                    .with_code(exitcode::IOERR);
+            }
+        } else {
+            start_file += 1;
+            file.pop();
+        }
+    }
+    for i in start_file..num_files {
+        cache.push_file_name(i, &mut file);
+
+        create_file(&file)
+            .with_context(|| format!("Failed to create file {:?}", file))
+            .with_code(exitcode::IOERR)?;
+
+        file.pop();
+    }
+
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn create_file(file: &Path) -> nix::Result<()> {
+    use nix::sys::stat::{mknod, Mode, SFlag};
+    mknod(
+        file,
+        SFlag::S_IFREG,
+        Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
+        0,
+    )
+}
+
+#[cfg(not(target_os = "linux"))]
+fn create_file(file: &Path) -> std::io::Result<std::fs::File> {
+    std::fs::File::create(file)
 }
 
 trait GeneratorUtils {
@@ -492,26 +501,5 @@ impl GeneratorUtils for f64 {
         };
 
         sample.round() as usize
-    }
-}
-
-trait RandomUtils {
-    type Seed;
-
-    fn next_seed(&mut self) -> Self::Seed;
-}
-
-impl RandomUtils for XorShiftRng {
-    type Seed = <XorShiftRng as SeedableRng>::Seed;
-
-    fn next_seed(&mut self) -> Self::Seed {
-        let seed = [
-            self.next_u32(),
-            self.next_u32(),
-            self.next_u32(),
-            self.next_u32(),
-        ]
-        .as_ptr() as *const [u8; 16];
-        unsafe { *seed }
     }
 }
