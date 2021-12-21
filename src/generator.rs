@@ -175,8 +175,8 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
         });
     }
 
-    let ratio = generator.file_to_dir_ratio;
-    let num_dirs = generator.num_files as f64 / ratio as f64;
+    let ratio = generator.file_to_dir_ratio as f64;
+    let num_dirs = generator.num_files as f64 / ratio;
     // This formula was derived from the following equation:
     // num_dirs = unknown_num_dirs_per_dir^max_depth
     let dirs_per_dir = 2f64.powf(num_dirs.log2() / generator.max_depth as f64);
@@ -184,7 +184,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
     Ok(Configuration {
         root_dir: generator.root_dir,
         files: generator.num_files,
-        files_per_dir: ratio as f64,
+        files_per_dir: ratio,
         dirs_per_dir,
         max_depth: generator.max_depth,
         entropy: generator.entropy,
@@ -264,6 +264,13 @@ impl FileNameCache {
             ManuallyDrop::new(Vec::<String>::with_capacity(file_entries.round() as usize));
         let mut dir_cache =
             ManuallyDrop::new(Vec::<String>::with_capacity(dir_entries.round() as usize));
+
+        debug!("Allocated {} file cache entries.", file_cache.capacity());
+        debug!(
+            "Allocated {} directory cache entries.",
+            dir_cache.capacity()
+        );
+
         unsafe {
             let cap = file_cache.capacity();
             file_cache.set_len(cap);
@@ -345,15 +352,19 @@ fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
 
 async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats> {
     let cache = FileNameCache::alloc(&config);
-    let mut random = XorShiftRng::seed_from_u64(
-        ((config.files.wrapping_add(config.max_depth as usize) as f64
+    let mut random = {
+        let seed = ((config.files.wrapping_add(config.max_depth as usize) as f64
             * (config.files_per_dir + config.dirs_per_dir)) as u64)
-            .wrapping_add(config.entropy),
-    );
+            .wrapping_add(config.entropy);
+        debug!("Starting seed: {}", seed);
+        XorShiftRng::seed_from_u64(seed)
+    };
     let mut stack = VecDeque::with_capacity(config.max_depth as usize);
     let mut tasks = Vec::with_capacity(config.files); // TODO add min
     let mut target_dir = config.root_dir;
     let mut stats = GeneratorStats { files: 0, dirs: 0 };
+
+    debug!("Allocated {} task entries.", tasks.capacity());
 
     'outer: loop {
         let num_files_to_generate = config.files_per_dir.num_to_generate(&mut random);
