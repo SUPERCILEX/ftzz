@@ -1,5 +1,5 @@
 use std::{
-    cmp::max,
+    cmp::{max, min},
     collections::VecDeque,
     fs::create_dir_all,
     mem::ManuallyDrop,
@@ -360,7 +360,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         XorShiftRng::seed_from_u64(seed)
     };
     let mut stack = VecDeque::with_capacity(config.max_depth as usize);
-    let mut tasks = Vec::with_capacity(config.files); // TODO add min
+    let mut tasks = Vec::with_capacity(min(1 << 23, config.files * 3 / 2));
     let mut target_dir = config.root_dir;
     let mut stats = GeneratorStats { files: 0, dirs: 0 };
 
@@ -406,6 +406,15 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
                 } else {
                     break 'outer;
                 }
+            }
+        }
+
+        if tasks.len() == tasks.capacity() {
+            debug!("Flushing pending task queue.");
+            for task in tasks.drain(..) {
+                task.await
+                    .with_context(|| "Failed to retrieve task result")
+                    .with_code(exitcode::SOFTWARE)??;
             }
         }
     }
