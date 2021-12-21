@@ -1,6 +1,5 @@
 use std::{
     cmp::{max, min},
-    collections::VecDeque,
     fs::create_dir_all,
     mem::ManuallyDrop,
     path::{Path, PathBuf},
@@ -330,6 +329,13 @@ impl FileNameCache {
     }
 }
 
+#[derive(Debug)]
+struct GeneratorTaskParams {
+    target_dir: PathBuf,
+    num_files: usize,
+    num_dirs: usize,
+}
+
 fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .max_blocking_threads(num_cpus::get())
@@ -342,6 +348,7 @@ fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
 }
 
 async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats> {
+    let max_depth = config.max_depth as usize;
     let cache = FileNameCache::alloc(&config);
     let mut random = {
         let seed = ((config.files.wrapping_add(config.max_depth as usize) as f64
@@ -350,63 +357,116 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         debug!("Starting seed: {}", seed);
         XorShiftRng::seed_from_u64(seed)
     };
-    let mut stack = VecDeque::with_capacity(config.max_depth as usize);
+    let mut stack = Vec::with_capacity(config.max_depth as usize);
+    // TODO tweak draining to keep machine saturated and optimize capacity
+    //  (should be `files / files_per_dir` or more likely some multiple of core count).
     let mut tasks = Vec::with_capacity(min(1 << 23, config.files * 3 / 2));
     let mut target_dir = config.root_dir;
     let mut stats = GeneratorStats { files: 0, dirs: 0 };
 
     debug!("Allocated {} task entries.", tasks.capacity());
 
-    'outer: loop {
-        let num_files_to_generate = config.files_per_dir.num_to_generate(&mut random);
-        let num_dirs_to_generate = if stack.len() < config.max_depth as usize {
-            config.dirs_per_dir.num_to_generate(&mut random)
-        } else {
-            0
-        };
-
-        {
-            stats.files += num_files_to_generate;
-            stats.dirs += num_dirs_to_generate;
-
-            let target_dir = target_dir.clone();
-            tasks.push(task::spawn_blocking(move || {
-                create_files_and_dirs(
-                    target_dir,
-                    num_files_to_generate,
-                    num_dirs_to_generate,
-                    cache,
-                )
-            }));
-        }
-
-        if num_dirs_to_generate > 0 {
-            stack.push_front((num_dirs_to_generate - 1, num_dirs_to_generate));
-            cache.push_dir_name(0, &mut target_dir);
-        } else {
-            loop {
-                if let Some((dirs_left, tot_dirs)) = stack.front_mut() {
-                    target_dir.pop();
-                    if *dirs_left > 0 {
-                        *dirs_left -= 1;
-                        cache.push_dir_name(*tot_dirs - *dirs_left, &mut target_dir);
-                        break;
-                    } else {
-                        stack.pop_front();
-                    }
-                } else {
-                    break 'outer;
-                }
-            }
-        }
-
-        if tasks.len() == tasks.capacity() {
+    macro_rules! flush_tasks {
+        () => {
             debug!("Flushing pending task queue.");
             for task in tasks.drain(..) {
                 task.await
                     .with_context(|| "Failed to retrieve task result")
                     .with_code(exitcode::SOFTWARE)??;
             }
+        };
+    }
+
+    macro_rules! gen_params {
+        ($target_dir:expr, $should_gen_dirs:expr) => {
+            GeneratorTaskParams {
+                target_dir: $target_dir,
+                num_files: config.files_per_dir.num_to_generate(&mut random),
+                num_dirs: if $should_gen_dirs {
+                    config.dirs_per_dir.num_to_generate(&mut random)
+                } else {
+                    0
+                },
+            }
+        };
+    }
+
+    macro_rules! queue_gen {
+        ($params:ident) => {
+            stats.files += $params.num_files;
+            stats.dirs += $params.num_dirs;
+
+            tasks.push(task::spawn_blocking(move || {
+                create_files_and_dirs($params, cache)
+            }));
+        };
+    }
+
+    {
+        let params = gen_params!(target_dir.clone(), max_depth > 0);
+        if params.num_dirs > 0 {
+            stack.push((1, vec![params.num_dirs]));
+        }
+        queue_gen!(params);
+    }
+
+    while let Some((tot_dirs, dirs_left)) = stack.last_mut() {
+        if dirs_left.is_empty() {
+            stack.pop();
+            target_dir.pop();
+
+            if let Some((tot_dirs, dirs_left)) = stack.last() {
+                if !dirs_left.is_empty() {
+                    target_dir.pop();
+                    cache.push_dir_name(*tot_dirs - dirs_left.len(), &mut target_dir);
+                }
+            }
+
+            continue;
+        }
+
+        let num_dirs_to_generate = dirs_left.pop().unwrap();
+        let next_stack_dir = *tot_dirs - dirs_left.len();
+        let is_completing = dirs_left.is_empty();
+        let gen_next_dirs = stack.len() < max_depth;
+
+        if tasks.len() + num_dirs_to_generate >= tasks.capacity() {
+            flush_tasks!();
+        }
+
+        let mut next_dirs = Vec::with_capacity(if gen_next_dirs {
+            // TODO figure out if we can bound this memory usage
+            num_dirs_to_generate
+        } else {
+            0
+        });
+        // Allocate a queue without VecDeque since we know the queue length will only shrink.
+        // We want a queue so that the first task that is scheduled is the directory we investigate
+        // first such that it will hopefully have finished creating its directories (and thus
+        // minimize lock contention).
+        let raw_next_dirs = next_dirs.spare_capacity_mut();
+
+        for i in 0..num_dirs_to_generate {
+            cache.push_dir_name(i, &mut target_dir);
+            let params = gen_params!(target_dir.clone(), gen_next_dirs);
+            target_dir.pop();
+
+            if gen_next_dirs {
+                raw_next_dirs[num_dirs_to_generate - i - 1].write(params.num_dirs);
+            }
+            queue_gen!(params);
+        }
+
+        if gen_next_dirs {
+            unsafe {
+                next_dirs.set_len(num_dirs_to_generate);
+            }
+            stack.push((num_dirs_to_generate, next_dirs));
+
+            cache.push_dir_name(0, &mut target_dir);
+        } else if !is_completing {
+            target_dir.pop();
+            cache.push_dir_name(next_stack_dir, &mut target_dir);
         }
     }
 
@@ -420,20 +480,15 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     Ok(stats)
 }
 
-fn create_files_and_dirs(
-    root_dir: PathBuf,
-    num_files: usize,
-    num_dirs: usize,
-    cache: FileNameCache,
-) -> CliResult<()> {
+fn create_files_and_dirs(params: GeneratorTaskParams, cache: FileNameCache) -> CliResult<()> {
     debug!(
         "Creating {} files and {} directories in {:?}",
-        num_files, num_dirs, root_dir,
+        params.num_files, params.num_dirs, params.target_dir,
     );
 
-    let mut file = root_dir;
+    let mut file = params.target_dir;
 
-    for i in 0..num_dirs {
+    for i in 0..params.num_dirs {
         cache.push_dir_name(i, &mut file);
 
         create_dir_all(&file)
@@ -444,7 +499,7 @@ fn create_files_and_dirs(
     }
 
     let mut start_file = 0;
-    if num_files > 0 {
+    if params.num_files > 0 {
         cache.push_file_name(0, &mut file);
 
         if let Err(e) = create_file(&file) {
@@ -468,7 +523,7 @@ fn create_files_and_dirs(
             file.pop();
         }
     }
-    for i in start_file..num_files {
+    for i in start_file..params.num_files {
         cache.push_file_name(i, &mut file);
 
         create_file(&file)
