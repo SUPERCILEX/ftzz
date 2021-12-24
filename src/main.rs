@@ -126,6 +126,7 @@ fn file_to_dir_ratio_parser(s: &str) -> Result<usize, String> {
 fn lenient_si_number(s: &str) -> Result<usize, String> {
     let mut s = s.replace('K', "k");
     s.remove_matches(",");
+    s.remove_matches("_");
     si_number(&s)
 }
 
@@ -225,6 +226,18 @@ mod cli_tests {
     fn generate_num_files_accepts_commas() {
         let m =
             Ftzz::into_app().get_matches_from(vec!["ftzz", "generate", "--files", "1,000", "dir"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_files, 1000);
+    }
+
+    #[test]
+    fn generate_num_files_accepts_underscores() {
+        let m =
+            Ftzz::into_app().get_matches_from(vec!["ftzz", "generate", "--files", "1_000", "dir"]);
         let g = <Generate as FromArgMatches>::from_arg_matches(
             m.subcommand_matches("generate").unwrap(),
         )
@@ -338,6 +351,25 @@ mod cli_tests {
             "generate",
             "--ftd-ratio",
             "1,000",
+            "-n",
+            "1",
+            "dir",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.file_to_dir_ratio, Some(1000));
+    }
+
+    #[test]
+    fn generate_ratio_accepts_underscores() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "--ftd-ratio",
+            "1_000",
             "-n",
             "1",
             "dir",
