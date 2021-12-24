@@ -1,5 +1,5 @@
 use std::{
-    cmp::{max, min},
+    cmp::max,
     fs::create_dir_all,
     mem::ManuallyDrop,
     path::{Path, PathBuf},
@@ -358,9 +358,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         XorShiftRng::seed_from_u64(seed)
     };
     let mut stack = Vec::with_capacity(config.max_depth as usize);
-    // TODO tweak draining to keep machine saturated and optimize capacity
-    //  (should be `files / files_per_dir` or more likely some multiple of core count).
-    let mut tasks = Vec::with_capacity(min(1 << 23, config.files * 3 / 2));
+    let mut tasks = Vec::with_capacity(num_cpus::get() * 100);
     let mut target_dir = config.root_dir;
     let mut stats = GeneratorStats { files: 0, dirs: 0 };
 
@@ -369,7 +367,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     macro_rules! flush_tasks {
         () => {
             debug!("Flushing pending task queue.");
-            for task in tasks.drain(..) {
+            for task in tasks.drain(..tasks.len() - (tasks.len() >> 4)) {
                 task.await
                     .with_context(|| "Failed to retrieve task result")
                     .with_code(exitcode::SOFTWARE)??;
