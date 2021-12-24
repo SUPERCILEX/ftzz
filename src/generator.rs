@@ -357,10 +357,13 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         debug!("Starting seed: {}", seed);
         XorShiftRng::seed_from_u64(seed)
     };
-    let mut stack = Vec::with_capacity(config.max_depth as usize);
+    let mut stack = Vec::with_capacity(max_depth);
     let mut tasks = Vec::with_capacity(num_cpus::get() * 100);
     let mut target_dir = config.root_dir;
     let mut stats = GeneratorStats { files: 0, dirs: 0 };
+
+    let mut vec_pool = Vec::with_capacity(max_depth);
+    let mut path_pool = Vec::with_capacity(tasks.capacity() - (tasks.capacity() >> 4));
 
     debug!("Allocated {} task entries.", tasks.capacity());
 
@@ -368,9 +371,11 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         () => {
             debug!("Flushing pending task queue.");
             for task in tasks.drain(..tasks.len() - (tasks.len() >> 4)) {
-                task.await
-                    .with_context(|| "Failed to retrieve task result")
-                    .with_code(exitcode::SOFTWARE)??;
+                path_pool.push(
+                    task.await
+                        .with_context(|| "Failed to retrieve task result")
+                        .with_code(exitcode::SOFTWARE)??,
+                );
             }
         };
     }
@@ -410,7 +415,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
 
     while let Some((tot_dirs, dirs_left)) = stack.last_mut() {
         if dirs_left.is_empty() {
-            stack.pop();
+            vec_pool.push(stack.pop().unwrap().1);
             target_dir.pop();
 
             if let Some((tot_dirs, dirs_left)) = stack.last() {
@@ -432,7 +437,8 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             flush_tasks!();
         }
 
-        let mut next_dirs = Vec::with_capacity(if gen_next_dirs {
+        let mut next_dirs = vec_pool.pop().unwrap_or_else(Vec::new);
+        next_dirs.reserve(if gen_next_dirs {
             // TODO figure out if we can bound this memory usage
             num_dirs_to_generate
         } else {
@@ -446,7 +452,15 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
 
         for i in 0..num_dirs_to_generate {
             cache.push_dir_name(i, &mut target_dir);
-            let params = gen_params!(target_dir.clone(), gen_next_dirs);
+            let params = gen_params!(
+                if let Some(mut buf) = path_pool.pop() {
+                    buf.clone_from(&target_dir);
+                    buf
+                } else {
+                    target_dir.clone()
+                },
+                gen_next_dirs
+            );
             target_dir.pop();
 
             if gen_next_dirs {
@@ -462,9 +476,12 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             stack.push((num_dirs_to_generate, next_dirs));
 
             cache.push_dir_name(0, &mut target_dir);
-        } else if !is_completing {
-            target_dir.pop();
-            cache.push_dir_name(next_stack_dir, &mut target_dir);
+        } else {
+            if !is_completing {
+                target_dir.pop();
+                cache.push_dir_name(next_stack_dir, &mut target_dir);
+            }
+            vec_pool.push(next_dirs);
         }
     }
 
@@ -478,7 +495,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     Ok(stats)
 }
 
-fn create_files_and_dirs(params: GeneratorTaskParams, cache: FileNameCache) -> CliResult<()> {
+fn create_files_and_dirs(params: GeneratorTaskParams, cache: FileNameCache) -> CliResult<PathBuf> {
     debug!(
         "Creating {} files and {} directories in {:?}",
         params.num_files, params.num_dirs, params.target_dir,
@@ -531,7 +548,7 @@ fn create_files_and_dirs(params: GeneratorTaskParams, cache: FileNameCache) -> C
         file.pop();
     }
 
-    Ok(())
+    Ok(file)
 }
 
 #[cfg(target_os = "linux")]
