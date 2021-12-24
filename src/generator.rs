@@ -265,31 +265,22 @@ impl FileNameCache {
         let mut dir_cache =
             ManuallyDrop::new(Vec::<String>::with_capacity(dir_entries.round() as usize));
 
-        debug!("Allocated {} file cache entries.", file_cache.capacity());
-        debug!(
-            "Allocated {} directory cache entries.",
-            dir_cache.capacity()
-        );
+        for (i, entry) in file_cache.spare_capacity_mut().iter_mut().enumerate() {
+            entry.write(FileNameCache::file_name(i));
+        }
+        for (i, entry) in dir_cache.spare_capacity_mut().iter_mut().enumerate() {
+            entry.write(FileNameCache::dir_name(i));
+        }
 
         unsafe {
             let cap = file_cache.capacity();
             file_cache.set_len(cap);
             let cap = dir_cache.capacity();
             dir_cache.set_len(cap);
-
-            for i in 0..file_cache.len() {
-                file_cache
-                    .as_mut_ptr()
-                    .add(i)
-                    .write(FileNameCache::file_name(i));
-            }
-            for i in 0..dir_cache.len() {
-                dir_cache
-                    .as_mut_ptr()
-                    .add(i)
-                    .write(FileNameCache::dir_name(i));
-            }
         }
+
+        debug!("Allocated {} file cache entries.", file_cache.len());
+        debug!("Allocated {} directory cache entries.", dir_cache.len());
 
         FileNameCache {
             file_cache: (file_cache.as_mut_ptr(), file_cache.len()),
