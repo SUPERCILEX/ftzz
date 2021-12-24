@@ -14,6 +14,14 @@ use tempfile::tempdir;
 
 use ftzz::generator::GeneratorBuilder;
 
+macro_rules! allow_inspection {
+    ($dir:ident) => {
+        if option_env!("INSPECT").is_some() {
+            $dir.into_path();
+        }
+    };
+}
+
 #[test]
 fn gen_in_empty_existing_dir_is_allowed() {
     let dir = tempdir().unwrap();
@@ -89,7 +97,8 @@ fn simple_create_files(#[case] num_files: usize) {
         num_files
     ));
 
-    assert_matching_hashes(hash, &hash_file)
+    allow_inspection!(dir);
+    assert_matching_hashes(hash, &hash_file);
 }
 
 #[rstest]
@@ -123,7 +132,8 @@ fn advanced_create_files(
         num_files, max_depth, ftd_ratio,
     ));
 
-    assert_matching_hashes(hash, &hash_file)
+    allow_inspection!(dir);
+    assert_matching_hashes(hash, &hash_file);
 }
 
 #[rstest]
@@ -145,7 +155,9 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
         .generate()
         .unwrap();
 
-    assert_le!(find_max_depth(dir.path()), max_depth);
+    let actual_max_depth = find_max_depth(dir.path());
+    allow_inspection!(dir);
+    assert_le!(actual_max_depth, max_depth);
 }
 
 /// Recursively hashes the file and directory names in dir
@@ -173,7 +185,7 @@ fn hash_dir(dir: &Path) -> u64 {
 }
 
 fn assert_matching_hashes(hash: u64, hash_file: &Path) {
-    if cfg!(regenerate_testdata) {
+    if option_env!("REGEN").is_some() {
         File::create(hash_file)
             .unwrap()
             .write_all(&hash.to_be_bytes())
@@ -183,10 +195,8 @@ fn assert_matching_hashes(hash: u64, hash_file: &Path) {
         File::open(&hash_file)
             .unwrap_or_else(|e| {
                 panic!(
-                    "Regenerate test files with \
-                    `RUSTFLAGS=\"--cfg regenerate_testdata\" cargo test`\
-                    \n{}: {:?}",
-                    e, hash_file
+                    "Regenerate test files with `REGEN=true cargo test` \n{}: {:?}",
+                    e, hash_file,
                 )
             })
             .read_to_end(&mut expected_hash)
