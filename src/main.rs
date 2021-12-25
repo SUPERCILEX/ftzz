@@ -47,24 +47,28 @@ struct Generate {
     ///
     /// Note: this value is probabilistically respected, meaning any number of files may be
     /// generated so long as we attempt to get close to N.
-    #[clap(short = 'n', long = "files", parse(try_from_str = num_files_parser))]
+    #[clap(short = 'n', long = "files", alias = "num-files")]
+    #[clap(parse(try_from_str = num_files_parser))]
     num_files: usize,
 
     /// The maximum directory tree depth
-    #[clap(short = 'd', long = "depth", default_value = "5")]
+    #[clap(short = 'd', long = "max-depth", alias = "depth")]
+    #[clap(default_value = "5")]
     max_depth: u32,
 
     /// The number of files to generate per directory (default: files / 1000)
     ///
     /// Note: this value is probabilistically respected, meaning not all directories will have N
     /// files).
-    #[clap(short = 'r', long = "ftd-ratio", parse(try_from_str = file_to_dir_ratio_parser))]
+    #[clap(short = 'r', long = "ftd-ratio")]
+    #[clap(parse(try_from_str = file_to_dir_ratio_parser))]
     file_to_dir_ratio: Option<usize>,
 
     /// Add some additional entropy to the PRNG's starting seed
     ///
     /// For example, you can use bash's `$RANDOM` function.
-    #[clap(long = "entropy", default_value = "0")]
+    #[clap(long = "entropy", alias = "seed")]
+    #[clap(default_value = "0")]
     entropy: u64,
 }
 
