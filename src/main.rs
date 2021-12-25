@@ -51,6 +51,10 @@ struct Generate {
     #[clap(parse(try_from_str = num_files_parser))]
     num_files: usize,
 
+    /// Whether or not to generate exactly N files
+    #[clap(short = 'e', long = "files-exact")]
+    files_exact: bool,
+
     /// The maximum directory tree depth
     #[clap(short = 'd', long = "max-depth", alias = "depth")]
     #[clap(default_value = "5")]
@@ -95,6 +99,7 @@ fn wrapped_main() -> CliResult<()> {
             builder
                 .root_dir(options.root_dir)
                 .num_files(options.num_files)
+                .files_exact(options.files_exact)
                 .max_depth(options.max_depth);
             if let Some(ratio) = options.file_to_dir_ratio {
                 builder.file_to_dir_ratio(ratio);

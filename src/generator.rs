@@ -21,6 +21,8 @@ use crate::errors::{CliExitAnyhowWrapper, CliResult};
 pub struct Generator {
     root_dir: PathBuf,
     num_files: usize,
+    #[builder(default = "false")]
+    files_exact: bool,
     #[builder(default = "5")]
     max_depth: u32,
     #[builder(default = "self.default_ftd_ratio()")]
@@ -126,6 +128,7 @@ impl Generator {
 struct Configuration {
     root_dir: PathBuf,
     files: usize,
+    files_exact: bool,
     files_per_dir: f64,
     dirs_per_dir: f64,
     max_depth: u32,
@@ -164,6 +167,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
         return Ok(Configuration {
             root_dir: generator.root_dir,
             files: generator.num_files,
+            files_exact: generator.files_exact,
             files_per_dir: generator.num_files as f64,
             dirs_per_dir: 0.,
             max_depth: 0,
@@ -183,6 +187,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
     Ok(Configuration {
         root_dir: generator.root_dir,
         files: generator.num_files,
+        files_exact: generator.files_exact,
         files_per_dir: ratio,
         dirs_per_dir,
         max_depth: generator.max_depth,
@@ -334,6 +339,7 @@ struct GeneratorTaskParams {
     target_dir: PathBuf,
     num_files: usize,
     num_dirs: usize,
+    file_offset: usize,
 }
 
 fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
@@ -393,6 +399,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
                 } else {
                     0
                 },
+                file_offset: 0,
             }
         };
     }
@@ -411,18 +418,32 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         };
     }
 
+    let root_num_files;
     {
-        let params = gen_params!(target_dir.clone(), max_depth > 0);
+        let mut params = gen_params!(target_dir.clone(), max_depth > 0);
+        root_num_files = params.num_files;
+
+        if config.files_exact && root_num_files >= config.files {
+            params = GeneratorTaskParams {
+                target_dir: params.target_dir,
+                num_files: config.files,
+                num_dirs: 0,
+                file_offset: 0,
+            };
+        }
         if params.num_dirs > 0 {
             stack.push((1, vec![params.num_dirs]));
         }
+
         queue_gen!(params);
     }
 
-    while let Some((tot_dirs, dirs_left)) = stack.last_mut() {
+    'outer: while let Some((tot_dirs, dirs_left)) = stack.last_mut() {
         if dirs_left.is_empty() {
             vec_pool.push(stack.pop().unwrap().1);
-            target_dir.pop();
+            if !stack.is_empty() {
+                target_dir.pop();
+            }
 
             if let Some((tot_dirs, dirs_left)) = stack.last() {
                 if !dirs_left.is_empty() {
@@ -469,6 +490,15 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             );
             target_dir.pop();
 
+            if config.files_exact && stats.files + params.num_files >= config.files {
+                let params = GeneratorTaskParams {
+                    num_files: config.files - stats.files,
+                    num_dirs: 0,
+                    ..params
+                };
+                queue_gen!(params);
+                break 'outer;
+            }
             if gen_next_dirs {
                 raw_next_dirs[num_dirs_to_generate - i - 1].write(params.num_dirs);
             }
@@ -489,6 +519,23 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             }
             vec_pool.push(next_dirs);
         }
+    }
+
+    if config.files_exact && stats.files < config.files {
+        // TODO Dumping all the remaining files in the root directory is very dumb and wrong
+        //  1. If there are a lot of files, we're missing out on performance gains from generating
+        //     the files in separate directories
+        //  2. The distribution will be totally wrong
+        //  Ideally we would continue the while loop above until enough files have been generated,
+        //  but I haven't had time to think about how to do so properly.
+
+        let params = GeneratorTaskParams {
+            target_dir,
+            num_files: config.files - stats.files,
+            num_dirs: 0,
+            file_offset: root_num_files,
+        };
+        queue_gen!(params);
     }
 
     #[cfg(not(dry_run))]
@@ -522,7 +569,7 @@ fn create_files_and_dirs(params: GeneratorTaskParams, cache: FileNameCache) -> C
 
     let mut start_file = 0;
     if params.num_files > 0 {
-        cache.push_file_name(0, &mut file);
+        cache.push_file_name(params.file_offset, &mut file);
 
         if let Err(e) = create_file(&file) {
             #[cfg(target_os = "linux")]
@@ -546,7 +593,7 @@ fn create_files_and_dirs(params: GeneratorTaskParams, cache: FileNameCache) -> C
         }
     }
     for i in start_file..params.num_files {
-        cache.push_file_name(i, &mut file);
+        cache.push_file_name(i + params.file_offset, &mut file);
 
         create_file(&file)
             .with_context(|| format!("Failed to create file {:?}", file))

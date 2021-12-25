@@ -8,6 +8,7 @@ use std::{
 };
 
 use more_asserts::assert_le;
+use rand::Rng;
 use rstest::rstest;
 use seahash::SeaHasher;
 use tempfile::tempdir;
@@ -106,6 +107,7 @@ fn advanced_create_files(
     #[values(1, 1_000, 10_000)] num_files: usize,
     #[values(0, 1, 10)] max_depth: u32,
     #[values(1, 100, 1_000)] ftd_ratio: usize,
+    #[values(false, true)] files_exact: bool,
 ) {
     let dir = tempdir().unwrap();
     println!("Using dir {:?}", dir.path());
@@ -113,6 +115,7 @@ fn advanced_create_files(
     GeneratorBuilder::default()
         .root_dir(dir.path().to_path_buf())
         .num_files(num_files)
+        .files_exact(files_exact)
         .max_depth(max_depth)
         .file_to_dir_ratio(min(num_files, ftd_ratio))
         .build()
@@ -123,17 +126,29 @@ fn advanced_create_files(
     let hash = hash_dir(dir.path());
     #[cfg(bazel)]
     let hash_file: PathBuf = runfiles::Runfiles::create().unwrap().rlocation(format!(
-        "__main__/ftzz/testdata/generator/advanced_create_files_{}_{}_{}.hash",
-        num_files, max_depth, ftd_ratio,
+        "__main__/ftzz/testdata/generator/advanced_create_files{}_{}_{}_{}.hash",
+        if files_exact { "_exact" } else { "" },
+        num_files,
+        max_depth,
+        ftd_ratio,
     ));
     #[cfg(not(bazel))]
     let hash_file = PathBuf::from(format!(
-        "testdata/generator/advanced_create_files_{}_{}_{}.hash",
-        num_files, max_depth, ftd_ratio,
+        "testdata/generator/advanced_create_files{}_{}_{}_{}.hash",
+        if files_exact { "_exact" } else { "" },
+        num_files,
+        max_depth,
+        ftd_ratio,
     ));
 
+    let actual_num_files = if files_exact {
+        count_num_files(dir.path())
+    } else {
+        num_files
+    };
     allow_inspection!(dir);
     assert_matching_hashes(hash, &hash_file);
+    assert_eq!(actual_num_files, num_files);
 }
 
 #[rstest]
@@ -158,6 +173,41 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
     let actual_max_depth = find_max_depth(dir.path());
     allow_inspection!(dir);
     assert_le!(actual_max_depth, max_depth);
+}
+
+#[test]
+fn fuzz_test() {
+    let dir = tempdir().unwrap();
+    println!("Using dir {:?}", dir.path());
+
+    let mut rng = rand::thread_rng();
+    let num_files = rng.gen_range(1..25_000);
+    let max_depth = rng.gen_range(0..100);
+    let ratio = rng.gen_range(1..num_files);
+    let files_exact = rng.gen();
+
+    GeneratorBuilder::default()
+        .root_dir(dir.path().to_path_buf())
+        .num_files(num_files)
+        .max_depth(max_depth)
+        .file_to_dir_ratio(ratio)
+        .files_exact(files_exact)
+        .build()
+        .unwrap()
+        .generate()
+        .unwrap();
+
+    let actual_max_depth = find_max_depth(dir.path());
+    let actual_num_files = if files_exact {
+        count_num_files(dir.path())
+    } else {
+        num_files
+    };
+
+    allow_inspection!(dir);
+
+    assert_le!(actual_max_depth, max_depth);
+    assert_eq!(actual_num_files, num_files);
 }
 
 /// Recursively hashes the file and directory names in dir
@@ -215,4 +265,20 @@ fn find_max_depth(dir: &Path) -> u32 {
         }
     }
     depth
+}
+
+fn count_num_files(dir: &Path) -> usize {
+    let mut num_files = 0;
+    let mut queue = VecDeque::from([dir.to_path_buf()]);
+    while let Some(path) = queue.pop_front() {
+        for entry in path.read_dir().unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                queue.push_back(path);
+            } else {
+                num_files += 1;
+            }
+        }
+    }
+    num_files
 }
