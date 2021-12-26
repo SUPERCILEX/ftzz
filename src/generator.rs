@@ -371,11 +371,14 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         () => {
             debug!("Flushing pending task queue.");
             for task in tasks.drain(..tasks.len() - (tasks.len() >> 4)) {
+                #[cfg(not(dry_run))]
                 path_pool.push(
                     task.await
                         .with_context(|| "Failed to retrieve task result")
                         .with_code(exitcode::SOFTWARE)??,
                 );
+                #[cfg(dry_run)]
+                path_pool.push(task);
             }
         };
     }
@@ -399,9 +402,12 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             stats.files += $params.num_files;
             stats.dirs += $params.num_dirs;
 
+            #[cfg(not(dry_run))]
             tasks.push(task::spawn_blocking(move || {
                 create_files_and_dirs($params, cache)
             }));
+            #[cfg(dry_run)]
+            tasks.push($params.target_dir)
         };
     }
 
@@ -485,6 +491,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         }
     }
 
+    #[cfg(not(dry_run))]
     for task in tasks {
         task.await
             .with_context(|| "Failed to retrieve task result")
