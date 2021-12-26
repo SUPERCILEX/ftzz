@@ -11,22 +11,45 @@ use more_asserts::assert_le;
 use rand::Rng;
 use rstest::rstest;
 use seahash::SeaHasher;
-use tempfile::tempdir;
 
 use ftzz::generator::GeneratorBuilder;
 
-macro_rules! allow_inspection {
-    ($dir:ident) => {
-        if option_env!("INSPECT").is_some() {
-            $dir.into_path();
+use crate::inspect::InspectableTempDir;
+
+mod inspect {
+    use std::path::PathBuf;
+
+    use tempfile::{tempdir, TempDir};
+
+    pub struct InspectableTempDir {
+        pub path: PathBuf,
+        _guard: Option<TempDir>,
+    }
+
+    impl InspectableTempDir {
+        pub fn new() -> Self {
+            let dir = tempdir().unwrap();
+            println!("Using dir {:?}", dir.path());
+
+            if option_env!("INSPECT").is_some() {
+                InspectableTempDir {
+                    path: dir.into_path(),
+                    _guard: None,
+                }
+            } else {
+                InspectableTempDir {
+                    path: dir.path().to_path_buf(),
+                    _guard: Some(dir),
+                }
+            }
         }
-    };
+    }
 }
 
 #[test]
 fn gen_in_empty_existing_dir_is_allowed() {
-    let dir = tempdir().unwrap();
-    let empty = dir.path().join("empty");
+    let dir = InspectableTempDir::new();
+    let empty = dir.path.join("empty");
     create_dir(&empty).unwrap();
 
     GeneratorBuilder::default()
@@ -40,8 +63,8 @@ fn gen_in_empty_existing_dir_is_allowed() {
 
 #[test]
 fn gen_in_non_emtpy_existing_dir_is_disallowed() {
-    let dir = tempdir().unwrap();
-    let non_empty = dir.path().join("nonempty");
+    let dir = InspectableTempDir::new();
+    let non_empty = dir.path.join("nonempty");
     create_dir(&non_empty).unwrap();
     File::create(non_empty.join("file")).unwrap();
 
@@ -57,17 +80,17 @@ fn gen_in_non_emtpy_existing_dir_is_disallowed() {
 
 #[test]
 fn gen_creates_new_dir_if_not_present() {
-    let dir = tempdir().unwrap();
+    let dir = InspectableTempDir::new();
 
     GeneratorBuilder::default()
-        .root_dir(dir.path().join("new"))
+        .root_dir(dir.path.join("new"))
         .num_files(1)
         .build()
         .unwrap()
         .generate()
         .unwrap();
 
-    assert!(dir.path().join("new").exists());
+    assert!(dir.path.join("new").exists());
 }
 
 #[rstest]
@@ -75,18 +98,17 @@ fn gen_creates_new_dir_if_not_present() {
 #[case(10_000)]
 #[case(100_000)]
 fn simple_create_files(#[case] num_files: usize) {
-    let dir = tempdir().unwrap();
-    println!("Using dir {:?}", dir.path());
+    let dir = InspectableTempDir::new();
 
     GeneratorBuilder::default()
-        .root_dir(dir.path().to_path_buf())
+        .root_dir(dir.path.clone())
         .num_files(num_files)
         .build()
         .unwrap()
         .generate()
         .unwrap();
 
-    let hash = hash_dir(dir.path());
+    let hash = hash_dir(&dir.path);
     #[cfg(bazel)]
     let hash_file: PathBuf = runfiles::Runfiles::create().unwrap().rlocation(format!(
         "__main__/ftzz/testdata/generator/simple_create_files_{}.hash",
@@ -98,7 +120,6 @@ fn simple_create_files(#[case] num_files: usize) {
         num_files
     ));
 
-    allow_inspection!(dir);
     assert_matching_hashes(hash, &hash_file);
 }
 
@@ -109,11 +130,10 @@ fn advanced_create_files(
     #[values(1, 100, 1_000)] ftd_ratio: usize,
     #[values(false, true)] files_exact: bool,
 ) {
-    let dir = tempdir().unwrap();
-    println!("Using dir {:?}", dir.path());
+    let dir = InspectableTempDir::new();
 
     GeneratorBuilder::default()
-        .root_dir(dir.path().to_path_buf())
+        .root_dir(dir.path.clone())
         .num_files(num_files)
         .files_exact(files_exact)
         .max_depth(max_depth)
@@ -123,7 +143,7 @@ fn advanced_create_files(
         .generate()
         .unwrap();
 
-    let hash = hash_dir(dir.path());
+    let hash = hash_dir(&dir.path);
     #[cfg(bazel)]
     let hash_file: PathBuf = runfiles::Runfiles::create().unwrap().rlocation(format!(
         "__main__/ftzz/testdata/generator/advanced_create_files{}_{}_{}_{}.hash",
@@ -141,14 +161,10 @@ fn advanced_create_files(
         ftd_ratio,
     ));
 
-    let actual_num_files = if files_exact {
-        count_num_files(dir.path())
-    } else {
-        num_files
-    };
-    allow_inspection!(dir);
     assert_matching_hashes(hash, &hash_file);
-    assert_eq!(actual_num_files, num_files);
+    if files_exact {
+        assert_eq!(count_num_files(&dir.path), num_files);
+    }
 }
 
 #[rstest]
@@ -158,11 +174,10 @@ fn advanced_create_files(
 #[case(10)]
 #[case(100)]
 fn max_depth_is_respected(#[case] max_depth: u32) {
-    let dir = tempdir().unwrap();
-    println!("Using dir {:?}", dir.path());
+    let dir = InspectableTempDir::new();
 
     GeneratorBuilder::default()
-        .root_dir(dir.path().to_path_buf())
+        .root_dir(dir.path.clone())
         .num_files(10_000)
         .max_depth(max_depth)
         .build()
@@ -170,15 +185,12 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
         .generate()
         .unwrap();
 
-    let actual_max_depth = find_max_depth(dir.path());
-    allow_inspection!(dir);
-    assert_le!(actual_max_depth, max_depth);
+    assert_le!(find_max_depth(&dir.path), max_depth);
 }
 
 #[test]
 fn fuzz_test() {
-    let dir = tempdir().unwrap();
-    println!("Using dir {:?}", dir.path());
+    let dir = InspectableTempDir::new();
 
     let mut rng = rand::thread_rng();
     let num_files = rng.gen_range(1..25_000);
@@ -187,7 +199,7 @@ fn fuzz_test() {
     let files_exact = rng.gen();
 
     GeneratorBuilder::default()
-        .root_dir(dir.path().to_path_buf())
+        .root_dir(dir.path.clone())
         .num_files(num_files)
         .max_depth(max_depth)
         .file_to_dir_ratio(ratio)
@@ -197,17 +209,10 @@ fn fuzz_test() {
         .generate()
         .unwrap();
 
-    let actual_max_depth = find_max_depth(dir.path());
-    let actual_num_files = if files_exact {
-        count_num_files(dir.path())
-    } else {
-        num_files
-    };
-
-    allow_inspection!(dir);
-
-    assert_le!(actual_max_depth, max_depth);
-    assert_eq!(actual_num_files, num_files);
+    assert_le!(find_max_depth(&dir.path), max_depth);
+    if files_exact {
+        assert_eq!(count_num_files(&dir.path), num_files);
+    }
 }
 
 /// Recursively hashes the file and directory names in dir
