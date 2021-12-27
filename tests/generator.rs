@@ -198,16 +198,16 @@ fn fuzz_test() {
     let ratio = rng.gen_range(1..num_files);
     let files_exact = rng.gen();
 
-    GeneratorBuilder::default()
+    let g = GeneratorBuilder::default()
         .root_dir(dir.path.clone())
         .num_files(num_files)
         .max_depth(max_depth)
         .file_to_dir_ratio(ratio)
         .files_exact(files_exact)
         .build()
-        .unwrap()
-        .generate()
         .unwrap();
+    println!("Params: {:?}", g);
+    g.generate().unwrap();
 
     assert_le!(find_max_depth(&dir.path), max_depth);
     if files_exact {
