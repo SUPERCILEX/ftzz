@@ -5,9 +5,9 @@ use std::{path::PathBuf, process::exit};
 use anyhow::Context;
 use clap::{AppSettings, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
-use cli_errors::{CliExitAnyhowWrapper, CliResult};
+use cli_errors::{CliExitAnyhowWrapper, CliExitError, CliResult};
 
-use ftzz::generator::GeneratorBuilder;
+use ftzz::generator::{Generator, GeneratorBuilder};
 
 /// A random file and directory generator
 #[derive(Parser, Debug)]
@@ -30,6 +30,12 @@ enum Cmd {
     /// parameters) containing approximately the target number of files. The exact configuration of
     /// files and directories in the hierarchy is probabilistically determined to mostly match the
     /// specified parameters.
+    ///
+    /// Generated files and directories are named using monotonically increasing numbers, where
+    /// files are named `n` and directories are named `n.dir` for a given natural number `n`.
+    ///
+    /// By default, generated files are empty, but random data can be used as the file contents with
+    /// the `total-bytes` option.
     Generate(Generate),
 }
 
@@ -50,8 +56,26 @@ struct Generate {
     num_files: usize,
 
     /// Whether or not to generate exactly N files
-    #[clap(short = 'e', long = "files-exact")]
+    #[clap(long = "files-exact")]
     files_exact: bool,
+
+    /// The total amount of random data to be distributed across the generated files
+    ///
+    /// Note: this value is probabilistically respected, meaning any amount of data may be
+    /// generated so long as we attempt to get close to N.
+    #[clap(short = 'b', long = "total-bytes", aliases = & ["num-bytes", "num-total-bytes"])]
+    #[clap(parse(try_from_str = num_bytes_parser))]
+    #[clap(default_value = "0")]
+    num_bytes: usize,
+
+    /// Whether or not to generate exactly N bytes
+    #[clap(long = "bytes-exact")]
+    bytes_exact: bool,
+
+    /// Whether or not to generate exactly N files and bytes
+    #[clap(short = 'e', long = "exact")]
+    #[clap(conflicts_with_all = & ["files-exact", "bytes-exact"])]
+    exact: bool,
 
     /// The maximum directory tree depth
     #[clap(short = 'd', long = "max-depth", alias = "depth")]
@@ -74,6 +98,109 @@ struct Generate {
     entropy: u64,
 }
 
+impl TryFrom<Generate> for Generator {
+    type Error = CliExitError;
+
+    fn try_from(options: Generate) -> Result<Self, Self::Error> {
+        let mut builder = GeneratorBuilder::default();
+        builder
+            .root_dir(options.root_dir)
+            .num_files(options.num_files)
+            .files_exact(options.files_exact || options.exact)
+            .num_bytes(options.num_bytes)
+            .bytes_exact(options.bytes_exact || options.exact)
+            .max_depth(options.max_depth);
+        if let Some(ratio) = options.file_to_dir_ratio {
+            builder.file_to_dir_ratio(ratio);
+        }
+        builder
+            .entropy(options.entropy)
+            .build()
+            .context("Input validation failed")
+            .with_code(exitcode::DATAERR)
+    }
+}
+
+#[cfg(test)]
+mod generate_tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[test]
+    fn params_are_mapped_correctly() {
+        let options = Generate {
+            root_dir: PathBuf::from("abc"),
+            num_files: 373,
+            num_bytes: 637,
+            max_depth: 43,
+            file_to_dir_ratio: Some(37),
+            entropy: 775,
+            files_exact: false,
+            bytes_exact: false,
+            exact: false,
+        };
+
+        let generator = Generator::try_from(options).unwrap();
+        let hack = format!("{:?}", generator);
+
+        assert!(hack.contains("root_dir: \"abc\""));
+        assert!(hack.contains("num_files: 373"));
+        assert!(hack.contains("num_bytes: 637"));
+        assert!(hack.contains("max_depth: 43"));
+        assert!(hack.contains("file_to_dir_ratio: 37"));
+        assert!(hack.contains("entropy: 775"));
+    }
+
+    #[rstest]
+    fn files_exact_is_mapped_correctly(
+        #[values(false, true)] files_exact: bool,
+        #[values(false, true)] global_exact: bool,
+    ) {
+        let options = Generate {
+            files_exact,
+            exact: global_exact,
+
+            root_dir: PathBuf::new(),
+            num_files: 1,
+            num_bytes: 0,
+            max_depth: 0,
+            file_to_dir_ratio: None,
+            entropy: 0,
+            bytes_exact: false,
+        };
+
+        let generator = Generator::try_from(options).unwrap();
+        let hack = format!("{:?}", generator);
+
+        assert!(hack.contains(&format!("files_exact: {}", files_exact || global_exact)));
+    }
+
+    #[rstest]
+    fn bytes_exact_is_mapped_correctly(
+        #[values(false, true)] bytes_exact: bool,
+        #[values(false, true)] global_exact: bool,
+    ) {
+        let options = Generate {
+            bytes_exact,
+            exact: global_exact,
+
+            root_dir: PathBuf::new(),
+            num_files: 1,
+            num_bytes: 0,
+            max_depth: 0,
+            file_to_dir_ratio: None,
+            entropy: 0,
+            files_exact: false,
+        };
+
+        let generator = Generator::try_from(options).unwrap();
+        let hack = format!("{:?}", generator);
+
+        assert!(hack.contains(&format!("bytes_exact: {}", bytes_exact || global_exact)));
+    }
+}
+
 fn main() {
     if let Err(e) = wrapped_main() {
         if let Some(source) = e.source {
@@ -92,23 +219,7 @@ fn wrapped_main() -> CliResult<()> {
     //     .unwrap();
 
     match args.cmd {
-        Cmd::Generate(options) => {
-            let mut builder = GeneratorBuilder::default();
-            builder
-                .root_dir(options.root_dir)
-                .num_files(options.num_files)
-                .files_exact(options.files_exact)
-                .max_depth(options.max_depth);
-            if let Some(ratio) = options.file_to_dir_ratio {
-                builder.file_to_dir_ratio(ratio);
-            }
-            builder
-                .entropy(options.entropy)
-                .build()
-                .context("Input validation failed")
-                .with_code(exitcode::DATAERR)?
-                .generate()
-        }
+        Cmd::Generate(options) => Generator::try_from(options)?.generate(),
     }
 }
 
@@ -119,6 +230,10 @@ fn num_files_parser(s: &str) -> Result<usize, String> {
     } else {
         Err(String::from("At least one file must be generated."))
     }
+}
+
+fn num_bytes_parser(s: &str) -> Result<usize, String> {
+    lenient_si_number(s)
 }
 
 fn file_to_dir_ratio_parser(s: &str) -> Result<usize, String> {
@@ -141,7 +256,8 @@ fn lenient_si_number(s: &str) -> Result<usize, String> {
 mod cli_tests {
     use clap::{
         ErrorKind::{
-            DisplayHelpOnMissingArgumentOrSubcommand, MissingRequiredArgument, UnknownArgument,
+            ArgumentConflict, DisplayHelpOnMissingArgumentOrSubcommand, MissingRequiredArgument,
+            UnknownArgument,
         },
         FromArgMatches, IntoApp,
     };
@@ -185,6 +301,10 @@ mod cli_tests {
         assert_eq!(g.max_depth, 5);
         assert_eq!(g.file_to_dir_ratio, None);
         assert_eq!(g.entropy, 0);
+        assert!(!g.files_exact);
+        assert!(!g.bytes_exact);
+        assert!(!g.exact);
+        assert_eq!(g.num_bytes, 0);
     }
 
     #[test]
@@ -422,5 +542,168 @@ mod cli_tests {
         .unwrap();
 
         assert_eq!(g.entropy, 231);
+    }
+
+    #[test]
+    fn generate_num_bytes_accepts_plain_nums() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "-n",
+            "1",
+            "dir",
+            "--total-bytes",
+            "1000",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_bytes, 1000);
+    }
+
+    #[test]
+    fn generate_short_num_bytes_accepts_plain_nums() {
+        let m = Ftzz::into_app()
+            .get_matches_from(vec!["ftzz", "generate", "-n", "1", "dir", "-b", "1000"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_bytes, 1000);
+    }
+
+    #[test]
+    fn generate_num_bytes_accepts_si_numbers() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "-n",
+            "1",
+            "dir",
+            "--total-bytes",
+            "1K",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_bytes, 1000);
+    }
+
+    #[test]
+    fn generate_num_bytes_accepts_commas() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "-n",
+            "1",
+            "dir",
+            "--total-bytes",
+            "1,000",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_bytes, 1000);
+    }
+
+    #[test]
+    fn generate_num_bytes_accepts_underscores() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "-n",
+            "1",
+            "dir",
+            "--total-bytes",
+            "1_000",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(g.num_bytes, 1000);
+    }
+
+    #[test]
+    fn generate_files_exact_and_exact_conflict() {
+        let f = Ftzz::try_parse_from(vec![
+            "ftzz",
+            "generate",
+            "-n",
+            "1",
+            "dir",
+            "--files-exact",
+            "--exact",
+        ]);
+
+        assert!(f.is_err());
+        assert_eq!(f.unwrap_err().kind, ArgumentConflict);
+    }
+
+    #[test]
+    fn generate_bytes_exact_and_exact_conflict() {
+        let f = Ftzz::try_parse_from(vec![
+            "ftzz",
+            "generate",
+            "-n",
+            "1",
+            "dir",
+            "--bytes-exact",
+            "--exact",
+        ]);
+
+        assert!(f.is_err());
+        assert_eq!(f.unwrap_err().kind, ArgumentConflict);
+    }
+
+    #[test]
+    fn generate_files_exact_and_bytes_exact_can_be_used() {
+        let m = Ftzz::into_app().get_matches_from(vec![
+            "ftzz",
+            "generate",
+            "-n",
+            "1",
+            "dir",
+            "--files-exact",
+            "--bytes-exact",
+        ]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert!(g.files_exact);
+        assert!(g.bytes_exact);
+    }
+
+    #[test]
+    fn generate_exact_can_be_used() {
+        let m = Ftzz::into_app()
+            .get_matches_from(vec!["ftzz", "generate", "-n", "1", "dir", "--exact"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert!(g.exact);
+    }
+
+    #[test]
+    fn generate_short_exact_can_be_used() {
+        let m = Ftzz::into_app().get_matches_from(vec!["ftzz", "generate", "-n", "1", "dir", "-e"]);
+        let g = <Generate as FromArgMatches>::from_arg_matches(
+            m.subcommand_matches("generate").unwrap(),
+        )
+        .unwrap();
+
+        assert!(g.exact);
     }
 }

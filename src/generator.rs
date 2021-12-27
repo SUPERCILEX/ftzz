@@ -22,6 +22,10 @@ pub struct Generator {
     num_files: usize,
     #[builder(default = "false")]
     files_exact: bool,
+    #[builder(default = "0")]
+    num_bytes: usize,
+    #[builder(default = "false")]
+    bytes_exact: bool,
     #[builder(default = "5")]
     max_depth: u32,
     #[builder(default = "self.default_ftd_ratio()")]
@@ -76,6 +80,9 @@ mod tests {
 
         assert_eq!(g.root_dir, PathBuf::from("abc"));
         assert_eq!(g.num_files, 1);
+        assert!(!g.files_exact);
+        assert_eq!(g.num_bytes, 0);
+        assert!(!g.bytes_exact);
         assert_eq!(g.max_depth, 5);
         assert_eq!(g.file_to_dir_ratio, 1);
         assert_eq!(g.entropy, 0);
