@@ -252,9 +252,9 @@ struct FileNameCache {
 unsafe impl Send for FileNameCache {}
 
 impl FileNameCache {
-    fn alloc(config: &Configuration) -> Self {
-        let num_cache_entries = config.files_per_dir + config.dirs_per_dir;
-        let files_percentage = config.files_per_dir / num_cache_entries;
+    fn alloc(files_per_dir: f64, dirs_per_dir: f64) -> Self {
+        let num_cache_entries = files_per_dir + dirs_per_dir;
+        let files_percentage = files_per_dir / num_cache_entries;
 
         // Overestimate since the cache can't grow
         let num_cache_entries = 1.5 * num_cache_entries;
@@ -354,8 +354,12 @@ fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
 }
 
 async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats> {
+    let cache_task = task::spawn_blocking(move || {
+        // spawn_blocking b/c we're using a single-threaded runtime
+        FileNameCache::alloc(config.files_per_dir, config.dirs_per_dir)
+    });
     let max_depth = config.max_depth as usize;
-    let cache = FileNameCache::alloc(&config);
+    let cache: FileNameCache;
     let mut random = {
         let seed = ((config.files.wrapping_add(config.max_depth as usize) as f64
             * (config.files_per_dir + config.dirs_per_dir)) as u64)
@@ -435,6 +439,10 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             stack.push((1, vec![params.num_dirs]));
         }
 
+        cache = cache_task
+            .await
+            .context("Failed to create name cache")
+            .with_code(exitcode::SOFTWARE)?;
         queue_gen!(params);
     }
 
