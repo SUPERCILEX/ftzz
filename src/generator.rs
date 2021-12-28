@@ -138,7 +138,6 @@ struct Configuration {
     informational_total_dirs: usize,
 }
 
-#[derive(Debug)]
 struct GeneratorStats {
     files: usize,
     dirs: usize,
@@ -243,7 +242,7 @@ fn print_stats(stats: GeneratorStats) {
 /// naming scheme.
 ///
 /// We intentionally use a thread-*un*safe raw fixed-size buffer to eliminate an Arc.
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 struct FileNameCache {
     file_cache: (*mut String, usize),
     dir_cache: (*mut String, usize),
@@ -334,7 +333,6 @@ impl FileNameCache {
     }
 }
 
-#[derive(Debug)]
 struct GeneratorTaskParams {
     target_dir: PathBuf,
     num_files: usize,
