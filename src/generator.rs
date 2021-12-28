@@ -346,7 +346,7 @@ fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .max_blocking_threads(num_cpus::get())
         .build()
-        .with_context(|| "Failed to create tokio runtime")
+        .context("Failed to create tokio runtime")
         .with_code(exitcode::OSERR)?;
 
     info!("Starting config: {:?}", config);
@@ -380,7 +380,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
                 #[cfg(not(dry_run))]
                 path_pool.push(
                     task.await
-                        .with_context(|| "Failed to retrieve task result")
+                        .context("Failed to retrieve task result")
                         .with_code(exitcode::SOFTWARE)??,
                 );
                 #[cfg(dry_run)]
@@ -541,7 +541,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     #[cfg(not(dry_run))]
     for task in tasks {
         task.await
-            .with_context(|| "Failed to retrieve task result")
+            .context("Failed to retrieve task result")
             .with_code(exitcode::SOFTWARE)??;
     }
 
