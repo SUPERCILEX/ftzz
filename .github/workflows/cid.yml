@@ -47,7 +47,9 @@ jobs:
           default: true
           components: rustfmt, clippy
       - name: Run lint
-        run: ./lint.sh
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
 
   deploy_release:
     needs: [build, test, lint]
