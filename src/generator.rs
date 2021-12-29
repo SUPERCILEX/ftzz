@@ -6,6 +6,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context};
+use cli_errors::{CliExitAnyhowWrapper, CliResult};
 use derive_builder::Builder;
 use log::{debug, info};
 use num_format::{SystemLocale, ToFormattedString};
@@ -13,8 +14,6 @@ use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
 use rand_xorshift::XorShiftRng;
 use tokio::task;
-
-use crate::errors::{CliExitAnyhowWrapper, CliResult};
 
 #[derive(Builder, Debug)]
 #[builder(build_fn(validate = "Self::validate"))]

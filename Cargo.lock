@@ -254,6 +254,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cli-errors"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10d7069e906d4acc1904125d9fb4b556806878f497b64d4c6348d157234f2a81"
+dependencies = [
+ "anyhow",
+ "exitcode",
+]
+
+[[package]]
 name = "colored"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -489,6 +499,7 @@ dependencies = [
  "clap 3.0.0-rc.4",
  "clap-num",
  "clap-verbosity-flag",
+ "cli-errors",
  "criterion",
  "derive_builder",
  "exitcode",

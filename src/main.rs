@@ -5,11 +5,9 @@ use std::{path::PathBuf, process::exit};
 use anyhow::Context;
 use clap::{AppSettings, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
+use cli_errors::{CliExitAnyhowWrapper, CliResult};
 
-use ftzz::{
-    errors::{CliExitAnyhowWrapper, CliResult},
-    generator::GeneratorBuilder,
-};
+use ftzz::generator::GeneratorBuilder;
 
 /// A random file and directory generator
 #[derive(Parser, Debug)]
