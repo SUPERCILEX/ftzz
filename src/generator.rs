@@ -134,19 +134,24 @@ impl Generator {
 struct Configuration {
     root_dir: PathBuf,
     files: usize,
+    bytes: usize,
     files_exact: bool,
+    bytes_exact: bool,
     files_per_dir: f64,
     dirs_per_dir: f64,
+    bytes_per_file: f64,
     max_depth: u32,
     entropy: u64,
 
     informational_dirs_per_dir: usize,
     informational_total_dirs: usize,
+    informational_bytes_per_files: usize,
 }
 
 struct GeneratorStats {
     files: usize,
     dirs: usize,
+    bytes: usize,
 }
 
 fn validated_options(generator: Generator) -> CliResult<Configuration> {
@@ -168,23 +173,30 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
         .with_code(exitcode::DATAERR);
     }
 
+    let num_files = generator.num_files as f64;
+    let bytes_per_file = generator.num_bytes as f64 / num_files;
+
     if generator.max_depth == 0 {
         return Ok(Configuration {
             root_dir: generator.root_dir,
             files: generator.num_files,
+            bytes: generator.num_bytes,
             files_exact: generator.files_exact,
-            files_per_dir: generator.num_files as f64,
+            bytes_exact: generator.bytes_exact,
+            files_per_dir: num_files,
             dirs_per_dir: 0.,
+            bytes_per_file,
             max_depth: 0,
             entropy: generator.entropy,
 
             informational_dirs_per_dir: 0,
             informational_total_dirs: 1,
+            informational_bytes_per_files: bytes_per_file.round() as usize,
         });
     }
 
     let ratio = generator.file_to_dir_ratio as f64;
-    let num_dirs = generator.num_files as f64 / ratio;
+    let num_dirs = num_files / ratio;
     // This formula was derived from the following equation:
     // num_dirs = unknown_num_dirs_per_dir^max_depth
     let dirs_per_dir = 2f64.powf(num_dirs.log2() / generator.max_depth as f64);
@@ -192,14 +204,18 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
     Ok(Configuration {
         root_dir: generator.root_dir,
         files: generator.num_files,
+        bytes: generator.num_bytes,
         files_exact: generator.files_exact,
+        bytes_exact: generator.bytes_exact,
         files_per_dir: ratio,
+        bytes_per_file,
         dirs_per_dir,
         max_depth: generator.max_depth,
         entropy: generator.entropy,
 
         informational_dirs_per_dir: dirs_per_dir.round() as usize,
         informational_total_dirs: num_dirs.round() as usize,
+        informational_bytes_per_files: bytes_per_file.round() as usize,
     })
 }
 
@@ -208,7 +224,8 @@ fn print_configuration_info(config: &Configuration) {
     println!(
         "About {} {files_maybe_plural} will be generated in approximately \
         {} {directories_maybe_plural} distributed across a tree of maximum depth {} where each \
-        directory contains approximately {} other {dpd_directories_maybe_plural}.",
+        directory contains approximately {} other {dpd_directories_maybe_plural}.\
+        {bytes_info}",
         config.files.to_formatted_string(&locale),
         config.informational_total_dirs.to_formatted_string(&locale),
         config.max_depth.to_formatted_string(&locale),
@@ -226,13 +243,28 @@ fn print_configuration_info(config: &Configuration) {
         } else {
             "directories"
         },
+        bytes_info = if config.bytes > 0 {
+            format!(
+                " Each file will contain approximately {} {bytes_maybe_plural} of random data.",
+                config
+                    .informational_bytes_per_files
+                    .to_formatted_string(&locale),
+                bytes_maybe_plural = if config.informational_bytes_per_files == 1 {
+                    "byte"
+                } else {
+                    "bytes"
+                },
+            )
+        } else {
+            "".to_string()
+        },
     );
 }
 
 fn print_stats(stats: GeneratorStats) {
     let locale = SystemLocale::new().unwrap();
     println!(
-        "Created {} {files_maybe_plural} across {} {directories_maybe_plural}.",
+        "Created {} {files_maybe_plural}{bytes_info} across {} {directories_maybe_plural}.",
         stats.files.to_formatted_string(&locale),
         stats.dirs.to_formatted_string(&locale),
         files_maybe_plural = if stats.files == 1 { "file" } else { "files" },
@@ -241,6 +273,12 @@ fn print_stats(stats: GeneratorStats) {
         } else {
             "directories"
         },
+        bytes_info = if stats.bytes > 0 {
+            info!("Wrote exactly {} bytes.", stats.bytes);
+            format!(" ({})", bytesize::to_string(stats.bytes as u64, true))
+        } else {
+            "".to_string()
+        }
     );
 }
 
@@ -374,7 +412,11 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     let mut stack = Vec::with_capacity(max_depth);
     let mut tasks = Vec::with_capacity(num_cpus::get() * 100);
     let mut target_dir = config.root_dir;
-    let mut stats = GeneratorStats { files: 0, dirs: 0 };
+    let mut stats = GeneratorStats {
+        files: 0,
+        dirs: 0,
+        bytes: 0,
+    };
 
     let mut vec_pool = Vec::with_capacity(max_depth);
     let mut path_pool = Vec::with_capacity(tasks.capacity() - (tasks.capacity() >> 4));
@@ -413,16 +455,17 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     }
 
     macro_rules! queue_gen {
-        ($params:ident) => {
-            stats.files += $params.num_files;
-            stats.dirs += $params.num_dirs;
+        ($params:expr) => {
+            let params = $params;
+            stats.files += params.num_files;
+            stats.dirs += params.num_dirs;
 
             #[cfg(not(dry_run))]
             tasks.push(task::spawn_blocking(move || {
-                create_files_and_dirs($params, cache)
+                create_files_and_dirs(params, cache)
             }));
             #[cfg(dry_run)]
-            tasks.push($params.target_dir)
+            tasks.push(params.target_dir)
         };
     }
 
@@ -503,12 +546,11 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             target_dir.pop();
 
             if config.files_exact && stats.files + params.num_files >= config.files {
-                let params = GeneratorTaskParams {
+                queue_gen!(GeneratorTaskParams {
                     num_files: config.files - stats.files,
                     num_dirs: 0,
                     ..params
-                };
-                queue_gen!(params);
+                });
                 break 'outer;
             }
             if gen_next_dirs {
