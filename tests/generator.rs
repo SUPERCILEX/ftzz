@@ -1,7 +1,7 @@
 use std::{
     cmp::{max, min},
     collections::VecDeque,
-    fs::{create_dir, File},
+    fs::{create_dir, create_dir_all, File},
     hash::Hasher,
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -241,6 +241,7 @@ fn hash_dir(dir: &Path) -> u64 {
 
 fn assert_matching_hashes(hash: u64, hash_file: &Path) {
     if option_env!("REGEN").is_some() {
+        create_dir_all(hash_file.parent().unwrap()).unwrap();
         File::create(hash_file)
             .unwrap()
             .write_all(&hash.to_be_bytes())
