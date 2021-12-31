@@ -466,18 +466,70 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         };
     }
 
+    // WARNING: HAS SIDE EFFECTS! Must be consumed or stats.bytes must be corrected.
+    macro_rules! gen_file_contents_params {
+        ($num_files:expr, $is_last_files: expr) => {{
+            if config.bytes > 0 {
+                if config.bytes_exact {
+                    if stats.bytes < config.bytes {
+                        let mut byte_counts = Vec::with_capacity($num_files);
+                        for entry in byte_counts.spare_capacity_mut() {
+                            let mut num_bytes = config.bytes_per_file.num_to_generate(&mut random);
+                            if stats.bytes + num_bytes > config.bytes {
+                                num_bytes = config.bytes - stats.bytes;
+                            }
+                            stats.bytes += num_bytes;
+
+                            entry.write(num_bytes);
+                        }
+                        unsafe {
+                            byte_counts.set_len(byte_counts.capacity());
+                        }
+                        if $is_last_files {
+                            let len = byte_counts.len();
+                            let mut leftover_bytes = config.bytes - stats.bytes;
+                            let mut i = 0;
+                            while leftover_bytes > 0 {
+                                byte_counts[i % len] += 1;
+
+                                leftover_bytes -= 1;
+                                i += 1;
+                            }
+                            stats.bytes = config.bytes;
+                        }
+
+                        GeneratedFileContents::PreDefined {
+                            byte_counts,
+                            random: random.clone(),
+                        }
+                    } else {
+                        GeneratedFileContents::None
+                    }
+                } else {
+                    GeneratedFileContents::OnTheFly {
+                        bytes_per_file: config.bytes_per_file,
+                        random: random.clone(),
+                    }
+                }
+            } else {
+                GeneratedFileContents::None
+            }
+        }};
+    }
+
     macro_rules! gen_params {
         ($target_dir:expr, $should_gen_dirs:expr) => {{
+            let num_files = config.files_per_dir.num_to_generate(&mut random);
             GeneratorTaskParams {
                 target_dir: $target_dir,
-                num_files: config.files_per_dir.num_to_generate(&mut random),
+                num_files,
                 num_dirs: if $should_gen_dirs {
                     config.dirs_per_dir.num_to_generate(&mut random)
                 } else {
                     0
                 },
                 file_offset: 0,
-                file_contents: GeneratedFileContents::None,
+                file_contents: gen_file_contents_params!(num_files, false),
             }
         }};
     }
@@ -503,12 +555,13 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         root_num_files = params.num_files;
 
         if config.files_exact && root_num_files >= config.files {
+            stats.bytes = 0; // Reset after gen_params modification
             params = GeneratorTaskParams {
                 target_dir: params.target_dir,
                 num_files: config.files,
                 num_dirs: 0,
                 file_offset: 0,
-                file_contents: GeneratedFileContents::None,
+                file_contents: gen_file_contents_params!(config.files, true),
             };
         }
         if params.num_dirs > 0 {
@@ -563,6 +616,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
 
         for i in 0..num_dirs_to_generate {
             cache.push_dir_name(i, &mut target_dir);
+            let prev_stats_bytes = stats.bytes;
             let params = gen_params!(
                 if let Some(mut buf) = path_pool.pop() {
                     buf.clone_from(&target_dir);
@@ -575,9 +629,12 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             target_dir.pop();
 
             if config.files_exact && stats.files + params.num_files >= config.files {
+                stats.bytes = prev_stats_bytes; // Reset after gen_params modification
+                let num_files = config.files - stats.files;
                 queue_gen!(GeneratorTaskParams {
-                    num_files: config.files - stats.files,
+                    num_files,
                     num_dirs: 0,
+                    file_contents: gen_file_contents_params!(num_files, true),
                     ..params
                 });
                 break 'outer;
@@ -604,22 +661,29 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         }
     }
 
+    // TODO Dumping all the remaining files or bytes in the root directory is very dumb and wrong
+    //  1. If there are a lot of files, we're missing out on performance gains from generating
+    //     the files in separate directories
+    //  2. The distribution will be totally wrong
+    //  Ideally we would continue the while loop above until enough files have been generated,
+    //  but I haven't had time to think about how to do so properly.
     if config.files_exact && stats.files < config.files {
-        // TODO Dumping all the remaining files in the root directory is very dumb and wrong
-        //  1. If there are a lot of files, we're missing out on performance gains from generating
-        //     the files in separate directories
-        //  2. The distribution will be totally wrong
-        //  Ideally we would continue the while loop above until enough files have been generated,
-        //  but I haven't had time to think about how to do so properly.
-
-        let params = GeneratorTaskParams {
+        let num_files = config.files - stats.files;
+        queue_gen!(GeneratorTaskParams {
             target_dir,
-            num_files: config.files - stats.files,
+            num_files,
             num_dirs: 0,
             file_offset: root_num_files,
-            file_contents: GeneratedFileContents::None,
-        };
-        queue_gen!(params);
+            file_contents: gen_file_contents_params!(num_files, true),
+        });
+    } else if config.bytes_exact && stats.bytes < config.bytes {
+        queue_gen!(GeneratorTaskParams {
+            target_dir,
+            num_files: 1,
+            num_dirs: 0,
+            file_offset: root_num_files,
+            file_contents: gen_file_contents_params!(1, true),
+        });
     }
 
     #[cfg(not(dry_run))]

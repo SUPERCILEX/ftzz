@@ -32,6 +32,12 @@ Generate *exactly* 1 million files:
 $ ftzz g . -en 1M
 ```
 
+Generate ~10_000 files with ~1 MB of random data spread across them:
+
+```sh
+$ ftzz g . -n 10K -b 1M
+```
+
 Because FTZZ generates reproducible outputs, the generated directory will always have the same
 structure given the same inputs. To generate variations on a structure with the same parameters, add
 some entropy:
