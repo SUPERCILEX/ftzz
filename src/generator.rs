@@ -1,8 +1,10 @@
 use std::{
-    cmp::max,
-    fs::create_dir_all,
-    mem::ManuallyDrop,
-    path::{Path, PathBuf},
+    cmp::{max, min},
+    fs::{create_dir_all, File},
+    io,
+    io::{ErrorKind::NotFound, Write},
+    mem::{ManuallyDrop, MaybeUninit},
+    path::PathBuf,
 };
 
 use anyhow::{anyhow, Context};
@@ -382,6 +384,19 @@ struct GeneratorTaskParams {
     num_files: usize,
     num_dirs: usize,
     file_offset: usize,
+    file_contents: GeneratedFileContents,
+}
+
+enum GeneratedFileContents {
+    None,
+    OnTheFly {
+        bytes_per_file: f64,
+        random: XorShiftRng,
+    },
+    PreDefined {
+        byte_counts: Vec<usize>,
+        random: XorShiftRng,
+    },
 }
 
 fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
@@ -420,6 +435,11 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
 
     let mut vec_pool = Vec::with_capacity(max_depth);
     let mut path_pool = Vec::with_capacity(tasks.capacity() - (tasks.capacity() >> 4));
+    let mut byte_counts_pool = Vec::with_capacity(if config.bytes > 0 {
+        path_pool.capacity()
+    } else {
+        0
+    });
 
     debug!("Allocated {} task entries.", tasks.capacity());
 
@@ -428,11 +448,18 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             debug!("Flushing pending task queue.");
             for task in tasks.drain(..tasks.len() - (tasks.len() >> 4)) {
                 #[cfg(not(dry_run))]
-                path_pool.push(
-                    task.await
+                {
+                    let (bytes_written, buf, byte_counts) = task
+                        .await
                         .context("Failed to retrieve task result")
-                        .with_code(exitcode::SOFTWARE)??,
-                );
+                        .with_code(exitcode::SOFTWARE)??;
+
+                    stats.bytes += bytes_written;
+                    path_pool.push(buf);
+                    if let Some(vec) = byte_counts {
+                        byte_counts_pool.push(vec);
+                    }
+                }
                 #[cfg(dry_run)]
                 path_pool.push(task);
             }
@@ -440,7 +467,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     }
 
     macro_rules! gen_params {
-        ($target_dir:expr, $should_gen_dirs:expr) => {
+        ($target_dir:expr, $should_gen_dirs:expr) => {{
             GeneratorTaskParams {
                 target_dir: $target_dir,
                 num_files: config.files_per_dir.num_to_generate(&mut random),
@@ -450,8 +477,9 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
                     0
                 },
                 file_offset: 0,
+                file_contents: GeneratedFileContents::None,
             }
-        };
+        }};
     }
 
     macro_rules! queue_gen {
@@ -480,6 +508,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
                 num_files: config.files,
                 num_dirs: 0,
                 file_offset: 0,
+                file_contents: GeneratedFileContents::None,
             };
         }
         if params.num_dirs > 0 {
@@ -588,22 +617,28 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             num_files: config.files - stats.files,
             num_dirs: 0,
             file_offset: root_num_files,
+            file_contents: GeneratedFileContents::None,
         };
         queue_gen!(params);
     }
 
     #[cfg(not(dry_run))]
     for task in tasks {
-        task.await
+        stats.bytes += task
+            .await
             .context("Failed to retrieve task result")
-            .with_code(exitcode::SOFTWARE)??;
+            .with_code(exitcode::SOFTWARE)??
+            .0;
     }
 
     cache.free();
     Ok(stats)
 }
 
-fn create_files_and_dirs(params: GeneratorTaskParams, cache: FileNameCache) -> CliResult<PathBuf> {
+fn create_files_and_dirs(
+    params: GeneratorTaskParams,
+    cache: FileNameCache,
+) -> CliResult<(usize, PathBuf, Option<Vec<usize>>)> {
     debug!(
         "Creating {} files and {} directories in {:?}",
         params.num_files, params.num_dirs, params.target_dir,
@@ -621,17 +656,95 @@ fn create_files_and_dirs(params: GeneratorTaskParams, cache: FileNameCache) -> C
         file.pop();
     }
 
+    let mut file_contents = params.file_contents;
+    let mut bytes_written = 0;
+
+    macro_rules! create_file {
+        ($file:expr, $file_num:expr, $first_time:expr) => {{
+            let num_bytes = match file_contents {
+                GeneratedFileContents::None => 0,
+                GeneratedFileContents::OnTheFly {
+                    bytes_per_file,
+                    ref mut random,
+                } => bytes_per_file.num_to_generate(random),
+                GeneratedFileContents::PreDefined {
+                    ref byte_counts, ..
+                } => byte_counts[$file_num],
+            };
+
+            let needs_slow_path_for_determinism =
+                $first_time && matches!(file_contents, GeneratedFileContents::OnTheFly { .. });
+            if num_bytes > 0 || needs_slow_path_for_determinism {
+                match file_contents {
+                    GeneratedFileContents::None => panic!("Impossible condition"),
+                    GeneratedFileContents::OnTheFly {
+                        bytes_per_file,
+                        ref mut random,
+                    } => File::create($file).and_then(|f| {
+                        // To stay deterministic, we need to ensure `random` is mutated in exactly
+                        // the same way regardless of whether or not creating the file fails and
+                        // needs to be retried. To do this, we always run num_to_generate() twice
+                        // for the initial file creation attempt. Thus, the branching looks like
+                        // this:
+                        //
+                        // FAILURE
+                        // 1. Call num_to_generate() in initial retry-aware if check
+                        // 2. Perform retry by moving to for loop
+                        // 3. Call write_random_bytes(num_to_generate())
+                        //
+                        // SUCCESS
+                        // 1. Call num_to_generate() in initial retry-aware if check
+                        //    - This value is ignored.
+                        // 2. Call write_random_bytes(num_to_generate()) below
+                        //    - Notice that num_to_generate can be 0 which is a bummer b/c we can't
+                        //      use mknod even though we'd like to.
+                        let num_bytes = if $first_time {
+                            bytes_per_file.num_to_generate(random)
+                        } else {
+                            num_bytes
+                        };
+
+                        if !$first_time || num_bytes > 0 {
+                            bytes_written += num_bytes;
+                            write_random_bytes(f, num_bytes, random)
+                        } else {
+                            Ok(())
+                        }
+                    }),
+                    GeneratedFileContents::PreDefined { ref mut random, .. } => {
+                        File::create($file).and_then(|f| write_random_bytes(f, num_bytes, random))
+                        // Don't update bytes_written b/c it's already known and GeneratorStats will
+                        // already have been updated.
+                    }
+                }
+            } else {
+                #[cfg(target_os = "linux")]
+                {
+                    use nix::sys::stat::{mknod, Mode, SFlag};
+                    mknod(
+                        $file,
+                        SFlag::S_IFREG,
+                        Mode::S_IRUSR
+                            | Mode::S_IWUSR
+                            | Mode::S_IRGRP
+                            | Mode::S_IWGRP
+                            | Mode::S_IROTH,
+                        0,
+                    )
+                    .map_err(|e| io::Error::from(e))
+                }
+                #[cfg(not(target_os = "linux"))]
+                File::create($file).map(|_| ())
+            }
+        }};
+    }
+
     let mut start_file = 0;
     if params.num_files > 0 {
         cache.push_file_name(params.file_offset, &mut file);
 
-        if let Err(e) = create_file(&file) {
-            #[cfg(target_os = "linux")]
-            let is_dir_missing = e == nix::errno::Errno::ENOENT;
-            #[cfg(not(target_os = "linux"))]
-            let is_dir_missing = e.kind() == std::io::ErrorKind::NotFound;
-
-            if is_dir_missing {
+        if let Err(e) = create_file!(&file, 0, true) {
+            if e.kind() == NotFound {
                 file.pop();
                 create_dir_all(&file)
                     .with_context(|| format!("Failed to create directory {:?}", file))
@@ -649,30 +762,32 @@ fn create_files_and_dirs(params: GeneratorTaskParams, cache: FileNameCache) -> C
     for i in start_file..params.num_files {
         cache.push_file_name(i + params.file_offset, &mut file);
 
-        create_file(&file)
+        create_file!(&file, i, false)
             .with_context(|| format!("Failed to create file {:?}", file))
             .with_code(exitcode::IOERR)?;
 
         file.pop();
     }
 
-    Ok(file)
+    if let GeneratedFileContents::PreDefined { byte_counts, .. } = file_contents {
+        Ok((bytes_written, file, Some(byte_counts)))
+    } else {
+        Ok((bytes_written, file, None))
+    }
 }
 
-#[cfg(target_os = "linux")]
-fn create_file(file: &Path) -> nix::Result<()> {
-    use nix::sys::stat::{mknod, Mode, SFlag};
-    mknod(
-        file,
-        SFlag::S_IFREG,
-        Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
-        0,
-    )
-}
+#[inline(never)] // Don't muck the stack for the GeneratedFileContents::None case
+fn write_random_bytes(mut file: File, mut num: usize, random: &mut impl RngCore) -> io::Result<()> {
+    #[allow(clippy::uninit_assumed_init)] // u8s do nothing when dropped
+    let mut buf: [u8; 4096] = unsafe { MaybeUninit::uninit().assume_init() };
+    while num > 0 {
+        let used = min(num, buf.len());
+        random.fill_bytes(&mut buf[0..used]);
+        file.write_all(&buf[0..used])?;
 
-#[cfg(not(target_os = "linux"))]
-fn create_file(file: &Path) -> std::io::Result<std::fs::File> {
-    std::fs::File::create(file)
+        num -= used;
+    }
+    Ok(())
 }
 
 trait GeneratorUtils {
