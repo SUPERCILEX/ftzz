@@ -8,7 +8,7 @@ files.
 ### Use prebuilt binaries
 
 Binaries for a number of platforms are available on the
-[release page](https://github.com/SUPERCILEX/ftzz/releases).
+[release page](https://github.com/SUPERCILEX/ftzz/releases/latest).
 
 ### Build from source
 
