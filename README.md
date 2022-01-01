@@ -39,11 +39,11 @@ $ ftzz g . -n 10K -b 1M
 ```
 
 Because FTZZ generates reproducible outputs, the generated directory will always have the same
-structure given the same inputs. To generate variations on a structure with the same parameters, add
-some entropy:
+structure given the same inputs. To generate variations on a structure with the same parameters,
+change the starting seed:
 
 ```sh
-$ ftzz g . -n 1M --entropy $RANDOM
+$ ftzz g . -n 1M --seed $RANDOM
 ```
 
 Other parameters can be found in the built-in docs:

@@ -33,7 +33,7 @@ pub struct Generator {
     #[builder(default = "self.default_ftd_ratio()")]
     file_to_dir_ratio: usize,
     #[builder(default = "0")]
-    entropy: u64,
+    seed: u64,
 }
 
 impl GeneratorBuilder {
@@ -87,7 +87,7 @@ mod tests {
         assert!(!g.bytes_exact);
         assert_eq!(g.max_depth, 5);
         assert_eq!(g.file_to_dir_ratio, 1);
-        assert_eq!(g.entropy, 0);
+        assert_eq!(g.seed, 0);
     }
 
     #[test]
@@ -143,7 +143,7 @@ struct Configuration {
     dirs_per_dir: f64,
     bytes_per_file: f64,
     max_depth: u32,
-    entropy: u64,
+    seed: u64,
 
     informational_dirs_per_dir: usize,
     informational_total_dirs: usize,
@@ -189,7 +189,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
             dirs_per_dir: 0.,
             bytes_per_file,
             max_depth: 0,
-            entropy: generator.entropy,
+            seed: generator.seed,
 
             informational_dirs_per_dir: 0,
             informational_total_dirs: 1,
@@ -213,7 +213,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
         bytes_per_file,
         dirs_per_dir,
         max_depth: generator.max_depth,
-        entropy: generator.entropy,
+        seed: generator.seed,
 
         informational_dirs_per_dir: dirs_per_dir.round() as usize,
         informational_total_dirs: num_dirs.round() as usize,
@@ -420,7 +420,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     let mut random = {
         let seed = ((config.files.wrapping_add(config.max_depth as usize) as f64
             * (config.files_per_dir + config.dirs_per_dir)) as u64)
-            .wrapping_add(config.entropy);
+            .wrapping_add(config.seed);
         debug!("Starting seed: {}", seed);
         XorShiftRng::seed_from_u64(seed)
     };

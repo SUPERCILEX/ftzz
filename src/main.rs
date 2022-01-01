@@ -90,12 +90,12 @@ struct Generate {
     #[clap(parse(try_from_str = file_to_dir_ratio_parser))]
     file_to_dir_ratio: Option<usize>,
 
-    /// Add some additional entropy to the PRNG's starting seed
+    /// Change the PRNG's starting seed
     ///
     /// For example, you can use bash's `$RANDOM` function.
-    #[clap(long = "entropy", alias = "seed")]
+    #[clap(long = "seed", alias = "entropy")]
     #[clap(default_value = "0")]
-    entropy: u64,
+    seed: u64,
 }
 
 impl TryFrom<Generate> for Generator {
@@ -114,7 +114,7 @@ impl TryFrom<Generate> for Generator {
             builder.file_to_dir_ratio(ratio);
         }
         builder
-            .entropy(options.entropy)
+            .seed(options.seed)
             .build()
             .context("Input validation failed")
             .with_code(exitcode::DATAERR)
@@ -135,7 +135,7 @@ mod generate_tests {
             num_bytes: 637,
             max_depth: 43,
             file_to_dir_ratio: Some(37),
-            entropy: 775,
+            seed: 775,
             files_exact: false,
             bytes_exact: false,
             exact: false,
@@ -149,7 +149,7 @@ mod generate_tests {
         assert!(hack.contains("num_bytes: 637"));
         assert!(hack.contains("max_depth: 43"));
         assert!(hack.contains("file_to_dir_ratio: 37"));
-        assert!(hack.contains("entropy: 775"));
+        assert!(hack.contains("seed: 775"));
     }
 
     #[rstest]
@@ -166,7 +166,7 @@ mod generate_tests {
             num_bytes: 0,
             max_depth: 0,
             file_to_dir_ratio: None,
-            entropy: 0,
+            seed: 0,
             bytes_exact: false,
         };
 
@@ -190,7 +190,7 @@ mod generate_tests {
             num_bytes: 0,
             max_depth: 0,
             file_to_dir_ratio: None,
-            entropy: 0,
+            seed: 0,
             files_exact: false,
         };
 
@@ -316,7 +316,7 @@ mod cli_generate_tests {
         assert_eq!(g.num_files, 1);
         assert_eq!(g.max_depth, 5);
         assert_eq!(g.file_to_dir_ratio, None);
-        assert_eq!(g.entropy, 0);
+        assert_eq!(g.seed, 0);
         assert!(!g.files_exact);
         assert!(!g.bytes_exact);
         assert!(!g.exact);
@@ -461,26 +461,18 @@ mod cli_generate_tests {
     }
 
     #[test]
-    fn generate_entropy_rejects_negatives() {
+    fn generate_seed_rejects_negatives() {
         expect_error!(
-            vec!["ftzz", "generate", "--entropy", "-1", "-n", "1", "dir",],
+            vec!["ftzz", "generate", "--seed", "-1", "-n", "1", "dir",],
             UnknownArgument
         );
     }
 
     #[test]
-    fn generate_entropy_accepts_plain_nums() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "--entropy",
-            "231",
-            "-n",
-            "1",
-            "dir",
-        ]);
+    fn generate_seed_accepts_plain_nums() {
+        let g = expect_success!(vec!["ftzz", "generate", "--seed", "231", "-n", "1", "dir",]);
 
-        assert_eq!(g.entropy, 231);
+        assert_eq!(g.seed, 231);
     }
 
     #[test]
