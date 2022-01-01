@@ -456,7 +456,8 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
 
                     stats.bytes += bytes_written;
                     path_pool.push(buf);
-                    if let Some(vec) = byte_counts {
+                    if let Some(mut vec) = byte_counts {
+                        vec.clear();
                         byte_counts_pool.push(vec);
                     }
                 }
@@ -472,25 +473,29 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             if config.bytes > 0 {
                 if config.bytes_exact {
                     if stats.bytes < config.bytes {
-                        let mut byte_counts = Vec::with_capacity($num_files);
-                        for entry in byte_counts.spare_capacity_mut() {
+                        let num_files = $num_files;
+                        let mut byte_counts: Vec<usize> =
+                            byte_counts_pool.pop().unwrap_or_default();
+                        byte_counts.reserve(num_files);
+                        let raw_byte_counts = byte_counts.spare_capacity_mut();
+
+                        for i in 0..num_files {
                             let mut num_bytes = config.bytes_per_file.num_to_generate(&mut random);
                             if stats.bytes + num_bytes > config.bytes {
                                 num_bytes = config.bytes - stats.bytes;
                             }
                             stats.bytes += num_bytes;
 
-                            entry.write(num_bytes);
+                            raw_byte_counts[i].write(num_bytes);
                         }
                         unsafe {
-                            byte_counts.set_len(byte_counts.capacity());
+                            byte_counts.set_len(num_files);
                         }
                         if $is_last_files {
-                            let len = byte_counts.len();
                             let mut leftover_bytes = config.bytes - stats.bytes;
                             let mut i = 0;
                             while leftover_bytes > 0 {
-                                byte_counts[i % len] += 1;
+                                byte_counts[i % num_files] += 1;
 
                                 leftover_bytes -= 1;
                                 i += 1;
