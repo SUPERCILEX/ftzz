@@ -601,7 +601,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             flush_tasks!();
         }
 
-        let mut next_dirs = vec_pool.pop().unwrap_or_else(Vec::new);
+        let mut next_dirs = vec_pool.pop().unwrap_or_default();
         next_dirs.reserve(if gen_next_dirs {
             // TODO figure out if we can bound this memory usage
             num_dirs_to_generate
