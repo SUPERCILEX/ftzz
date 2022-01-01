@@ -201,7 +201,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
     let num_dirs = num_files / ratio;
     // This formula was derived from the following equation:
     // num_dirs = unknown_num_dirs_per_dir^max_depth
-    let dirs_per_dir = 2f64.powf(num_dirs.log2() / generator.max_depth as f64);
+    let dirs_per_dir = num_dirs.powf(1f64 / generator.max_depth as f64);
 
     Ok(Configuration {
         root_dir: generator.root_dir,
