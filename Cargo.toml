@@ -2,7 +2,7 @@ cargo-features = ["strip"]
 
 [package]
 name = "ftzz"
-version = "0.1.5"
+version = "1.0.0"
 authors = ["Alex Saveau <saveau.alexandre@gmail.com>"]
 edition = "2021"
 description = "File Tree Fuzzer creates a pseudo-random directory hierarchy filled with some number of files."
