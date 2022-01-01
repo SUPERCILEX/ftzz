@@ -5,6 +5,7 @@ use std::{path::PathBuf, process::exit};
 use anyhow::Context;
 use clap::{AppSettings, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
+use clap_verbosity_flag::Verbosity;
 use cli_errors::{CliExitAnyhowWrapper, CliExitError, CliResult};
 
 use ftzz::generator::{Generator, GeneratorBuilder};
@@ -16,8 +17,8 @@ use ftzz::generator::{Generator, GeneratorBuilder};
 #[clap(global_setting(AppSettings::UseLongFormatForHelpSubcommand))]
 #[cfg_attr(test, clap(global_setting(AppSettings::HelpExpected)))]
 struct Ftzz {
-    // #[clap(flatten)]
-    // verbose: Verbosity,
+    #[clap(flatten)]
+    verbose: Verbosity,
     #[clap(subcommand)]
     cmd: Cmd,
 }
@@ -212,11 +213,7 @@ fn main() {
 
 fn wrapped_main() -> CliResult<()> {
     let args = Ftzz::parse();
-    // TODO waiting on https://github.com/rust-cli/clap-verbosity-flag/issues/29
-    // SimpleLogger::new()
-    //     .with_level(args.verbose.log_level().unwrap().to_level_filter())
-    //     .init()
-    //     .unwrap();
+    simple_logger::init_with_level(args.verbose.log_level().unwrap()).unwrap();
 
     match args.cmd {
         Cmd::Generate(options) => Generator::try_from(options)?.generate(),

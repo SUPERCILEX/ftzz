@@ -12,25 +12,25 @@ categories = ["command-line-utilities", "development-tools", "development-tools:
 license = "Apache-2.0"
 
 [dependencies]
-anyhow = "1.0.51"
+anyhow = "1.0.52"
 bytesize = "1.1.0"
-clap = { version = "3.0.0-rc.4", features = ["derive", "wrap_help"] }
-clap-num = "0.2.0"
-clap-verbosity-flag = "0.3.2"
+clap = { version = "3.0.0", features = ["derive", "wrap_help"] }
+clap-num = "1.0.0"
+clap-verbosity-flag = "0.4.0"
 cli-errors = "0.1.0"
 derive_builder = "0.10.2"
 exitcode = "1.1.2"
 log = "0.4.14"
 num-format = { version = "0.4.0", features = ["with-system-locale"] }
-num_cpus = "1.13.0"
+num_cpus = "1.13.1"
 rand = "0.8.4"
 rand_distr = "0.4.2"
 rand_xorshift = "0.3.0"
-simple_logger = "1.15.1"
-tokio = { version = "1.14.0", features = ["full"] }
+simple_logger = { version = "1.16.0", default-features = false, features = ["colors"] }
+tokio = { version = "1.15.0", features = ["full"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-nix = "0.23.0"
+nix = "0.23.1"
 
 [dev-dependencies]
 criterion = "0.3.5"
