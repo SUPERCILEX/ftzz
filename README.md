@@ -1,7 +1,6 @@
 # FTZZ
 
-File Tree Fuzzer allows you to create a pseudo-random directory hierarchy filled with some number of
-files.
+File Tree Fuzzer creates a pseudo-random directory hierarchy filled with some number of files.
 
 ## Installation
 
