@@ -277,7 +277,7 @@ fn print_stats(stats: GeneratorStats) {
         },
         bytes_info = if stats.bytes > 0 {
             info!("Wrote exactly {} bytes.", stats.bytes);
-            format!(" ({})", bytesize::to_string(stats.bytes as u64, true))
+            format!(" ({})", bytesize::to_string(stats.bytes as u64, false))
         } else {
             "".to_string()
         }
