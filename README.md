@@ -15,7 +15,7 @@ Binaries for a number of platforms are available on the
 $ cargo +nightly install ftzz
 ```
 
-> To install cargo, see [these instructions](https://doc.rust-lang.org/cargo/getting-started/installation.html).
+> To install cargo, follow [these instructions](https://doc.rust-lang.org/cargo/getting-started/installation.html).
 
 ## Usage
 
@@ -37,7 +37,7 @@ Generate ~10_000 files with ~1 MB of random data spread across them:
 $ ftzz g . -n 10K -b 1M
 ```
 
-Because FTZZ generates reproducible outputs, the generated directory will always have the same
+Because FTZZ creates reproducible outputs, the generated directory will always have the same
 structure given the same inputs. To generate variations on a structure with the same parameters,
 change the starting seed:
 
