@@ -224,7 +224,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
 fn print_configuration_info(config: &Configuration) {
     let locale = SystemLocale::new().unwrap();
     println!(
-        "About {} {files_maybe_plural} will be generated in approximately \
+        "{file_count_type} {} {files_maybe_plural} will be generated in approximately \
         {} {directories_maybe_plural} distributed across a tree of maximum depth {} where each \
         directory contains approximately {} other {dpd_directories_maybe_plural}.\
         {bytes_info}",
@@ -234,6 +234,11 @@ fn print_configuration_info(config: &Configuration) {
         config
             .informational_dirs_per_dir
             .to_formatted_string(&locale),
+        file_count_type = if config.files_exact {
+            "Exactly"
+        } else {
+            "About"
+        },
         files_maybe_plural = if config.files == 1 { "file" } else { "files" },
         directories_maybe_plural = if config.informational_total_dirs == 1 {
             "directory"
