@@ -3,7 +3,7 @@ use std::{
     collections::VecDeque,
     fs::{create_dir, create_dir_all, File},
     hash::Hasher,
-    io::{BufReader, Read, Write},
+    io::{Read, Write},
     path::{Path, PathBuf},
 };
 
@@ -11,6 +11,7 @@ use more_asserts::assert_le;
 use rand::Rng;
 use rstest::rstest;
 use seahash::SeaHasher;
+use stack_buffer::StackBufReader;
 
 use ftzz::generator::GeneratorBuilder;
 
@@ -263,7 +264,9 @@ fn hash_dir(dir: &Path) -> u64 {
             if entry.file_type().unwrap().is_dir() {
                 queue.push_back(entry.path())
             } else if entry.metadata().unwrap().len() > 0 {
-                for byte in BufReader::new(File::open(entry.path()).unwrap()).bytes() {
+                for byte in
+                    StackBufReader::<_, 4096>::new(File::open(entry.path()).unwrap()).bytes()
+                {
                     hasher.write_u8(byte.unwrap());
                 }
             }

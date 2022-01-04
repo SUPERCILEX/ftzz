@@ -521,6 +521,7 @@ dependencies = [
  "rstest",
  "seahash",
  "simple_logger",
+ "stack-buffer",
  "tempfile",
  "tokio",
 ]
@@ -1264,6 +1265,12 @@ name = "smallvec"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ecab6c735a6bb4139c0caafd0cc3635748bbb3acf4550e8138122099251f309"
+
+[[package]]
+name = "stack-buffer"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "415d18e142f613c1fa7c32917542f991ac8a7b26f2a5557bc461d8b5c6a47d71"
 
 [[package]]
 name = "strsim"
