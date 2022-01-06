@@ -750,7 +750,7 @@ fn create_files_and_dirs(
                 $first_time && matches!(file_contents, GeneratedFileContents::OnTheFly { .. });
             if num_bytes > 0 || needs_slow_path_for_determinism {
                 match file_contents {
-                    GeneratedFileContents::None => panic!("Impossible condition"),
+                    GeneratedFileContents::None => unreachable!("num_bytes should be 0"),
                     GeneratedFileContents::OnTheFly {
                         bytes_per_file,
                         ref mut random,
