@@ -15,7 +15,7 @@ bytesize = "1.1.0"
 clap = { version = "3.0.5", features = ["derive", "wrap_help"] }
 clap-num = "1.0.0"
 clap-verbosity-flag = "0.4.0"
-cli-errors = "0.1.0"
+cli-errors = "0.2.0"
 derive_builder = "0.10.2"
 exitcode = "1.1.2"
 log = "0.4.14"

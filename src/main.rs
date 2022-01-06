@@ -1,6 +1,6 @@
 #![feature(string_remove_matches)]
 
-use std::{path::PathBuf, process::exit};
+use std::path::PathBuf;
 
 use anyhow::Context;
 use clap::{AppSettings, Args, Parser, Subcommand, ValueHint};
@@ -202,16 +202,8 @@ mod generate_tests {
     }
 }
 
-fn main() {
-    if let Err(e) = wrapped_main() {
-        if let Some(source) = e.source {
-            eprintln!("{:?}", source);
-        }
-        exit(e.code);
-    }
-}
-
-fn wrapped_main() -> CliResult<()> {
+#[cli_errors::main]
+fn main() -> CliResult<()> {
     let args = Ftzz::parse();
     simple_logger::init_with_level(args.verbose.log_level().unwrap()).unwrap();
 

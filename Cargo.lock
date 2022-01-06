@@ -261,12 +261,23 @@ dependencies = [
 
 [[package]]
 name = "cli-errors"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10d7069e906d4acc1904125d9fb4b556806878f497b64d4c6348d157234f2a81"
+checksum = "d62e777d8c507357cbaad3b6b543b3b0acc6fb8a7ccfa47f68a885b0358396d1"
 dependencies = [
  "anyhow",
+ "cli-errors-macros",
  "exitcode",
+]
+
+[[package]]
+name = "cli-errors-macros"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "160fb06e66626b19d02487ee198bd3a168216dc84f785ba756ca622060fdc9b7"
+dependencies = [
+ "quote 1.0.14",
+ "syn",
 ]
 
 [[package]]
