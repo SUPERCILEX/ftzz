@@ -551,12 +551,14 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             stats.files += params.num_files;
             stats.dirs += params.num_dirs;
 
-            #[cfg(not(dry_run))]
-            tasks.push(task::spawn_blocking(move || {
-                create_files_and_dirs(params, cache)
-            }));
-            #[cfg(dry_run)]
-            tasks.push(params.target_dir)
+            if params.num_files > 0 || params.num_dirs > 0 {
+                #[cfg(not(dry_run))]
+                tasks.push(task::spawn_blocking(move || {
+                    create_files_and_dirs(params, cache)
+                }));
+                #[cfg(dry_run)]
+                tasks.push(params.target_dir);
+            }
         };
     }
 
