@@ -481,6 +481,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
                         let num_files = $num_files;
                         let mut byte_counts: Vec<usize> =
                             byte_counts_pool.pop().unwrap_or_default();
+                        debug_assert!(byte_counts.is_empty());
                         byte_counts.reserve(num_files);
                         let raw_byte_counts = byte_counts.spare_capacity_mut();
 
@@ -612,6 +613,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         }
 
         let mut next_dirs = vec_pool.pop().unwrap_or_default();
+        debug_assert!(next_dirs.is_empty());
         next_dirs.reserve(if gen_next_dirs {
             // TODO figure out if we can bound this memory usage
             num_dirs_to_generate
@@ -750,7 +752,14 @@ fn create_files_and_dirs(
                 $first_time && matches!(file_contents, GeneratedFileContents::OnTheFly { .. });
             if num_bytes > 0 || needs_slow_path_for_determinism {
                 match file_contents {
-                    GeneratedFileContents::None => unreachable!("num_bytes should be 0"),
+                    GeneratedFileContents::None => {
+                        #[cfg(debug_assertions)]
+                        unreachable!("num_bytes should be 0");
+                        #[cfg(not(debug_assertions))]
+                        unsafe {
+                            std::hint::unreachable_unchecked();
+                        }
+                    }
                     GeneratedFileContents::OnTheFly {
                         bytes_per_file,
                         ref mut random,
