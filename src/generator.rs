@@ -475,10 +475,10 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     // WARNING: HAS SIDE EFFECTS! Must be consumed or stats.bytes must be corrected.
     macro_rules! gen_file_contents_params {
         ($num_files:expr, $is_last_files: expr) => {{
-            if config.bytes > 0 {
+            let num_files = $num_files;
+            if config.bytes > 0 && num_files > 0 {
                 if config.bytes_exact {
                     if stats.bytes < config.bytes {
-                        let num_files = $num_files;
                         let mut byte_counts: Vec<usize> =
                             byte_counts_pool.pop().unwrap_or_default();
                         debug_assert!(byte_counts.is_empty());
@@ -551,6 +551,10 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             stats.files += params.num_files;
             stats.dirs += params.num_dirs;
 
+            debug_assert!(
+                matches!(params.file_contents, GeneratedFileContents::None) || params.num_files > 0,
+                "Some strictly positive number of files must be generated for bytes to be written"
+            );
             if params.num_files > 0 || params.num_dirs > 0 {
                 #[cfg(not(dry_run))]
                 tasks.push(task::spawn_blocking(move || {
