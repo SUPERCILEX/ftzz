@@ -593,13 +593,14 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     }
 
     'outer: while let Some((tot_dirs, dirs_left)) = stack.last_mut() {
-        if dirs_left.is_empty() {
-            vec_pool.push(stack.pop().unwrap().1);
-            if !stack.is_empty() {
-                target_dir.pop();
-            }
+        let num_dirs_to_generate = dirs_left.pop();
+
+        if num_dirs_to_generate == None {
+            vec_pool.push(unsafe { stack.pop().unwrap_unchecked().1 });
 
             if let Some((tot_dirs, dirs_left)) = stack.last() {
+                target_dir.pop();
+
                 if !dirs_left.is_empty() {
                     target_dir.pop();
                     cache.push_dir_name(*tot_dirs - dirs_left.len(), &mut target_dir);
@@ -609,7 +610,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             continue;
         }
 
-        let num_dirs_to_generate = dirs_left.pop().unwrap();
+        let num_dirs_to_generate = unsafe { num_dirs_to_generate.unwrap_unchecked() };
         let next_stack_dir = *tot_dirs - dirs_left.len();
         let is_completing = dirs_left.is_empty();
         let gen_next_dirs = stack.len() < max_depth;
