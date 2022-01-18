@@ -1,12 +1,16 @@
 use std::time::Duration;
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{
+    criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion, PlotConfiguration,
+    Throughput,
+};
 use tempfile::tempdir;
 
 use ftzz::generator::GeneratorBuilder;
 
 fn simple_generate(c: &mut Criterion) {
     let mut group = c.benchmark_group("simple_generate");
+    group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
     for num_files in [1_000, 10_000, 100_000] {
         group.throughput(Throughput::Elements(num_files));
