@@ -1,5 +1,6 @@
 use std::{
     cmp::{max, min},
+    collections::VecDeque,
     fs::{create_dir_all, File},
     io,
     io::{ErrorKind::NotFound, Write},
@@ -14,7 +15,7 @@ use log::{debug, info};
 use num_format::{SystemLocale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
-use rand_xorshift::XorShiftRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 use tokio::task;
 
 #[derive(Builder, Debug)]
@@ -355,10 +356,7 @@ impl FileNameCache {
             return;
         }
 
-        let file_cache = ManuallyDrop::new(unsafe {
-            Vec::from_raw_parts(self.file_cache.0, self.file_cache.1, self.file_cache.1)
-        });
-        path.push(&file_cache[i]);
+        path.push(unsafe { self.file_cache.0.add(i).as_ref().unwrap() });
     }
 
     fn push_dir_name(self, i: usize, path: &mut PathBuf) {
@@ -367,10 +365,7 @@ impl FileNameCache {
             return;
         }
 
-        let dir_cache = ManuallyDrop::new(unsafe {
-            Vec::from_raw_parts(self.dir_cache.0, self.dir_cache.1, self.dir_cache.1)
-        });
-        path.push(&dir_cache[i]);
+        path.push(unsafe { self.dir_cache.0.add(i).as_ref().unwrap() });
     }
 
     #[inline]
@@ -396,11 +391,11 @@ enum GeneratedFileContents {
     None,
     OnTheFly {
         bytes_per_file: f64,
-        random: XorShiftRng,
+        random: Xoshiro256PlusPlus,
     },
     PreDefined {
         byte_counts: Vec<usize>,
-        random: XorShiftRng,
+        random: Xoshiro256PlusPlus,
     },
 }
 
@@ -427,10 +422,10 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             * (config.files_per_dir + config.dirs_per_dir)) as u64)
             .wrapping_add(config.seed);
         debug!("Starting seed: {}", seed);
-        XorShiftRng::seed_from_u64(seed)
+        Xoshiro256PlusPlus::seed_from_u64(seed)
     };
     let mut stack = Vec::with_capacity(max_depth);
-    let mut tasks = Vec::with_capacity(num_cpus::get() * 100);
+    let mut tasks = VecDeque::with_capacity(num_cpus::get().pow(2));
     let mut target_dir = config.root_dir;
     let mut stats = GeneratorStats {
         files: 0,
@@ -439,7 +434,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     };
 
     let mut vec_pool = Vec::with_capacity(max_depth);
-    let mut path_pool = Vec::with_capacity(tasks.capacity() - (tasks.capacity() >> 4));
+    let mut path_pool = Vec::with_capacity(tasks.capacity() / 2);
     let mut byte_counts_pool = Vec::with_capacity(if config.bytes > 0 {
         path_pool.capacity()
     } else {
@@ -451,7 +446,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     macro_rules! flush_tasks {
         () => {
             debug!("Flushing pending task queue.");
-            for task in tasks.drain(..tasks.len() - (tasks.len() >> 4)) {
+            for task in tasks.drain(..tasks.len() / 2) {
                 #[cfg(not(dry_run))]
                 {
                     let (bytes_written, buf, byte_counts) = task
@@ -557,11 +552,11 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             );
             if params.num_files > 0 || params.num_dirs > 0 {
                 #[cfg(not(dry_run))]
-                tasks.push(task::spawn_blocking(move || {
+                tasks.push_back(task::spawn_blocking(move || {
                     create_files_and_dirs(params, cache)
                 }));
                 #[cfg(dry_run)]
-                tasks.push(params.target_dir);
+                tasks.push_back(params.target_dir);
             }
         };
     }

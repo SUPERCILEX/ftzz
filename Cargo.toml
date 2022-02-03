@@ -21,14 +21,14 @@ exitcode = "1.1.2"
 log = "0.4.14"
 num-format = { version = "0.4.0", features = ["with-system-locale"] }
 num_cpus = "1.13.1"
-rand = "0.8.4"
+rand = { version = "0.8.4", features = ["simd_support"] }
 rand_distr = "0.4.3"
-rand_xorshift = "0.3.0"
+rand_xoshiro = "0.6.0"
 simple_logger = { version = "1.16.0", default-features = false, features = ["colors"] }
-tokio = { version = "1.15.0", features = ["full"] }
+tokio = { version = "1.15.0", features = ["rt", "parking_lot"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-nix = "0.23.1"
+nix = { path = "/home/asaveau/Desktop/nix", default-features = false, features = ["fs"] }
 
 [dev-dependencies]
 criterion = "0.3.5"
