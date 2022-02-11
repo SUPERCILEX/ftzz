@@ -177,6 +177,35 @@ fn dense_generate(c: &mut Criterion) {
     );
 }
 
+fn bytes_generate(c: &mut Criterion) {
+    let mut group = c.benchmark_group("bytes_generate");
+
+    for num_bytes in [100_000, 1_000_000, 10_000_000] {
+        group.throughput(Throughput::Bytes(num_bytes));
+        group.bench_with_input(
+            BenchmarkId::from_parameter(num_bytes),
+            &num_bytes,
+            |b, num_bytes| {
+                b.iter_with_large_drop(|| {
+                    let dir = tempdir().unwrap();
+
+                    GeneratorBuilder::default()
+                        .root_dir(dir.path().to_path_buf())
+                        .num_files(10000)
+                        .max_depth(5)
+                        .num_bytes(*num_bytes as usize)
+                        .build()
+                        .unwrap()
+                        .generate()
+                        .unwrap();
+
+                    dir
+                })
+            },
+        );
+    }
+}
+
 criterion_group! {
     name = benches;
     config = Criterion::default().noise_threshold(0.005).warm_up_time(Duration::from_secs(1));
@@ -187,5 +216,6 @@ criterion_group! {
     shallow_generate,
     simple_generate,
     sparse_generate,
+    bytes_generate,
 }
 criterion_main!(benches);
