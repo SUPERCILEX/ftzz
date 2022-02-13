@@ -1,11 +1,14 @@
 use std::{
     cmp::{max, min},
     collections::VecDeque,
+    ffi::{CStr, OsStr},
     fs::{create_dir_all, File},
     io,
     io::{ErrorKind::NotFound, Write},
     mem::{ManuallyDrop, MaybeUninit},
-    path::PathBuf,
+    ops::Deref,
+    os::unix::ffi::{OsStrExt, OsStringExt},
+    path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
 use anyhow::{anyhow, Context};
@@ -350,22 +353,20 @@ impl FileNameCache {
         }
     }
 
-    fn push_file_name(self, i: usize, path: &mut PathBuf) {
+    fn with_file_name<T>(self, i: usize, f: impl FnOnce(&str) -> T) -> T {
         if i >= self.file_cache.1 {
-            path.push(FileNameCache::file_name(i));
-            return;
+            return f(&FileNameCache::file_name(i));
         }
 
-        path.push(unsafe { self.file_cache.0.add(i).as_ref().unwrap() });
+        f(unsafe { self.file_cache.0.add(i).as_ref().unwrap_unchecked() })
     }
 
-    fn push_dir_name(self, i: usize, path: &mut PathBuf) {
+    fn with_dir_name<T>(self, i: usize, f: impl FnOnce(&str) -> T) -> T {
         if i >= self.dir_cache.1 {
-            path.push(FileNameCache::dir_name(i));
-            return;
+            return f(&FileNameCache::dir_name(i));
         }
 
-        path.push(unsafe { self.dir_cache.0.add(i).as_ref().unwrap() });
+        f(unsafe { self.dir_cache.0.add(i).as_ref().unwrap_unchecked() })
     }
 
     #[inline]
@@ -379,8 +380,129 @@ impl FileNameCache {
     }
 }
 
+/// A specialized PathBuf implementation that takes advantage of a few assumptions. Specifically,
+/// it *only* supports adding single-level directories (e.g. "foo", "foo/bar" is not allowed) and
+/// updating the current file name. Any other usage is UB.
+struct FastPathBuf {
+    inner: Vec<u8>,
+    last_len: usize,
+}
+
+impl FastPathBuf {
+    fn push(&mut self, name: &str) {
+        self.last_len = self.inner.len();
+
+        self.inner.reserve(name.len() + 1);
+        self.inner.push(MAIN_SEPARATOR as u8);
+        self.inner.extend_from_slice(name.as_bytes());
+    }
+
+    fn pop(&mut self) {
+        if self.inner.len() > self.last_len {
+            self.inner.truncate(self.last_len);
+        } else {
+            self.inner.truncate(
+                unsafe { self.parent().unwrap_unchecked() }
+                    .as_os_str()
+                    .len(),
+            );
+        }
+    }
+
+    fn set_file_name(&mut self, name: &str) {
+        self.pop();
+        self.push(name);
+    }
+
+    fn push_cloned(&self, name: &str) -> FastPathBuf {
+        let mut buf = FastPathBuf {
+            inner: Vec::with_capacity(self.inner.len() + 1 + name.len()),
+            last_len: 0,
+        };
+
+        buf.inner.clone_from(&self.inner);
+        buf.push(name);
+        buf.last_len = self.last_len;
+
+        buf
+    }
+
+    fn to_cstr_mut(&mut self) -> CStrFastPathBufGuard {
+        CStrFastPathBufGuard::new(self)
+    }
+}
+
+impl From<PathBuf> for FastPathBuf {
+    fn from(p: PathBuf) -> Self {
+        let inner = p.into_os_string().into_vec();
+        FastPathBuf {
+            last_len: inner.len(),
+            inner,
+        }
+    }
+}
+
+impl Deref for FastPathBuf {
+    type Target = Path;
+
+    fn deref(&self) -> &Self::Target {
+        OsStr::from_bytes(&self.inner).as_ref()
+    }
+}
+
+impl AsRef<Path> for FastPathBuf {
+    fn as_ref(&self) -> &Path {
+        self
+    }
+}
+
+impl Clone for FastPathBuf {
+    fn clone(&self) -> Self {
+        FastPathBuf {
+            inner: self.inner.clone(),
+            last_len: self.last_len,
+        }
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        self.inner.clone_from(&source.inner);
+        self.last_len = source.last_len;
+    }
+}
+
+struct CStrFastPathBufGuard<'a> {
+    buf: &'a mut FastPathBuf,
+}
+
+impl<'a> CStrFastPathBufGuard<'a> {
+    fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard {
+        buf.inner.push(0); // NUL terminator
+        CStrFastPathBufGuard { buf }
+    }
+}
+
+impl<'a> Deref for CStrFastPathBufGuard<'a> {
+    type Target = CStr;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { CStr::from_bytes_with_nul_unchecked(&self.buf.inner) }
+    }
+}
+
+impl<'a> AsRef<CStr> for CStrFastPathBufGuard<'a> {
+    fn as_ref(&self) -> &CStr {
+        self
+    }
+}
+
+impl<'a> Drop for CStrFastPathBufGuard<'a> {
+    fn drop(&mut self) {
+        self.buf.inner.pop();
+    }
+}
+
 struct GeneratorTaskParams {
-    target_dir: PathBuf,
+    target_dir: FastPathBuf,
     num_files: usize,
     num_dirs: usize,
     file_offset: usize,
@@ -426,7 +548,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     };
     let mut stack = Vec::with_capacity(max_depth);
     let mut tasks = VecDeque::with_capacity(num_cpus::get().pow(2));
-    let mut target_dir = config.root_dir;
+    let mut target_dir = FastPathBuf::from(config.root_dir);
     let mut stats = GeneratorStats {
         files: 0,
         dirs: 0,
@@ -597,8 +719,9 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
                 target_dir.pop();
 
                 if !dirs_left.is_empty() {
-                    target_dir.pop();
-                    cache.push_dir_name(*tot_dirs - dirs_left.len(), &mut target_dir);
+                    cache.with_dir_name(*tot_dirs - dirs_left.len(), |s| {
+                        target_dir.set_file_name(s);
+                    });
                 }
             }
 
@@ -629,18 +752,19 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         let raw_next_dirs = next_dirs.spare_capacity_mut();
 
         for i in 0..num_dirs_to_generate {
-            cache.push_dir_name(i, &mut target_dir);
             let prev_stats_bytes = stats.bytes;
             let params = gen_params!(
-                if let Some(mut buf) = path_pool.pop() {
-                    buf.clone_from(&target_dir);
-                    buf
-                } else {
-                    target_dir.clone()
-                },
+                cache.with_dir_name(i, |s| {
+                    if let Some(mut buf) = path_pool.pop() {
+                        buf.clone_from(&target_dir);
+                        buf.push(s);
+                        buf
+                    } else {
+                        target_dir.push_cloned(s)
+                    }
+                }),
                 gen_next_dirs
             );
-            target_dir.pop();
 
             if config.files_exact && stats.files + params.num_files >= config.files {
                 stats.bytes = prev_stats_bytes; // Reset after gen_params modification
@@ -665,11 +789,10 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             }
             stack.push((num_dirs_to_generate, next_dirs));
 
-            cache.push_dir_name(0, &mut target_dir);
+            cache.with_dir_name(0, |s| target_dir.push(s));
         } else {
             if !is_completing {
-                target_dir.pop();
-                cache.push_dir_name(next_stack_dir, &mut target_dir);
+                cache.with_dir_name(next_stack_dir, |s| target_dir.set_file_name(s));
             }
             vec_pool.push(next_dirs);
         }
@@ -716,19 +839,19 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
 fn create_files_and_dirs(
     params: GeneratorTaskParams,
     cache: FileNameCache,
-) -> CliResult<(usize, PathBuf, Option<Vec<usize>>)> {
+) -> CliResult<(usize, FastPathBuf, Option<Vec<usize>>)> {
     debug!(
         "Creating {} files and {} directories in {:?}",
-        params.num_files, params.num_dirs, params.target_dir,
+        params.num_files, params.num_dirs, &*params.target_dir,
     );
 
     let mut file = params.target_dir;
 
     for i in 0..params.num_dirs {
-        cache.push_dir_name(i, &mut file);
+        cache.with_dir_name(i, |s| file.push(s));
 
         create_dir_all(&file)
-            .with_context(|| format!("Failed to create directory {:?}", file))
+            .with_context(|| format!("Failed to create directory {:?}", &*file))
             .with_code(exitcode::IOERR)?;
 
         file.pop();
@@ -806,8 +929,9 @@ fn create_files_and_dirs(
                 #[cfg(target_os = "linux")]
                 {
                     use nix::sys::stat::{mknod, Mode, SFlag};
+                    let cstr = $file.to_cstr_mut();
                     mknod(
-                        $file,
+                        &*cstr,
                         SFlag::S_IFREG,
                         Mode::S_IRUSR
                             | Mode::S_IWUSR
@@ -826,17 +950,17 @@ fn create_files_and_dirs(
 
     let mut start_file = 0;
     if params.num_files > 0 {
-        cache.push_file_name(params.file_offset, &mut file);
+        cache.with_file_name(params.file_offset, |s| file.push(s));
 
-        if let Err(e) = create_file!(&file, 0, true) {
+        if let Err(e) = create_file!(&mut file, 0, true) {
             if e.kind() == NotFound {
                 file.pop();
                 create_dir_all(&file)
-                    .with_context(|| format!("Failed to create directory {:?}", file))
+                    .with_context(|| format!("Failed to create directory {:?}", &*file))
                     .with_code(exitcode::IOERR)?;
             } else {
                 return Err(e)
-                    .with_context(|| format!("Failed to create file {:?}", file))
+                    .with_context(|| format!("Failed to create file {:?}", &*file))
                     .with_code(exitcode::IOERR);
             }
         } else {
@@ -845,10 +969,10 @@ fn create_files_and_dirs(
         }
     }
     for i in start_file..params.num_files {
-        cache.push_file_name(i + params.file_offset, &mut file);
+        cache.with_file_name(i + params.file_offset, |s| file.push(s));
 
-        create_file!(&file, i, false)
-            .with_context(|| format!("Failed to create file {:?}", file))
+        create_file!(&mut file, i, false)
+            .with_context(|| format!("Failed to create file {:?}", &*file))
             .with_code(exitcode::IOERR)?;
 
         file.pop();
