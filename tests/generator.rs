@@ -33,12 +33,12 @@ mod inspect {
             println!("Using dir {:?}", dir.path());
 
             if option_env!("INSPECT").is_some() {
-                InspectableTempDir {
+                Self {
                     path: dir.into_path(),
                     _guard: None,
                 }
             } else {
-                InspectableTempDir {
+                Self {
                     path: dir.path().to_path_buf(),
                     _guard: Some(dir),
                 }

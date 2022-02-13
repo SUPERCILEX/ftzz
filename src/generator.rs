@@ -340,7 +340,7 @@ impl FileNameCache {
         debug!("Allocated {} file cache entries.", file_cache.len());
         debug!("Allocated {} directory cache entries.", dir_cache.len());
 
-        FileNameCache {
+        Self {
             file_cache: (file_cache.as_mut_ptr(), file_cache.len()),
             dir_cache: (dir_cache.as_mut_ptr(), dir_cache.len()),
         }
@@ -435,7 +435,7 @@ impl FastPathBuf {
 impl From<PathBuf> for FastPathBuf {
     fn from(p: PathBuf) -> Self {
         let inner = p.into_os_string().into_vec();
-        FastPathBuf {
+        Self {
             last_len: inner.len(),
             inner,
         }
@@ -458,7 +458,7 @@ impl AsRef<Path> for FastPathBuf {
 
 impl Clone for FastPathBuf {
     fn clone(&self) -> Self {
-        FastPathBuf {
+        Self {
             inner: self.inner.clone(),
             last_len: self.last_len,
         }
