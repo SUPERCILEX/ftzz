@@ -19,7 +19,7 @@ cli-errors = "0.2.0"
 derive_builder = "0.10.2"
 exitcode = "1.1.2"
 log = "0.4.14"
-num-format = { version = "0.4.0", features = ["with-system-locale"] }
+num-format = "0.4.0"
 num_cpus = "1.13.1"
 rand = { version = "0.8.4", features = ["simd_support"] }
 rand_distr = "0.4.3"

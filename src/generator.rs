@@ -15,7 +15,7 @@ use anyhow::{anyhow, Context};
 use cli_errors::{CliExitAnyhowWrapper, CliResult};
 use derive_builder::Builder;
 use log::{debug, info};
-use num_format::{SystemLocale, ToFormattedString};
+use num_format::{Locale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -226,7 +226,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
 }
 
 fn print_configuration_info(config: &Configuration) {
-    let locale = SystemLocale::new().unwrap();
+    let locale = Locale::en;
     println!(
         "{file_count_type} {} {files_maybe_plural} will be generated in approximately \
         {} {directories_maybe_plural} distributed across a tree of maximum depth {} where each \
@@ -273,7 +273,7 @@ fn print_configuration_info(config: &Configuration) {
 }
 
 fn print_stats(stats: GeneratorStats) {
-    let locale = SystemLocale::new().unwrap();
+    let locale = Locale::en;
     println!(
         "Created {} {files_maybe_plural}{bytes_info} across {} {directories_maybe_plural}.",
         stats.files.to_formatted_string(&locale),
