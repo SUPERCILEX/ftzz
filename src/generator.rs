@@ -485,7 +485,11 @@ impl<'a> Deref for CStrFastPathBufGuard<'a> {
     type Target = CStr;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { CStr::from_bytes_with_nul_unchecked(&self.buf.inner) }
+        if cfg!(debug_assertions) {
+            CStr::from_bytes_with_nul(&self.buf.inner).unwrap()
+        } else {
+            unsafe { CStr::from_bytes_with_nul_unchecked(&self.buf.inner) }
+        }
     }
 }
 
