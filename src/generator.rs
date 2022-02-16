@@ -562,7 +562,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
 
     let mut vec_pool = Vec::with_capacity(max_depth);
     let mut path_pool = Vec::with_capacity(tasks.capacity() / 2);
-    let mut byte_counts_pool = Vec::with_capacity(if config.bytes > 0 {
+    let mut byte_counts_pool = Vec::with_capacity(if config.bytes_exact && config.bytes > 0 {
         path_pool.capacity()
     } else {
         0
