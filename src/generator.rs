@@ -14,12 +14,12 @@ use std::{
 use anyhow::{anyhow, Context};
 use cli_errors::{CliExitAnyhowWrapper, CliResult};
 use derive_builder::Builder;
-use log::{debug, info, trace};
 use num_format::{Locale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use tokio::task;
+use tracing::{event, instrument, span, Level};
 
 #[derive(Builder, Debug)]
 #[builder(build_fn(validate = "Self::validate"))]
@@ -285,7 +285,7 @@ fn print_stats(stats: GeneratorStats) {
             "directories"
         },
         bytes_info = if stats.bytes > 0 {
-            info!("Wrote exactly {} bytes.", stats.bytes);
+            event!(Level::INFO, bytes = stats.bytes, "Exact bytes written");
             format!(" ({})", bytesize::to_string(stats.bytes as u64, false))
         } else {
             "".to_string()
@@ -337,8 +337,12 @@ impl FileNameCache {
             dir_cache.set_len(cap);
         }
 
-        debug!("Allocated {} file cache entries.", file_cache.len());
-        debug!("Allocated {} directory cache entries.", dir_cache.len());
+        event!(
+            Level::DEBUG,
+            files = file_cache.len(),
+            dirs = dir_cache.len(),
+            "Name cache allocations"
+        );
 
         Self {
             file_cache: (file_cache.as_mut_ptr(), file_cache.len()),
@@ -532,7 +536,7 @@ fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
         .context("Failed to create tokio runtime")
         .with_code(exitcode::OSERR)?;
 
-    info!("Starting config: {:?}", config);
+    event!(Level::INFO, config = ?config, "Starting config");
     runtime.block_on(run_generator_async(config))
 }
 
@@ -547,7 +551,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         let seed = ((config.files.wrapping_add(config.max_depth as usize) as f64
             * (config.files_per_dir + config.dirs_per_dir)) as u64)
             .wrapping_add(config.seed);
-        debug!("Starting seed: {}", seed);
+        event!(Level::DEBUG, seed = ?seed, "Starting seed");
         Xoshiro256PlusPlus::seed_from_u64(seed)
     };
     let mut stack = Vec::with_capacity(max_depth);
@@ -568,17 +572,18 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         0
     });
 
-    debug!("Allocated {} task entries.", tasks.capacity());
-    debug!(
-        "Allocated {} dir, {} path, and {} file size object pool entries.",
-        vec_pool.capacity(),
-        path_pool.capacity(),
-        byte_counts_pool.capacity()
+    event!(
+        Level::DEBUG,
+        task_queue = tasks.capacity(),
+        object_pool.dirs = vec_pool.capacity(),
+        object_pool.paths = path_pool.capacity(),
+        object_pool.file_sizes = byte_counts_pool.capacity(),
+        "Entry allocations"
     );
 
     macro_rules! flush_tasks {
         () => {
-            trace!("Flushing pending task queue.");
+            event!(Level::TRACE, "Flushing pending task queue");
             for task in tasks.drain(..tasks.len() / 2) {
                 #[cfg(not(dry_run))]
                 {
@@ -720,6 +725,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         queue_gen!(params);
     }
 
+    let gen_span = span!(Level::TRACE, "dir_gen");
     'outer: while let Some((tot_dirs, dirs_left)) = stack.last_mut() {
         let num_dirs_to_generate = dirs_left.pop();
 
@@ -762,6 +768,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         // minimize lock contention).
         let raw_next_dirs = next_dirs.spare_capacity_mut();
 
+        let span_guard = gen_span.enter();
         for i in 0..num_dirs_to_generate {
             let prev_stats_bytes = stats.bytes;
             let params = gen_params!(
@@ -793,6 +800,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
             }
             queue_gen!(params);
         }
+        drop(span_guard);
 
         if gen_next_dirs {
             unsafe {
@@ -847,19 +855,24 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     Ok(stats)
 }
 
+#[instrument(level = "trace", skip(params, cache))]
 fn create_files_and_dirs(
     params: GeneratorTaskParams,
     cache: FileNameCache,
 ) -> CliResult<(usize, FastPathBuf, Option<Vec<usize>>)> {
-    trace!(
-        "Creating {} files and {} directories in {:?}",
-        params.num_files,
-        params.num_dirs,
-        &*params.target_dir,
+    event!(
+        Level::TRACE,
+        files = params.num_files,
+        dirs = params.num_dirs,
+        target = ?&*params.target_dir,
+        "Generating files and dirs"
     );
+    let dir_span = span!(Level::TRACE, "directory_creation");
+    let file_span = span!(Level::TRACE, "file_creation");
 
     let mut file = params.target_dir;
 
+    let span_guard = dir_span.enter();
     for i in 0..params.num_dirs {
         cache.with_dir_name(i, |s| file.push(s));
 
@@ -869,6 +882,7 @@ fn create_files_and_dirs(
 
         file.pop();
     }
+    drop(span_guard);
 
     let mut file_contents = params.file_contents;
     let mut bytes_written = 0;
@@ -961,12 +975,15 @@ fn create_files_and_dirs(
         }};
     }
 
+    let span_guard = file_span.enter();
     let mut start_file = 0;
     if params.num_files > 0 {
         cache.with_file_name(params.file_offset, |s| file.push(s));
 
         if let Err(e) = create_file!(&mut file, 0, true) {
             if e.kind() == NotFound {
+                event!(Level::TRACE, file = ?&*file, "Parent directory not created in time");
+
                 file.pop();
                 create_dir_all(&file)
                     .with_context(|| format!("Failed to create directory {:?}", &*file))
@@ -990,6 +1007,7 @@ fn create_files_and_dirs(
 
         file.pop();
     }
+    drop(span_guard);
 
     if let GeneratedFileContents::PreDefined { byte_counts, .. } = file_contents {
         Ok((bytes_written, file, Some(byte_counts)))
@@ -998,6 +1016,7 @@ fn create_files_and_dirs(
     }
 }
 
+#[instrument(level = "trace", skip(file, random))]
 #[inline(never)] // Don't muck the stack for the GeneratedFileContents::None case
 fn write_random_bytes(mut file: File, mut num: usize, random: &mut impl RngCore) -> io::Result<()> {
     #[allow(clippy::uninit_assumed_init)] // u8s do nothing when dropped
