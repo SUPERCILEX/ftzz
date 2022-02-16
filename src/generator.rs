@@ -14,7 +14,7 @@ use std::{
 use anyhow::{anyhow, Context};
 use cli_errors::{CliExitAnyhowWrapper, CliResult};
 use derive_builder::Builder;
-use log::{debug, info};
+use log::{debug, info, trace};
 use num_format::{Locale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
 use rand_distr::{LogNormal, Normal};
@@ -578,7 +578,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
 
     macro_rules! flush_tasks {
         () => {
-            debug!("Flushing pending task queue.");
+            trace!("Flushing pending task queue.");
             for task in tasks.drain(..tasks.len() / 2) {
                 #[cfg(not(dry_run))]
                 {
@@ -851,9 +851,11 @@ fn create_files_and_dirs(
     params: GeneratorTaskParams,
     cache: FileNameCache,
 ) -> CliResult<(usize, FastPathBuf, Option<Vec<usize>>)> {
-    debug!(
+    trace!(
         "Creating {} files and {} directories in {:?}",
-        params.num_files, params.num_dirs, &*params.target_dir,
+        params.num_files,
+        params.num_dirs,
+        &*params.target_dir,
     );
 
     let mut file = params.target_dir;
