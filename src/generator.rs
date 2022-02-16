@@ -551,7 +551,8 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
         Xoshiro256PlusPlus::seed_from_u64(seed)
     };
     let mut stack = Vec::with_capacity(max_depth);
-    let mut tasks = VecDeque::with_capacity(num_cpus::get().pow(2));
+    // Minus 1 because VecDeque adds 1 and then rounds to a power of 2
+    let mut tasks = VecDeque::with_capacity(num_cpus::get().pow(2) - 1);
     let mut target_dir = FastPathBuf::from(config.root_dir);
     let mut stats = GeneratorStats {
         files: 0,
