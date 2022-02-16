@@ -569,6 +569,12 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     });
 
     debug!("Allocated {} task entries.", tasks.capacity());
+    debug!(
+        "Allocated {} dir, {} path, and {} file size object pool entries.",
+        vec_pool.capacity(),
+        path_pool.capacity(),
+        byte_counts_pool.capacity()
+    );
 
     macro_rules! flush_tasks {
         () => {
