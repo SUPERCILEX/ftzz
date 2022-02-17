@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
-use clap::{AppSettings, Args, Parser, Subcommand, ValueHint};
+use clap::{Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use cli_errors::{CliExitAnyhowWrapper, CliExitError, CliResult};
@@ -13,9 +13,8 @@ use ftzz::generator::{Generator, GeneratorBuilder};
 /// A random file and directory generator
 #[derive(Parser, Debug)]
 #[clap(version, author = "Alex Saveau (@SUPERCILEX)")]
-#[clap(global_setting(AppSettings::InferSubcommands))]
-#[clap(global_setting(AppSettings::UseLongFormatForHelpSubcommand))]
-#[cfg_attr(test, clap(global_setting(AppSettings::HelpExpected)))]
+#[clap(infer_subcommands = true)]
+#[cfg_attr(test, clap(help_expected = true))]
 struct Ftzz {
     #[clap(flatten)]
     verbose: Verbosity,
@@ -269,7 +268,7 @@ mod cli_tests {
 
     #[test]
     fn verify_app() {
-        Ftzz::into_app().debug_assert();
+        Ftzz::command().debug_assert();
     }
 }
 
@@ -290,13 +289,13 @@ mod cli_generate_tests {
             let f = Ftzz::try_parse_from($args);
 
             assert!(f.is_err());
-            assert_eq!(f.unwrap_err().kind, $error);
+            assert_eq!(f.unwrap_err().kind(), $error);
         };
     }
 
     macro_rules! expect_success {
         ($args:expr) => {{
-            let m = Ftzz::into_app().get_matches_from($args);
+            let m = Ftzz::command().get_matches_from($args);
             <Generate as FromArgMatches>::from_arg_matches(
                 m.subcommand_matches("generate").unwrap(),
             )

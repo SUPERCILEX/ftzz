@@ -6,9 +6,11 @@ use std::{
     io,
     io::{ErrorKind::NotFound, Write},
     mem::{ManuallyDrop, MaybeUninit},
+    num::NonZeroUsize,
     ops::Deref,
     os::unix::ffi::{OsStrExt, OsStringExt},
     path::{Path, PathBuf, MAIN_SEPARATOR},
+    thread,
 };
 
 use anyhow::{anyhow, Context};
@@ -537,17 +539,22 @@ enum GeneratedFileContents {
 }
 
 fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
+    let parallelism =
+        thread::available_parallelism().unwrap_or(unsafe { NonZeroUsize::new_unchecked(1) });
     let runtime = tokio::runtime::Builder::new_current_thread()
-        .max_blocking_threads(num_cpus::get())
+        .max_blocking_threads(parallelism.get())
         .build()
         .context("Failed to create tokio runtime")
         .with_code(exitcode::OSERR)?;
 
     event!(Level::INFO, config = ?config, "Starting config");
-    runtime.block_on(run_generator_async(config))
+    runtime.block_on(run_generator_async(config, parallelism))
 }
 
-async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats> {
+async fn run_generator_async(
+    config: Configuration,
+    parallelism: NonZeroUsize,
+) -> CliResult<GeneratorStats> {
     let cache_task = task::spawn_blocking(move || {
         // spawn_blocking b/c we're using a single-threaded runtime
         FileNameCache::alloc(config.files_per_dir, config.dirs_per_dir)
@@ -563,7 +570,7 @@ async fn run_generator_async(config: Configuration) -> CliResult<GeneratorStats>
     };
     let mut stack = Vec::with_capacity(max_depth);
     // Minus 1 because VecDeque adds 1 and then rounds to a power of 2
-    let mut tasks = VecDeque::with_capacity(num_cpus::get().pow(2) - 1);
+    let mut tasks = VecDeque::with_capacity(parallelism.get().pow(2) - 1);
     let mut target_dir = FastPathBuf::from(config.root_dir);
     let mut stats = GeneratorStats {
         files: 0,
