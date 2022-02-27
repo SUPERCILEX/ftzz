@@ -306,6 +306,7 @@ struct FileNameCache {
 unsafe impl Send for FileNameCache {}
 
 impl FileNameCache {
+    #[instrument(level = "trace")]
     fn alloc(files_per_dir: f64, dirs_per_dir: f64) -> Self {
         let num_cache_entries = files_per_dir + dirs_per_dir;
         let files_percentage = files_per_dir / num_cache_entries;
@@ -318,17 +319,23 @@ impl FileNameCache {
         let file_entries = files_percentage * num_cache_entries;
         let dir_entries = num_cache_entries - file_entries;
 
+        let alloc_span = span!(Level::TRACE, "file_cache_alloc");
+        let span_guard = alloc_span.enter();
         let mut file_cache =
             ManuallyDrop::new(Vec::<String>::with_capacity(file_entries.round() as usize));
-        let mut dir_cache =
-            ManuallyDrop::new(Vec::<String>::with_capacity(dir_entries.round() as usize));
-
         for (i, entry) in file_cache.spare_capacity_mut().iter_mut().enumerate() {
             entry.write(FileNameCache::file_name(i));
         }
+        drop(span_guard);
+
+        let alloc_span = span!(Level::TRACE, "dir_cache_alloc");
+        let span_guard = alloc_span.enter();
+        let mut dir_cache =
+            ManuallyDrop::new(Vec::<String>::with_capacity(dir_entries.round() as usize));
         for (i, entry) in dir_cache.spare_capacity_mut().iter_mut().enumerate() {
             entry.write(FileNameCache::dir_name(i));
         }
+        drop(span_guard);
 
         unsafe {
             let cap = file_cache.capacity();
