@@ -563,13 +563,15 @@ async fn run_generator_async(
             let prev_stats_bytes = stats.bytes;
             let params = gen_params!(
                 cache.with_dir_name(i, |s| {
-                    if let Some(mut buf) = path_pool.pop() {
-                        buf.clone_from(&target_dir);
-                        buf.push(s);
-                        buf
-                    } else {
-                        target_dir.push_cloned(s)
-                    }
+                    let mut buf = path_pool.pop().unwrap_or_else(|| {
+                        // Space for inner, the path seperator, name, and a NUL terminator
+                        FastPathBuf::with_capacity(target_dir.len() + 1 + s.len() + 1)
+                    });
+
+                    buf.clone_from(&target_dir);
+                    buf.push(s);
+
+                    buf
                 }),
                 gen_next_dirs
             );

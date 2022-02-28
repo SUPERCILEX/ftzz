@@ -14,6 +14,17 @@ pub struct FastPathBuf {
 }
 
 impl FastPathBuf {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            inner: Vec::with_capacity(capacity),
+            last_len: 0,
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
     pub fn push(&mut self, name: &str) {
         self.last_len = self.inner.len();
 
@@ -37,20 +48,6 @@ impl FastPathBuf {
     pub fn set_file_name(&mut self, name: &str) {
         self.pop();
         self.push(name);
-    }
-
-    pub fn push_cloned(&self, name: &str) -> FastPathBuf {
-        let mut buf = FastPathBuf {
-            // Space for inner, the path seperator, name, and a NUL terminator
-            inner: Vec::with_capacity(self.inner.len() + 1 + name.len() + 1),
-            last_len: 0,
-        };
-
-        buf.inner.clone_from(&self.inner);
-        buf.push(name);
-        buf.last_len = self.last_len;
-
-        buf
     }
 
     pub fn to_cstr_mut(&mut self) -> CStrFastPathBufGuard {
