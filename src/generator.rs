@@ -1,15 +1,12 @@
 use std::{
     cmp::{max, min},
     collections::VecDeque,
-    ffi::{CStr, OsStr},
     fs::{create_dir_all, File},
     io,
     io::{ErrorKind::NotFound, Write},
-    mem::{ManuallyDrop, MaybeUninit},
+    mem::MaybeUninit,
     num::NonZeroUsize,
-    ops::Deref,
-    os::unix::ffi::{OsStrExt, OsStringExt},
-    path::{Path, PathBuf, MAIN_SEPARATOR},
+    path::PathBuf,
     thread,
 };
 
@@ -22,6 +19,8 @@ use rand_distr::{LogNormal, Normal};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use tokio::task;
 use tracing::{event, instrument, span, Level};
+
+use crate::{fast_path::FastPathBuf, name_cache::FileNameCache};
 
 #[derive(Builder, Debug)]
 #[builder(build_fn(validate = "Self::validate"))]
@@ -293,230 +292,6 @@ fn print_stats(stats: GeneratorStats) {
             "".to_string()
         }
     );
-}
-
-/// Specialized cache for file names that takes advantage of our monotonically increasing integer
-/// naming scheme.
-///
-/// We intentionally use a thread-*un*safe raw fixed-size buffer to eliminate an Arc.
-#[derive(Copy, Clone)]
-struct FileNameCache {
-    file_cache: (*mut String, usize),
-    dir_cache: (*mut String, usize),
-}
-
-unsafe impl Send for FileNameCache {}
-
-impl FileNameCache {
-    #[instrument(level = "trace")]
-    fn alloc(files_per_dir: f64, dirs_per_dir: f64) -> Self {
-        let num_cache_entries = files_per_dir + dirs_per_dir;
-        let files_percentage = files_per_dir / num_cache_entries;
-
-        // Overestimate since the cache can't grow
-        let num_cache_entries = 1.5 * num_cache_entries;
-        // Max out the cache size at 1MiB
-        let num_cache_entries = f64::min((1 << 20) as f64, num_cache_entries);
-
-        let file_entries = files_percentage * num_cache_entries;
-        let dir_entries = num_cache_entries - file_entries;
-
-        let alloc_span = span!(Level::TRACE, "file_cache_alloc");
-        let span_guard = alloc_span.enter();
-        let mut file_cache =
-            ManuallyDrop::new(Vec::<String>::with_capacity(file_entries.round() as usize));
-        for (i, entry) in file_cache.spare_capacity_mut().iter_mut().enumerate() {
-            entry.write(FileNameCache::file_name(i));
-        }
-        drop(span_guard);
-
-        let alloc_span = span!(Level::TRACE, "dir_cache_alloc");
-        let span_guard = alloc_span.enter();
-        let mut dir_cache =
-            ManuallyDrop::new(Vec::<String>::with_capacity(dir_entries.round() as usize));
-        for (i, entry) in dir_cache.spare_capacity_mut().iter_mut().enumerate() {
-            entry.write(FileNameCache::dir_name(i));
-        }
-        drop(span_guard);
-
-        unsafe {
-            let cap = file_cache.capacity();
-            file_cache.set_len(cap);
-            let cap = dir_cache.capacity();
-            dir_cache.set_len(cap);
-        }
-
-        event!(
-            Level::DEBUG,
-            files = file_cache.len(),
-            dirs = dir_cache.len(),
-            "Name cache allocations"
-        );
-
-        Self {
-            file_cache: (file_cache.as_mut_ptr(), file_cache.len()),
-            dir_cache: (dir_cache.as_mut_ptr(), dir_cache.len()),
-        }
-    }
-
-    fn free(self) {
-        unsafe {
-            Vec::from_raw_parts(self.file_cache.0, self.file_cache.1, self.file_cache.1);
-            Vec::from_raw_parts(self.dir_cache.0, self.dir_cache.1, self.dir_cache.1);
-        }
-    }
-
-    fn with_file_name<T>(self, i: usize, f: impl FnOnce(&str) -> T) -> T {
-        if i >= self.file_cache.1 {
-            return f(&FileNameCache::file_name(i));
-        }
-
-        f(unsafe { self.file_cache.0.add(i).as_ref().unwrap_unchecked() })
-    }
-
-    fn with_dir_name<T>(self, i: usize, f: impl FnOnce(&str) -> T) -> T {
-        if i >= self.dir_cache.1 {
-            return f(&FileNameCache::dir_name(i));
-        }
-
-        f(unsafe { self.dir_cache.0.add(i).as_ref().unwrap_unchecked() })
-    }
-
-    #[inline]
-    fn file_name(i: usize) -> String {
-        i.to_string()
-    }
-
-    #[inline]
-    fn dir_name(i: usize) -> String {
-        format!("{}.dir", i)
-    }
-}
-
-/// A specialized PathBuf implementation that takes advantage of a few assumptions. Specifically,
-/// it *only* supports adding single-level directories (e.g. "foo", "foo/bar" is not allowed) and
-/// updating the current file name. Any other usage is UB.
-struct FastPathBuf {
-    inner: Vec<u8>,
-    last_len: usize,
-}
-
-impl FastPathBuf {
-    fn push(&mut self, name: &str) {
-        self.last_len = self.inner.len();
-
-        self.inner.reserve(name.len() + 1);
-        self.inner.push(MAIN_SEPARATOR as u8);
-        self.inner.extend_from_slice(name.as_bytes());
-    }
-
-    fn pop(&mut self) {
-        if self.inner.len() > self.last_len {
-            self.inner.truncate(self.last_len);
-        } else {
-            self.inner.truncate(
-                unsafe { self.parent().unwrap_unchecked() }
-                    .as_os_str()
-                    .len(),
-            );
-        }
-    }
-
-    fn set_file_name(&mut self, name: &str) {
-        self.pop();
-        self.push(name);
-    }
-
-    fn push_cloned(&self, name: &str) -> FastPathBuf {
-        let mut buf = FastPathBuf {
-            // Space for inner, the path seperator, name, and a NUL terminator
-            inner: Vec::with_capacity(self.inner.len() + 1 + name.len() + 1),
-            last_len: 0,
-        };
-
-        buf.inner.clone_from(&self.inner);
-        buf.push(name);
-        buf.last_len = self.last_len;
-
-        buf
-    }
-
-    fn to_cstr_mut(&mut self) -> CStrFastPathBufGuard {
-        CStrFastPathBufGuard::new(self)
-    }
-}
-
-impl From<PathBuf> for FastPathBuf {
-    fn from(p: PathBuf) -> Self {
-        let inner = p.into_os_string().into_vec();
-        Self {
-            last_len: inner.len(),
-            inner,
-        }
-    }
-}
-
-impl Deref for FastPathBuf {
-    type Target = Path;
-
-    fn deref(&self) -> &Self::Target {
-        OsStr::from_bytes(&self.inner).as_ref()
-    }
-}
-
-impl AsRef<Path> for FastPathBuf {
-    fn as_ref(&self) -> &Path {
-        self
-    }
-}
-
-impl Clone for FastPathBuf {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            last_len: self.last_len,
-        }
-    }
-
-    fn clone_from(&mut self, source: &Self) {
-        self.inner.clone_from(&source.inner);
-        self.last_len = source.last_len;
-    }
-}
-
-struct CStrFastPathBufGuard<'a> {
-    buf: &'a mut FastPathBuf,
-}
-
-impl<'a> CStrFastPathBufGuard<'a> {
-    fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard {
-        buf.inner.push(0); // NUL terminator
-        CStrFastPathBufGuard { buf }
-    }
-}
-
-impl<'a> Deref for CStrFastPathBufGuard<'a> {
-    type Target = CStr;
-
-    fn deref(&self) -> &Self::Target {
-        if cfg!(debug_assertions) {
-            CStr::from_bytes_with_nul(&self.buf.inner).unwrap()
-        } else {
-            unsafe { CStr::from_bytes_with_nul_unchecked(&self.buf.inner) }
-        }
-    }
-}
-
-impl<'a> AsRef<CStr> for CStrFastPathBufGuard<'a> {
-    fn as_ref(&self) -> &CStr {
-        self
-    }
-}
-
-impl<'a> Drop for CStrFastPathBufGuard<'a> {
-    fn drop(&mut self) {
-        self.buf.inner.pop();
-    }
 }
 
 struct GeneratorTaskParams {
