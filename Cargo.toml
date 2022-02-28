@@ -18,15 +18,16 @@ clap-verbosity-flag = "1.0.0"
 cli-errors = "0.3.0"
 derive_builder = "0.10.2"
 exitcode = "1.1.2"
+log = { version = "0.4.14", features = ["release_max_level_info"] }
 num-format = "0.4.0"
 rand = { version = "0.8.5", features = ["simd_support"] }
 rand_distr = "0.4.3"
 rand_xoshiro = "0.6.0"
+simple_logger = { version = "2.1.0", default-features = false, features = ["colors"] }
 tokio = { version = "1.17.0", features = ["rt", "parking_lot"] }
-tracing = { version = "0.1.31", features = ["release_max_level_info"] }
+tracing = { version = "0.1.31", features = ["release_max_level_off", "log"] }
 tracing-chrome = { git = "https://github.com/SUPERCILEX/tracing-chrome", optional = true }
-tracing-log = "0.1.2"
-tracing-subscriber = "0.3.9"
+tracing-subscriber = { version = "0.3.9", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 nix = { git = "https://github.com/nix-rust/nix", default-features = false, features = ["fs"] }
@@ -38,6 +39,9 @@ rstest = "0.12.0"
 seahash = "4.1.0"
 stack-buffer = "0.2.0"
 tempfile = "3.3.0"
+
+[features]
+trace = ["tracing-chrome", "tracing-subscriber"]
 
 [[bench]]
 name = "generator"

@@ -205,17 +205,9 @@ mod generate_tests {
 fn main() -> CliResult<()> {
     let args = Ftzz::parse();
 
-    #[cfg(not(feature = "tracing-chrome"))]
-    {
-        use tracing_log::AsTrace;
-        use tracing_subscriber::fmt::Subscriber;
-
-        Subscriber::builder()
-            .pretty()
-            .with_max_level(args.verbose.log_level().unwrap().as_trace())
-            .init();
-    }
-    #[cfg(feature = "tracing-chrome")]
+    #[cfg(not(feature = "trace"))]
+    simple_logger::init_with_level(args.verbose.log_level().unwrap()).unwrap();
+    #[cfg(feature = "trace")]
     let _guard = {
         use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 

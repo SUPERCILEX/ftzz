@@ -171,6 +171,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "colored"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3616f750b84d8f0de8a58bda93e08e2a81ad3f523089b05f1dffecab48c6cbd"
+dependencies = [
+ "atty",
+ "lazy_static",
+ "winapi",
+]
+
+[[package]]
 name = "criterion"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -378,6 +389,7 @@ dependencies = [
  "criterion",
  "derive_builder",
  "exitcode",
+ "log",
  "more-asserts",
  "nix",
  "num-format",
@@ -386,12 +398,12 @@ dependencies = [
  "rand_xoshiro",
  "rstest",
  "seahash",
+ "simple_logger",
  "stack-buffer",
  "tempfile",
  "tokio",
  "tracing",
  "tracing-chrome",
- "tracing-log",
  "tracing-subscriber",
 ]
 
@@ -956,6 +968,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "simple_logger"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c75a9723083573ace81ad0cdfc50b858aa3c366c48636edb4109d73122a0c0ea"
+dependencies = [
+ "atty",
+ "colored",
+ "log",
+ "winapi",
+]
+
+[[package]]
 name = "smallvec"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1071,6 +1095,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6c650a8ef0cd2dd93736f033d21cbd1224c5a967aa0c258d00fcf7dafef9b9f"
 dependencies = [
  "cfg-if",
+ "log",
  "pin-project-lite",
  "tracing-attributes",
  "tracing-core",
