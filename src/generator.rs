@@ -429,7 +429,8 @@ impl FastPathBuf {
 
     fn push_cloned(&self, name: &str) -> FastPathBuf {
         let mut buf = FastPathBuf {
-            inner: Vec::with_capacity(self.inner.len() + 1 + name.len()),
+            // Space for inner, the path seperator, name, and a NUL terminator
+            inner: Vec::with_capacity(self.inner.len() + 1 + name.len() + 1),
             last_len: 0,
         };
 
