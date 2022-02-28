@@ -15,7 +15,7 @@ use cli_errors::{CliExitAnyhowWrapper, CliResult};
 use derive_builder::Builder;
 use num_format::{Locale, ToFormattedString};
 use rand::{distributions::Distribution, RngCore, SeedableRng};
-use rand_distr::{LogNormal, Normal};
+use rand_distr::Normal;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use tokio::task;
 use tracing::{event, instrument, span, Level};
@@ -305,7 +305,7 @@ struct GeneratorTaskParams {
 enum GeneratedFileContents {
     None,
     OnTheFly {
-        bytes_per_file: f64,
+        num_bytes_distr: Normal<f64>,
         random: Xoshiro256PlusPlus,
     },
     PreDefined {
@@ -335,15 +335,20 @@ async fn run_generator_async(
         // spawn_blocking b/c we're using a single-threaded runtime
         FileNameCache::alloc(config.files_per_dir, config.dirs_per_dir)
     });
-    let max_depth = config.max_depth as usize;
     let cache: FileNameCache;
+
+    let max_depth = config.max_depth as usize;
     let mut random = {
-        let seed = ((config.files.wrapping_add(config.max_depth as usize) as f64
+        let seed = ((config.files.wrapping_add(max_depth) as f64
             * (config.files_per_dir + config.dirs_per_dir)) as u64)
             .wrapping_add(config.seed);
         event!(Level::DEBUG, seed = ?seed, "Starting seed");
         Xoshiro256PlusPlus::seed_from_u64(seed)
     };
+    let num_files_distr = Normal::new(config.files_per_dir, config.files_per_dir * 0.2).unwrap();
+    let num_dirs_distr = Normal::new(config.dirs_per_dir, config.dirs_per_dir * 0.2).unwrap();
+    let num_bytes_distr = Normal::new(config.bytes_per_file, config.bytes_per_file * 0.2).unwrap();
+
     let mut stack = Vec::with_capacity(max_depth);
     // Minus 1 because VecDeque adds 1 and then rounds to a power of 2
     let mut tasks = VecDeque::with_capacity(parallelism.get().pow(2) - 1);
@@ -409,7 +414,8 @@ async fn run_generator_async(
                         let raw_byte_counts = byte_counts.spare_capacity_mut();
 
                         for i in 0..num_files {
-                            let mut num_bytes = config.bytes_per_file.num_to_generate(&mut random);
+                            let mut num_bytes =
+                                num_bytes_distr.sample(&mut random).round() as usize;
                             if stats.bytes + num_bytes > config.bytes {
                                 num_bytes = config.bytes - stats.bytes;
                             }
@@ -441,7 +447,7 @@ async fn run_generator_async(
                     }
                 } else {
                     GeneratedFileContents::OnTheFly {
-                        bytes_per_file: config.bytes_per_file,
+                        num_bytes_distr,
                         random: random.clone(),
                     }
                 }
@@ -453,12 +459,12 @@ async fn run_generator_async(
 
     macro_rules! gen_params {
         ($target_dir:expr, $should_gen_dirs:expr) => {{
-            let num_files = config.files_per_dir.num_to_generate(&mut random);
+            let num_files = num_files_distr.sample(&mut random).round() as usize;
             GeneratorTaskParams {
                 target_dir: $target_dir,
                 num_files,
                 num_dirs: if $should_gen_dirs {
-                    config.dirs_per_dir.num_to_generate(&mut random)
+                    num_dirs_distr.sample(&mut random).round() as usize
                 } else {
                     0
                 },
@@ -684,9 +690,9 @@ fn create_files_and_dirs(
             let num_bytes = match file_contents {
                 GeneratedFileContents::None => 0,
                 GeneratedFileContents::OnTheFly {
-                    bytes_per_file,
+                    num_bytes_distr,
                     ref mut random,
-                } => bytes_per_file.num_to_generate(random),
+                } => num_bytes_distr.sample(random).round() as usize,
                 GeneratedFileContents::PreDefined {
                     ref byte_counts, ..
                 } => byte_counts[$file_num],
@@ -705,7 +711,7 @@ fn create_files_and_dirs(
                         }
                     }
                     GeneratedFileContents::OnTheFly {
-                        bytes_per_file,
+                        num_bytes_distr,
                         ref mut random,
                     } => File::create($file).and_then(|f| {
                         // To stay deterministic, we need to ensure `random` is mutated in exactly
@@ -726,7 +732,7 @@ fn create_files_and_dirs(
                         //    - Notice that num_to_generate can be 0 which is a bummer b/c we can't
                         //      use mknod even though we'd like to.
                         let num_bytes = if $first_time {
-                            bytes_per_file.num_to_generate(random)
+                            num_bytes_distr.sample(random).round() as usize
                         } else {
                             num_bytes
                         };
@@ -821,22 +827,4 @@ fn write_random_bytes(mut file: File, mut num: usize, random: &mut impl RngCore)
         num -= used;
     }
     Ok(())
-}
-
-trait GeneratorUtils {
-    fn num_to_generate(self, random: &mut impl RngCore) -> usize;
-}
-
-impl GeneratorUtils for f64 {
-    fn num_to_generate(self, random: &mut impl RngCore) -> usize {
-        let sample = if self > 10_000. {
-            LogNormal::from_mean_cv(self, 2.).unwrap().sample(random)
-        } else {
-            // LogNormal doesn't perform well with values under 10K for our purposes,
-            // so default to normal
-            Normal::new(self, self * 0.2).unwrap().sample(random)
-        };
-
-        sample.round() as usize
-    }
 }
