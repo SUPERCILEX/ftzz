@@ -1,5 +1,6 @@
 use std::{
     ffi::{CStr, OsStr},
+    fmt,
     ops::Deref,
     os::unix::ffi::{OsStrExt, OsStringExt},
     path::{Path, PathBuf, MAIN_SEPARATOR},
@@ -76,6 +77,12 @@ impl Deref for FastPathBuf {
 impl AsRef<Path> for FastPathBuf {
     fn as_ref(&self) -> &Path {
         self
+    }
+}
+
+impl fmt::Debug for FastPathBuf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self.deref(), f)
     }
 }
 

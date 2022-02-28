@@ -662,7 +662,7 @@ fn create_files_and_dirs(
         Level::TRACE,
         files = params.num_files,
         dirs = params.num_dirs,
-        target = ?&*params.target_dir,
+        target = ?params.target_dir,
         "Generating files and dirs"
     );
     let dir_span = span!(Level::TRACE, "directory_creation");
@@ -675,7 +675,7 @@ fn create_files_and_dirs(
         cache.with_dir_name(i, |s| file.push(s));
 
         create_dir_all(&file)
-            .with_context(|| format!("Failed to create directory {:?}", &*file))
+            .with_context(|| format!("Failed to create directory {:?}", file))
             .with_code(exitcode::IOERR)?;
 
         file.pop();
@@ -780,15 +780,15 @@ fn create_files_and_dirs(
 
         if let Err(e) = create_file!(&mut file, 0, true) {
             if e.kind() == NotFound {
-                event!(Level::TRACE, file = ?&*file, "Parent directory not created in time");
+                event!(Level::TRACE, file = ?file, "Parent directory not created in time");
 
                 file.pop();
                 create_dir_all(&file)
-                    .with_context(|| format!("Failed to create directory {:?}", &*file))
+                    .with_context(|| format!("Failed to create directory {:?}", file))
                     .with_code(exitcode::IOERR)?;
             } else {
                 return Err(e)
-                    .with_context(|| format!("Failed to create file {:?}", &*file))
+                    .with_context(|| format!("Failed to create file {:?}", file))
                     .with_code(exitcode::IOERR);
             }
         } else {
@@ -800,7 +800,7 @@ fn create_files_and_dirs(
         cache.with_file_name(i + params.file_offset, |s| file.push(s));
 
         create_file!(&mut file, i, false)
-            .with_context(|| format!("Failed to create file {:?}", &*file))
+            .with_context(|| format!("Failed to create file {:?}", file))
             .with_code(exitcode::IOERR)?;
 
         file.pop();
