@@ -21,8 +21,8 @@ impl FastPathBuf {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.inner.len()
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
     }
 
     pub fn push(&mut self, name: &str) {

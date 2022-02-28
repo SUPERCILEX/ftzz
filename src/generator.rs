@@ -20,7 +20,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use tokio::task;
 use tracing::{event, instrument, span, Level};
 
-use crate::{fast_path::FastPathBuf, name_cache::FileNameCache};
+use crate::utils::{FastPathBuf, FileNameCache};
 
 #[derive(Builder, Debug)]
 #[builder(build_fn(validate = "Self::validate"))]
@@ -565,7 +565,7 @@ async fn run_generator_async(
                 cache.with_dir_name(i, |s| {
                     let mut buf = path_pool.pop().unwrap_or_else(|| {
                         // Space for inner, the path seperator, name, and a NUL terminator
-                        FastPathBuf::with_capacity(target_dir.len() + 1 + s.len() + 1)
+                        FastPathBuf::with_capacity(target_dir.capacity() + 1 + s.len() + 1)
                     });
 
                     buf.clone_from(&target_dir);
