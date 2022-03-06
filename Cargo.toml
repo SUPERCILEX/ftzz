@@ -12,12 +12,13 @@ license = "Apache-2.0"
 [dependencies]
 anyhow = "1.0.55"
 bytesize = "1.1.0"
-clap = { version = "3.1.2", features = ["derive", "wrap_help"] }
+clap = { version = "3.1.5", features = ["derive", "wrap_help"] }
 clap-num = "1.0.0"
 clap-verbosity-flag = "1.0.0"
 cli-errors = "0.3.0"
 derive_builder = "0.10.2"
 exitcode = "1.1.2"
+itoa = "1.0.1"
 log = { version = "0.4.14", features = ["release_max_level_info"] }
 num-format = "0.4.0"
 rand = { version = "0.8.5", features = ["simd_support"] }
