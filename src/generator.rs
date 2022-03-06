@@ -7,7 +7,7 @@ use std::{
     mem::MaybeUninit,
     num::NonZeroUsize,
     path::PathBuf,
-    thread,
+    ptr, slice, thread,
 };
 
 use anyhow::{anyhow, Context};
@@ -20,7 +20,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use tokio::task;
 use tracing::{event, instrument, span, Level};
 
-use crate::utils::{FastPathBuf, FileNameCache};
+use crate::utils::FastPathBuf;
 
 #[derive(Builder, Debug)]
 #[builder(build_fn(validate = "Self::validate"))]
@@ -331,12 +331,6 @@ async fn run_generator_async(
     config: Configuration,
     parallelism: NonZeroUsize,
 ) -> CliResult<GeneratorStats> {
-    let cache_task = task::spawn_blocking(move || {
-        // spawn_blocking b/c we're using a single-threaded runtime
-        FileNameCache::alloc(config.files_per_dir, config.dirs_per_dir)
-    });
-    let cache: FileNameCache;
-
     let max_depth = config.max_depth as usize;
     let mut random = {
         let seed = ((config.files.wrapping_add(max_depth) as f64
@@ -486,9 +480,7 @@ async fn run_generator_async(
             );
             if params.num_files > 0 || params.num_dirs > 0 {
                 #[cfg(not(dry_run))]
-                tasks.push_back(task::spawn_blocking(move || {
-                    create_files_and_dirs(params, cache)
-                }));
+                tasks.push_back(task::spawn_blocking(move || create_files_and_dirs(params)));
                 #[cfg(dry_run)]
                 tasks.push_back(params.target_dir);
             }
@@ -514,10 +506,6 @@ async fn run_generator_async(
             stack.push((1, vec![params.num_dirs]));
         }
 
-        cache = cache_task
-            .await
-            .context("Failed to create name cache")
-            .with_code(exitcode::SOFTWARE)?;
         queue_gen!(params);
     }
 
@@ -532,7 +520,7 @@ async fn run_generator_async(
                 target_dir.pop();
 
                 if !dirs_left.is_empty() {
-                    cache.with_dir_name(*tot_dirs - dirs_left.len(), |s| {
+                    with_dir_name(*tot_dirs - dirs_left.len(), |s| {
                         target_dir.set_file_name(s);
                     });
                 }
@@ -568,7 +556,7 @@ async fn run_generator_async(
         for i in 0..num_dirs_to_generate {
             let prev_stats_bytes = stats.bytes;
             let params = gen_params!(
-                cache.with_dir_name(i, |s| {
+                with_dir_name(i, |s| {
                     let mut buf = path_pool.pop().unwrap_or_else(|| {
                         // Space for inner, the path seperator, name, and a NUL terminator
                         FastPathBuf::with_capacity(target_dir.capacity() + 1 + s.len() + 1)
@@ -606,10 +594,10 @@ async fn run_generator_async(
             }
             stack.push((num_dirs_to_generate, next_dirs));
 
-            cache.with_dir_name(0, |s| target_dir.push(s));
+            with_dir_name(0, |s| target_dir.push(s));
         } else {
             if !is_completing {
-                cache.with_dir_name(next_stack_dir, |s| target_dir.set_file_name(s));
+                with_dir_name(next_stack_dir, |s| target_dir.set_file_name(s));
             }
             vec_pool.push(next_dirs);
         }
@@ -649,14 +637,12 @@ async fn run_generator_async(
             .0;
     }
 
-    cache.free();
     Ok(stats)
 }
 
-#[instrument(level = "trace", skip(params, cache))]
+#[instrument(level = "trace", skip(params))]
 fn create_files_and_dirs(
     params: GeneratorTaskParams,
-    cache: FileNameCache,
 ) -> CliResult<(usize, FastPathBuf, Option<Vec<usize>>)> {
     event!(
         Level::TRACE,
@@ -672,7 +658,7 @@ fn create_files_and_dirs(
 
     let span_guard = dir_span.enter();
     for i in 0..params.num_dirs {
-        cache.with_dir_name(i, |s| file.push(s));
+        with_dir_name(i, |s| file.push(s));
 
         create_dir_all(&file)
             .with_context(|| format!("Failed to create directory {:?}", file))
@@ -776,7 +762,7 @@ fn create_files_and_dirs(
     let span_guard = file_span.enter();
     let mut start_file = 0;
     if params.num_files > 0 {
-        cache.with_file_name(params.file_offset, |s| file.push(s));
+        with_file_name(params.file_offset, |s| file.push(s));
 
         if let Err(e) = create_file!(&mut file, 0, true) {
             if e.kind() == NotFound {
@@ -797,7 +783,7 @@ fn create_files_and_dirs(
         }
     }
     for i in start_file..params.num_files {
-        cache.with_file_name(i + params.file_offset, |s| file.push(s));
+        with_file_name(i + params.file_offset, |s| file.push(s));
 
         create_file!(&mut file, i, false)
             .with_context(|| format!("Failed to create file {:?}", file))
@@ -827,4 +813,25 @@ fn write_random_bytes(mut file: File, mut num: usize, random: &mut impl RngCore)
         num -= used;
     }
     Ok(())
+}
+
+fn with_file_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
+    f(itoa::Buffer::new().format(i))
+}
+
+fn with_dir_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
+    const SUFFIX: &str = ".dir";
+    with_file_name(i, |s| {
+        let mut buf = [MaybeUninit::<u8>::uninit(); 39 + SUFFIX.len()]; // 39 to support u128
+        unsafe {
+            let buf_ptr = buf.as_mut_ptr() as *mut u8;
+            ptr::copy_nonoverlapping(s.as_ptr(), buf_ptr, s.len());
+            ptr::copy_nonoverlapping(SUFFIX.as_ptr(), buf_ptr.add(s.len()), SUFFIX.len());
+
+            f(std::str::from_utf8_unchecked(slice::from_raw_parts(
+                buf.as_ptr() as *const u8,
+                s.len() + SUFFIX.len(),
+            )))
+        }
+    })
 }
