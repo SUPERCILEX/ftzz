@@ -19,6 +19,7 @@ pub trait FileContentsGenerator {
 pub struct NoGeneratedFileContents;
 
 impl FileContentsGenerator for NoGeneratedFileContents {
+    #[inline]
     fn create_file(&mut self, file: &mut FastPathBuf, _: usize, _: bool) -> io::Result<usize> {
         #[cfg(target_os = "linux")]
         {
@@ -101,6 +102,7 @@ pub struct PreDefinedGeneratedFileContents<R: RngCore> {
 }
 
 impl<R: RngCore> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
+    #[inline]
     fn create_file(
         &mut self,
         file: &mut FastPathBuf,
@@ -122,8 +124,8 @@ impl<R: RngCore> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
     }
 }
 
-#[instrument(level = "trace", skip(file, random))]
 #[inline(never)] // Don't muck the stack for the GeneratedFileContents::None case
+#[instrument(level = "trace", skip(file, random))]
 fn write_random_bytes(mut file: File, mut num: usize, random: &mut impl RngCore) -> io::Result<()> {
     #[allow(clippy::uninit_assumed_init)] // u8s do nothing when dropped
     let mut buf: [u8; 4096] = unsafe { MaybeUninit::uninit().assume_init() };
