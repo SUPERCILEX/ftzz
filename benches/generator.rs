@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{num::NonZeroUsize, time::Duration};
 
 use criterion::{
     criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion, PlotConfiguration,
@@ -23,7 +23,7 @@ fn simple_generate(c: &mut Criterion) {
 
                     GeneratorBuilder::default()
                         .root_dir(dir.path().to_path_buf())
-                        .num_files(*num_files as usize)
+                        .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
                         .max_depth(5)
                         .build()
                         .unwrap()
@@ -53,7 +53,7 @@ fn huge_generate(c: &mut Criterion) {
 
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(*num_files as usize)
+                    .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
                     .max_depth(5)
                     .build()
                     .unwrap()
@@ -80,7 +80,7 @@ fn deep_generate(c: &mut Criterion) {
 
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(*num_files as usize)
+                    .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
                     .max_depth(100)
                     .build()
                     .unwrap()
@@ -107,7 +107,7 @@ fn shallow_generate(c: &mut Criterion) {
 
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(*num_files as usize)
+                    .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
                     .max_depth(0)
                     .build()
                     .unwrap()
@@ -134,9 +134,9 @@ fn sparse_generate(c: &mut Criterion) {
 
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(*num_files as usize)
+                    .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
                     .max_depth(5)
-                    .file_to_dir_ratio(1)
+                    .file_to_dir_ratio(NonZeroUsize::new(1).unwrap())
                     .build()
                     .unwrap()
                     .generate()
@@ -163,9 +163,9 @@ fn dense_generate(c: &mut Criterion) {
                 let num_files = *num_files as usize;
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(num_files)
+                    .num_files(NonZeroUsize::new(num_files).unwrap())
                     .max_depth(5)
-                    .file_to_dir_ratio(num_files)
+                    .file_to_dir_ratio(NonZeroUsize::new(num_files).unwrap())
                     .build()
                     .unwrap()
                     .generate()
@@ -191,7 +191,7 @@ fn bytes_generate(c: &mut Criterion) {
 
                     GeneratorBuilder::default()
                         .root_dir(dir.path().to_path_buf())
-                        .num_files(10000)
+                        .num_files(NonZeroUsize::new(10000).unwrap())
                         .max_depth(5)
                         .num_bytes(*num_bytes as usize)
                         .build()

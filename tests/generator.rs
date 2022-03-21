@@ -4,6 +4,7 @@ use std::{
     fs::{create_dir, create_dir_all, File},
     hash::Hasher,
     io::{Read, Write},
+    num::NonZeroUsize,
     path::{Path, PathBuf},
 };
 
@@ -55,7 +56,7 @@ fn gen_in_empty_existing_dir_is_allowed() {
 
     GeneratorBuilder::default()
         .root_dir(empty)
-        .num_files(1)
+        .num_files(NonZeroUsize::new(1).unwrap())
         .build()
         .unwrap()
         .generate()
@@ -71,7 +72,7 @@ fn gen_in_non_emtpy_existing_dir_is_disallowed() {
 
     let result = GeneratorBuilder::default()
         .root_dir(non_empty)
-        .num_files(1)
+        .num_files(NonZeroUsize::new(1).unwrap())
         .build()
         .unwrap()
         .generate();
@@ -85,7 +86,7 @@ fn gen_creates_new_dir_if_not_present() {
 
     GeneratorBuilder::default()
         .root_dir(dir.path.join("new"))
-        .num_files(1)
+        .num_files(NonZeroUsize::new(1).unwrap())
         .build()
         .unwrap()
         .generate()
@@ -103,7 +104,7 @@ fn simple_create_files(#[case] num_files: usize) {
 
     GeneratorBuilder::default()
         .root_dir(dir.path.clone())
-        .num_files(num_files)
+        .num_files(NonZeroUsize::new(num_files).unwrap())
         .build()
         .unwrap()
         .generate()
@@ -139,12 +140,12 @@ fn advanced_create_files(
 
     GeneratorBuilder::default()
         .root_dir(dir.path.clone())
-        .num_files(num_files)
+        .num_files(NonZeroUsize::new(num_files).unwrap())
         .num_bytes(bytes.0)
         .files_exact(files_exact)
         .bytes_exact(bytes.1)
         .max_depth(max_depth)
-        .file_to_dir_ratio(min(num_files, ftd_ratio))
+        .file_to_dir_ratio(NonZeroUsize::new(min(num_files, ftd_ratio)).unwrap())
         .build()
         .unwrap()
         .generate()
@@ -200,7 +201,7 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
 
     GeneratorBuilder::default()
         .root_dir(dir.path.clone())
-        .num_files(10_000)
+        .num_files(NonZeroUsize::new(10_000).unwrap())
         .max_depth(max_depth)
         .build()
         .unwrap()
@@ -228,10 +229,10 @@ fn fuzz_test() {
 
     let g = GeneratorBuilder::default()
         .root_dir(dir.path.clone())
-        .num_files(num_files)
+        .num_files(NonZeroUsize::new(num_files).unwrap())
         .num_bytes(num_bytes)
         .max_depth(max_depth)
-        .file_to_dir_ratio(ratio)
+        .file_to_dir_ratio(NonZeroUsize::new(ratio).unwrap())
         .files_exact(files_exact)
         .bytes_exact(bytes_exact)
         .build()

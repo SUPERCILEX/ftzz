@@ -1,6 +1,6 @@
 #![feature(string_remove_matches)]
 
-use std::path::PathBuf;
+use std::{num::NonZeroUsize, path::PathBuf};
 
 use anyhow::Context;
 use clap::{Args, Parser, Subcommand, ValueHint};
@@ -53,7 +53,7 @@ struct Generate {
     /// generated so long as we attempt to get close to N.
     #[clap(short = 'n', long = "files", alias = "num-files")]
     #[clap(parse(try_from_str = num_files_parser))]
-    num_files: usize,
+    num_files: NonZeroUsize,
 
     /// Whether or not to generate exactly N files
     #[clap(long = "files-exact")]
@@ -88,7 +88,7 @@ struct Generate {
     /// files).
     #[clap(short = 'r', long = "ftd-ratio")]
     #[clap(parse(try_from_str = file_to_dir_ratio_parser))]
-    file_to_dir_ratio: Option<usize>,
+    file_to_dir_ratio: Option<NonZeroUsize>,
 
     /// Change the PRNG's starting seed
     ///
@@ -131,10 +131,10 @@ mod generate_tests {
     fn params_are_mapped_correctly() {
         let options = Generate {
             root_dir: PathBuf::from("abc"),
-            num_files: 373,
+            num_files: NonZeroUsize::new(373).unwrap(),
             num_bytes: 637,
             max_depth: 43,
-            file_to_dir_ratio: Some(37),
+            file_to_dir_ratio: Some(NonZeroUsize::new(37).unwrap()),
             seed: 775,
             files_exact: false,
             bytes_exact: false,
@@ -162,7 +162,7 @@ mod generate_tests {
             exact: global_exact,
 
             root_dir: PathBuf::new(),
-            num_files: 1,
+            num_files: NonZeroUsize::new(1).unwrap(),
             num_bytes: 0,
             max_depth: 0,
             file_to_dir_ratio: None,
@@ -186,7 +186,7 @@ mod generate_tests {
             exact: global_exact,
 
             root_dir: PathBuf::new(),
-            num_files: 1,
+            num_files: NonZeroUsize::new(1).unwrap(),
             num_bytes: 0,
             max_depth: 0,
             file_to_dir_ratio: None,
@@ -223,10 +223,10 @@ fn main() -> CliResult<()> {
     }
 }
 
-fn num_files_parser(s: &str) -> Result<usize, String> {
+fn num_files_parser(s: &str) -> Result<NonZeroUsize, String> {
     let files = lenient_si_number(s)?;
     if files > 0 {
-        Ok(files)
+        Ok(unsafe { NonZeroUsize::new_unchecked(files) })
     } else {
         Err(String::from("At least one file must be generated."))
     }
@@ -236,10 +236,10 @@ fn num_bytes_parser(s: &str) -> Result<usize, String> {
     lenient_si_number(s)
 }
 
-fn file_to_dir_ratio_parser(s: &str) -> Result<usize, String> {
+fn file_to_dir_ratio_parser(s: &str) -> Result<NonZeroUsize, String> {
     let ratio = lenient_si_number(s)?;
     if ratio > 0 {
-        Ok(ratio)
+        Ok(unsafe { NonZeroUsize::new_unchecked(ratio) })
     } else {
         Err(String::from("Cannot have no files per directory."))
     }
@@ -313,7 +313,7 @@ mod cli_generate_tests {
         let g = expect_success!(vec!["ftzz", "generate", "-n", "1", "dir"]);
 
         assert_eq!(g.root_dir, PathBuf::from("dir"));
-        assert_eq!(g.num_files, 1);
+        assert_eq!(g.num_files.get(), 1);
         assert_eq!(g.max_depth, 5);
         assert_eq!(g.file_to_dir_ratio, None);
         assert_eq!(g.seed, 0);
@@ -332,35 +332,35 @@ mod cli_generate_tests {
     fn generate_num_files_accepts_plain_nums() {
         let g = expect_success!(vec!["ftzz", "generate", "--files", "1000", "dir"]);
 
-        assert_eq!(g.num_files, 1000);
+        assert_eq!(g.num_files.get(), 1000);
     }
 
     #[test]
     fn generate_short_num_files_accepts_plain_nums() {
         let g = expect_success!(vec!["ftzz", "generate", "-n", "1000", "dir"]);
 
-        assert_eq!(g.num_files, 1000);
+        assert_eq!(g.num_files.get(), 1000);
     }
 
     #[test]
     fn generate_num_files_accepts_si_numbers() {
         let g = expect_success!(vec!["ftzz", "generate", "--files", "1K", "dir"]);
 
-        assert_eq!(g.num_files, 1000);
+        assert_eq!(g.num_files.get(), 1000);
     }
 
     #[test]
     fn generate_num_files_accepts_commas() {
         let g = expect_success!(vec!["ftzz", "generate", "--files", "1,000", "dir"]);
 
-        assert_eq!(g.num_files, 1000);
+        assert_eq!(g.num_files.get(), 1000);
     }
 
     #[test]
     fn generate_num_files_accepts_underscores() {
         let g = expect_success!(vec!["ftzz", "generate", "--files", "1_000", "dir"]);
 
-        assert_eq!(g.num_files, 1000);
+        assert_eq!(g.num_files.get(), 1000);
     }
 
     #[test]
@@ -405,14 +405,14 @@ mod cli_generate_tests {
             "dir",
         ]);
 
-        assert_eq!(g.file_to_dir_ratio, Some(1000));
+        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(1000).unwrap()));
     }
 
     #[test]
     fn generate_short_ratio_accepts_plain_nums() {
         let g = expect_success!(vec!["ftzz", "generate", "-r", "321", "-n", "1", "dir"]);
 
-        assert_eq!(g.file_to_dir_ratio, Some(321));
+        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(321).unwrap()));
     }
 
     #[test]
@@ -427,7 +427,7 @@ mod cli_generate_tests {
             "dir",
         ]);
 
-        assert_eq!(g.file_to_dir_ratio, Some(1000));
+        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(1000).unwrap()));
     }
 
     #[test]
@@ -442,7 +442,7 @@ mod cli_generate_tests {
             "dir",
         ]);
 
-        assert_eq!(g.file_to_dir_ratio, Some(1000));
+        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(1000).unwrap()));
     }
 
     #[test]
@@ -457,7 +457,7 @@ mod cli_generate_tests {
             "dir",
         ]);
 
-        assert_eq!(g.file_to_dir_ratio, Some(1000));
+        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(1000).unwrap()));
     }
 
     #[test]
