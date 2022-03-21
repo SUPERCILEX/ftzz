@@ -160,7 +160,6 @@ impl<
         debug_assert!(!self.done);
 
         let mut num_files = self.num_files_distr.sample(&mut self.random).round() as usize;
-        let todo_tmp_remove = num_files;
         if let Some(ref mut files) = self.files_exact {
             if num_files >= files.get() {
                 self.done = true;
@@ -179,16 +178,6 @@ impl<
         } else {
             0
         };
-
-        // TODO remove after test validation
-        if gen_dirs && self.done {
-            self.num_dirs_distr.sample(&mut self.random).round();
-        }
-        if self.done && todo_tmp_remove > 0 && let Some(bytes_distr) = &self.num_bytes_distr && self.bytes_exact.is_some_with(|b| *b > 0) {
-            for _ in 0..todo_tmp_remove {
-                bytes_distr.sample(&mut self.random).round();
-            }
-        }
 
         self.queue_gen_internal(file, num_files, num_dirs, 0, byte_counts_pool)
     }
