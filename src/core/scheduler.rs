@@ -65,22 +65,20 @@ pub async fn run(
             event!(Level::TRACE, "Flushing pending task queue");
             for task in tasks.drain(..tasks.len() / 2) {
                 #[cfg(not(dry_run))]
-                {
-                    let outcome = task
-                        .await
-                        .context("Failed to retrieve task result")
-                        .with_code(exitcode::SOFTWARE)??;
-
-                    stats += &outcome;
-
-                    path_pool.push(outcome.pool_return_file);
-                    if let Some(mut vec) = outcome.pool_return_byte_counts {
-                        vec.clear();
-                        byte_counts_pool.push(vec);
-                    }
-                }
+                let outcome = task
+                    .await
+                    .context("Failed to retrieve task result")
+                    .with_code(exitcode::SOFTWARE)??;
                 #[cfg(dry_run)]
-                path_pool.push(task);
+                let outcome = task;
+
+                stats += &outcome;
+
+                path_pool.push(outcome.pool_return_file);
+                if let Some(mut vec) = outcome.pool_return_byte_counts {
+                    vec.clear();
+                    byte_counts_pool.push(vec);
+                }
             }
         };
     }
@@ -197,6 +195,10 @@ pub async fn run(
             .await
             .context("Failed to retrieve task result")
             .with_code(exitcode::SOFTWARE)??;
+    }
+    #[cfg(dry_run)]
+    for task in tasks {
+        stats += &task;
     }
 
     Ok(stats)

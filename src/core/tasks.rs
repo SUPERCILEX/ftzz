@@ -17,7 +17,11 @@ use crate::{
 pub type QueueResult = Result<QueueOutcome, QueueErrors>;
 
 pub struct QueueOutcome {
+    #[cfg(not(dry_run))]
     pub task: JoinHandle<CliResult<GeneratorTaskOutcome>>,
+    #[cfg(dry_run)]
+    pub task: GeneratorTaskOutcome,
+
     pub num_dirs: usize,
     pub done: bool,
 }
@@ -50,8 +54,19 @@ macro_rules! queue {
         if params.num_files > 0 || params.num_dirs > 0 {
             Ok(QueueOutcome {
                 num_dirs: params.num_dirs,
-                task: task::spawn_blocking(move || create_files_and_dirs(params)),
                 done: $done,
+
+                #[cfg(not(dry_run))]
+                task: task::spawn_blocking(move || create_files_and_dirs(params)),
+                #[cfg(dry_run)]
+                task: GeneratorTaskOutcome {
+                    files_generated: params.num_files,
+                    dirs_generated: params.num_dirs,
+                    bytes_generated: 0,
+
+                    pool_return_file: params.target_dir,
+                    pool_return_byte_counts: None,
+                },
             })
         } else {
             Err(QueueErrors::NothingToDo(params.target_dir))
