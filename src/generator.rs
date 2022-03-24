@@ -210,10 +210,15 @@ fn print_configuration_info(config: &Configuration) {
         },
         bytes_info = if config.bytes > 0 {
             format!(
-                " Each file will contain approximately {} {bytes_maybe_plural} of random data.",
+                " Each file will contain {byte_count_type} {} {bytes_maybe_plural} of random data.",
                 config
                     .informational_bytes_per_files
                     .to_formatted_string(&locale),
+                byte_count_type = if config.bytes_exact {
+                    "exactly"
+                } else {
+                    "approximately"
+                },
                 bytes_maybe_plural = if config.informational_bytes_per_files == 1 {
                     "byte"
                 } else {
