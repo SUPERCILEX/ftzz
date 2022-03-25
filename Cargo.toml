@@ -10,24 +10,24 @@ categories = ["command-line-utilities", "development-tools", "development-tools:
 license = "Apache-2.0"
 
 [dependencies]
-anyhow = "1.0.55"
+anyhow = "1.0.56"
 bytesize = "1.1.0"
-clap = { version = "3.1.5", features = ["derive", "wrap_help"] }
+clap = { version = "3.1.6", features = ["derive", "wrap_help"] }
 clap-num = "1.0.0"
 clap-verbosity-flag = "1.0.0"
 cli-errors = "0.3.0"
-derive_builder = "0.10.2"
+derive_builder = "0.11.1"
 exitcode = "1.1.2"
-itoa = "1.0.1"
-log = { version = "0.4.14", features = ["release_max_level_info"] }
+itoa = { git = "https://github.com/SUPERCILEX/itoa" }
+log = { version = "0.4.16", features = ["release_max_level_info"] }
 num-format = "0.4.0"
 rand = { version = "0.8.5", features = ["simd_support"] }
 rand_distr = "0.4.3"
 rand_xoshiro = "0.6.0"
 simple_logger = { version = "2.1.0", default-features = false, features = ["colors"] }
 tokio = { version = "1.17.0", features = ["rt", "parking_lot"] }
-tracing = { version = "0.1.31", features = ["release_max_level_off", "log"] }
-tracing-chrome = { git = "https://github.com/SUPERCILEX/tracing-chrome", optional = true }
+tracing = { version = "0.1.32", features = ["release_max_level_off", "log"] }
+tracing-chrome = { version = "0.5.0", optional = true }
 tracing-subscriber = { version = "0.3.9", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
