@@ -2,15 +2,14 @@ use std::{collections::VecDeque, num::NonZeroUsize, ops::AddAssign, path::PathBu
 
 use anyhow::Context;
 use cli_errors::{CliExitAnyhowWrapper, CliResult};
-
 use tracing::{event, span, Level};
 
 use crate::{
     core::{
-        files::{with_dir_name, GeneratorTaskOutcome},
+        files::GeneratorTaskOutcome,
         tasks::{QueueErrors, TaskGenerator},
     },
-    utils::FastPathBuf,
+    utils::{with_dir_name, FastPathBuf},
 };
 
 pub struct GeneratorStats {

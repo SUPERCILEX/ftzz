@@ -1,31 +1,13 @@
-use std::{fs::create_dir_all, io::ErrorKind::NotFound, mem::MaybeUninit, ptr, slice};
+use std::{fs::create_dir_all, io::ErrorKind::NotFound};
 
 use anyhow::Context;
 use cli_errors::{CliExitAnyhowWrapper, CliResult};
 use tracing::{event, instrument, Level};
 
-use crate::{core::file_contents::FileContentsGenerator, utils::FastPathBuf};
-
-pub fn with_file_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
-    f(itoa::Buffer::new().format(i))
-}
-
-pub fn with_dir_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
-    const SUFFIX: &str = ".dir";
-    with_file_name(i, |s| {
-        let mut buf = [MaybeUninit::<u8>::uninit(); 39 + SUFFIX.len()]; // 39 to support u128
-        unsafe {
-            let buf_ptr = buf.as_mut_ptr() as *mut u8;
-            ptr::copy_nonoverlapping(s.as_ptr(), buf_ptr, s.len());
-            ptr::copy_nonoverlapping(SUFFIX.as_ptr(), buf_ptr.add(s.len()), SUFFIX.len());
-
-            f(std::str::from_utf8_unchecked(slice::from_raw_parts(
-                buf.as_ptr() as *const u8,
-                s.len() + SUFFIX.len(),
-            )))
-        }
-    })
-}
+use crate::{
+    core::file_contents::FileContentsGenerator,
+    utils::{with_dir_name, with_file_name, FastPathBuf},
+};
 
 pub struct GeneratorTaskParams<G: FileContentsGenerator> {
     pub target_dir: FastPathBuf,
