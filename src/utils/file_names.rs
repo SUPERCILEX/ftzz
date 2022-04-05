@@ -19,6 +19,7 @@ impl FileNameCache {
         let mut num_buf = itoa::Buffer::new();
 
         let buf_ptr = buf.as_mut_ptr() as *mut u8;
+        // TODO use for loop once possible
         let mut i = 0;
         while i < Self::max_cache_size() {
             let bytes = num_buf.format(i).as_bytes();
