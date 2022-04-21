@@ -1,3 +1,4 @@
+use itoa_const as itoa;
 use std::{mem::MaybeUninit, ptr, slice};
 
 struct FileNameCache {

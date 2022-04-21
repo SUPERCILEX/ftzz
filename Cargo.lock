@@ -399,7 +399,7 @@ dependencies = [
  "criterion",
  "derive_builder",
  "exitcode",
- "itoa 1.0.1 (git+https://github.com/SUPERCILEX/itoa)",
+ "itoa-const",
  "log",
  "more-asserts",
  "nix",
@@ -503,9 +503,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
 
 [[package]]
-name = "itoa"
-version = "1.0.1"
-source = "git+https://github.com/SUPERCILEX/itoa#42bc8b7be69d0e4a015373caf795a6d035abfd78"
+name = "itoa-const"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05e741d4d78675e8624dc49b97545d7b64cfcb4ace7e05ec6d55083589a7010e"
 
 [[package]]
 name = "js-sys"
@@ -934,7 +935,7 @@ version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e8d9fa5c3b304765ce1fd9c4c8a3de2c8db365a5b91be52f186efc675681d95"
 dependencies = [
- "itoa 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "itoa 1.0.1",
  "ryu",
  "serde",
 ]
