@@ -38,9 +38,7 @@ impl GeneratorBuilder {
     fn validate(&self) -> Result<(), String> {
         if let Some(ratio) = self.file_to_dir_ratio && let Some(num_files) = self.num_files && ratio > num_files {
             return Err(format!(
-                "The file to dir ratio ({}) cannot be larger than the number of files to generate ({}).",
-                ratio,
-                num_files,
+                "The file to dir ratio ({ratio}) cannot be larger than the number of files to generate ({num_files}).",
             ));
         }
 

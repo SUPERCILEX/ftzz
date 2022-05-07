@@ -142,7 +142,7 @@ mod generate_tests {
         };
 
         let generator = Generator::try_from(options).unwrap();
-        let hack = format!("{:?}", generator);
+        let hack = format!("{generator:?}");
 
         assert!(hack.contains("root_dir: \"abc\""));
         assert!(hack.contains("num_files: 373"));
@@ -171,7 +171,7 @@ mod generate_tests {
         };
 
         let generator = Generator::try_from(options).unwrap();
-        let hack = format!("{:?}", generator);
+        let hack = format!("{generator:?}");
 
         assert!(hack.contains(&format!("files_exact: {}", files_exact || global_exact)));
     }
@@ -195,7 +195,7 @@ mod generate_tests {
         };
 
         let generator = Generator::try_from(options).unwrap();
-        let hack = format!("{:?}", generator);
+        let hack = format!("{generator:?}");
 
         assert!(hack.contains(&format!("bytes_exact: {}", bytes_exact || global_exact)));
     }

@@ -113,7 +113,7 @@ mod tests {
                 assert_eq!(s, i.to_string());
             });
             with_dir_name(i, |s| {
-                assert_eq!(s, format!("{}.dir", i));
+                assert_eq!(s, format!("{i}.dir"));
             });
         }
     }

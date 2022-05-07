@@ -56,7 +56,7 @@ fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> CliResult<()> {
         with_dir_name(i, |s| dir.push(s));
 
         create_dir_all(&dir)
-            .with_context(|| format!("Failed to create directory {:?}", dir))
+            .with_context(|| format!("Failed to create directory {dir:?}"))
             .with_code(exitcode::IOERR)?;
 
         dir.pop();
@@ -89,11 +89,11 @@ fn create_files(
 
                     file.pop();
                     create_dir_all(&file)
-                        .with_context(|| format!("Failed to create directory {:?}", file))
+                        .with_context(|| format!("Failed to create directory {file:?}"))
                         .with_code(exitcode::IOERR)?;
                 } else {
                     return Err(e)
-                        .with_context(|| format!("Failed to create file {:?}", file))
+                        .with_context(|| format!("Failed to create file {file:?}"))
                         .with_code(exitcode::IOERR);
                 }
             }
@@ -104,7 +104,7 @@ fn create_files(
 
         bytes_written += contents
             .create_file(file, i, false)
-            .with_context(|| format!("Failed to create file {:?}", file))
+            .with_context(|| format!("Failed to create file {file:?}"))
             .with_code(exitcode::IOERR)?;
 
         file.pop();

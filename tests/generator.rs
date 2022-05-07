@@ -113,13 +113,11 @@ fn simple_create_files(#[case] num_files: usize) {
     let hash = hash_dir(&dir.path);
     #[cfg(bazel)]
     let hash_file: PathBuf = runfiles::Runfiles::create().unwrap().rlocation(format!(
-        "__main__/ftzz/testdata/generator/simple_create_files_{}.hash",
-        num_files
+        "__main__/ftzz/testdata/generator/simple_create_files_{num_files}.hash",
     ));
     #[cfg(not(bazel))]
     let hash_file = PathBuf::from(format!(
-        "testdata/generator/simple_create_files_{}.hash",
-        num_files
+        "testdata/generator/simple_create_files_{num_files}.hash",
     ));
 
     assert_matching_hashes(hash, &hash_file);
@@ -237,7 +235,7 @@ fn fuzz_test() {
         .bytes_exact(bytes_exact)
         .build()
         .unwrap();
-    println!("Params: {:?}", g);
+    println!("Params: {g:?}");
     g.generate().unwrap();
 
     assert_le!(find_max_depth(&dir.path), max_depth);
