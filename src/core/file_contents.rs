@@ -76,8 +76,8 @@ impl<D: Distribution<f64>, R: RngCore> FileContentsGenerator
                 // 1. Call num_to_generate() in initial retry-aware if check
                 //    - This value is ignored.
                 // 2. Call write_random_bytes(num_to_generate()) below
-                //    - Notice that num_to_generate can be 0 which is a bummer b/c we can't
-                //      use mknod even though we'd like to.
+                //    - Notice that num_to_generate can be 0 which is a bummer b/c we can't use
+                //      mknod even though we'd like to.
                 let num_bytes = if retryable {
                     self.num_bytes_distr.sample(&mut self.random).round() as usize
                 } else {

@@ -26,16 +26,18 @@ struct Ftzz {
 enum Cmd {
     /// Generate a random directory hierarchy with some number of files
     ///
-    /// A pseudo-random directory hierarchy will be generated (seeded by this command's input
-    /// parameters) containing approximately the target number of files. The exact configuration of
-    /// files and directories in the hierarchy is probabilistically determined to mostly match the
+    /// A pseudo-random directory hierarchy will be generated (seeded by this
+    /// command's input parameters) containing approximately the target
+    /// number of files. The exact configuration of files and directories in
+    /// the hierarchy is probabilistically determined to mostly match the
     /// specified parameters.
     ///
-    /// Generated files and directories are named using monotonically increasing numbers, where
-    /// files are named `n` and directories are named `n.dir` for a given natural number `n`.
+    /// Generated files and directories are named using monotonically increasing
+    /// numbers, where files are named `n` and directories are named `n.dir`
+    /// for a given natural number `n`.
     ///
-    /// By default, generated files are empty, but random data can be used as the file contents with
-    /// the `total-bytes` option.
+    /// By default, generated files are empty, but random data can be used as
+    /// the file contents with the `total-bytes` option.
     Generate(Generate),
 }
 
@@ -49,8 +51,8 @@ struct Generate {
 
     /// The number of files to generate
     ///
-    /// Note: this value is probabilistically respected, meaning any number of files may be
-    /// generated so long as we attempt to get close to N.
+    /// Note: this value is probabilistically respected, meaning any number of
+    /// files may be generated so long as we attempt to get close to N.
     #[clap(short = 'n', long = "files", alias = "num-files")]
     #[clap(parse(try_from_str = num_files_parser))]
     num_files: NonZeroUsize,
@@ -59,10 +61,11 @@ struct Generate {
     #[clap(long = "files-exact")]
     files_exact: bool,
 
-    /// The total amount of random data to be distributed across the generated files
+    /// The total amount of random data to be distributed across the generated
+    /// files
     ///
-    /// Note: this value is probabilistically respected, meaning any amount of data may be
-    /// generated so long as we attempt to get close to N.
+    /// Note: this value is probabilistically respected, meaning any amount of
+    /// data may be generated so long as we attempt to get close to N.
     #[clap(short = 'b', long = "total-bytes", aliases = & ["num-bytes", "num-total-bytes"])]
     #[clap(parse(try_from_str = num_bytes_parser))]
     #[clap(default_value = "0")]
@@ -84,8 +87,8 @@ struct Generate {
 
     /// The number of files to generate per directory (default: files / 1000)
     ///
-    /// Note: this value is probabilistically respected, meaning not all directories will have N
-    /// files).
+    /// Note: this value is probabilistically respected, meaning not all
+    /// directories will have N files).
     #[clap(short = 'r', long = "ftd-ratio")]
     #[clap(parse(try_from_str = file_to_dir_ratio_parser))]
     file_to_dir_ratio: Option<NonZeroUsize>,

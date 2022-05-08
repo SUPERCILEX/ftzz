@@ -131,10 +131,11 @@ pub async fn run(
             } else {
                 0
             });
-            // Allocate a queue without VecDeque since we know the queue length will only shrink.
-            // We want a queue so that the first task that is scheduled is the directory we investigate
-            // first such that it will hopefully have finished creating its directories (and thus
-            // minimize lock contention).
+            // Allocate a queue without VecDeque since we know the queue length will only
+            // shrink. We want a queue so that the first task that is scheduled
+            // is the directory we investigate first such that it will hopefully
+            // have finished creating its directories (and thus minimize lock
+            // contention).
             let raw_next_dirs = next_dirs.spare_capacity_mut();
 
             let span_guard = gen_span.enter();

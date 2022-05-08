@@ -207,12 +207,13 @@ impl<
         }
         self.done = true;
 
-        // TODO Dumping all the remaining files or bytes in the root directory is very dumb and wrong
-        //  1. If there are a lot of files, we're missing out on performance gains from generating
-        //     the files in separate directories
-        //  2. The distribution will be totally wrong
-        //  Ideally we would continue the while loop above until enough files have been generated,
-        //  but I haven't had time to think about how to do so properly.
+        // TODO Dumping all the remaining files or bytes in the root directory is very
+        // dumb and wrong  1. If there are a lot of files, we're missing out on
+        // performance gains from generating     the files in separate
+        // directories  2. The distribution will be totally wrong
+        //  Ideally we would continue the while loop above until enough files have been
+        // generated,  but I haven't had time to think about how to do so
+        // properly.
         if let Some(files) = self.files_exact {
             self.queue_gen_internal(
                 file,

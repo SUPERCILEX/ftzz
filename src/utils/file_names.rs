@@ -5,15 +5,17 @@ struct FileNameCache {
     cache: [MaybeUninit<u8>; 3000],
 }
 
-/// Specialized cache for file names that takes advantage of our monotonically increasing integer
-/// naming scheme.
+/// Specialized cache for file names that takes advantage of our monotonically
+/// increasing integer naming scheme.
 ///
-/// The cache can be thought of as an arena, meaning all strings are written into a single
-/// buffer that only needs to be allocated once. The memory layout sizes every item equally such
-/// that the minimal number of instructions can be used to retrieve items. To strike a balance
-/// between compute and memory usage, the numbers 0-999 are cached leading to 3 * 1000 = 3000 bytes
-/// being allocated (thus likely residing in a 32 KiB L1 cache). Furthermore, since this cache is so
-/// small, we construct it at compile time and ship it with the binary.
+/// The cache can be thought of as an arena, meaning all strings are written
+/// into a single buffer that only needs to be allocated once. The memory layout
+/// sizes every item equally such that the minimal number of instructions can be
+/// used to retrieve items. To strike a balance between compute and memory
+/// usage, the numbers 0-999 are cached leading to 3 * 1000 = 3000 bytes
+/// being allocated (thus likely residing in a 32 KiB L1 cache). Furthermore,
+/// since this cache is so small, we construct it at compile time and ship it
+/// with the binary.
 impl FileNameCache {
     const fn new() -> FileNameCache {
         let mut buf = [MaybeUninit::<u8>::uninit(); 3000];
