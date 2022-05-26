@@ -52,6 +52,7 @@ impl<D: Distribution<f64>, R: RngCore> FileContentsGenerator
     for OnTheFlyGeneratedFileContents<D, R>
 {
     #[inline]
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn create_file(
         &mut self,
         file: &mut FastPathBuf,

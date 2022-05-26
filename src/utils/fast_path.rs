@@ -6,10 +6,10 @@ use std::{
     path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
-/// A specialized PathBuf implementation that takes advantage of a few
-/// assumptions. Specifically, it *only* supports adding single-level
-/// directories (e.g. "foo", "foo/bar" is not allowed) and updating the current
-/// file name. Any other usage is UB.
+/// A specialized [`PathBuf`][std::fs::PathBuf] implementation that takes
+/// advantage of a few assumptions. Specifically, it *only* supports adding
+/// single-level directories (e.g. "foo", "foo/bar" is not allowed) and updating
+/// the current file name. Any other usage is UB.
 pub struct FastPathBuf {
     inner: Vec<u8>,
     last_len: usize,
@@ -83,7 +83,7 @@ impl AsRef<Path> for FastPathBuf {
 
 impl fmt::Debug for FastPathBuf {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(self.deref(), f)
+        fmt::Debug::fmt(&**self, f)
     }
 }
 

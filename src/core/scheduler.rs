@@ -12,6 +12,7 @@ use crate::{
     utils::{with_dir_name, FastPathBuf},
 };
 
+#[derive(Debug, Copy, Clone)]
 pub struct GeneratorStats {
     pub files: usize,
     pub dirs: usize,
@@ -26,11 +27,12 @@ impl AddAssign<&GeneratorTaskOutcome> for GeneratorStats {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 pub async fn run(
     root_dir: PathBuf,
     max_depth: usize,
     parallelism: NonZeroUsize,
-    mut generator: impl TaskGenerator,
+    mut generator: impl TaskGenerator + Send,
 ) -> CliResult<GeneratorStats> {
     // Minus 1 because VecDeque adds 1 and then rounds to a power of 2
     let mut tasks = VecDeque::with_capacity(parallelism.get().pow(2) - 1);

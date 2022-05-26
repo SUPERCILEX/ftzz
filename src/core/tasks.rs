@@ -1,3 +1,5 @@
+#![allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+
 use std::{cmp::min, num::NonZeroUsize};
 
 use cli_errors::CliResult;
@@ -247,15 +249,15 @@ impl<
         R: RngCore + Clone + Send + 'static,
     > OtherFilesAndContentsGenerator<DF, DD, DB, R>
 {
-    pub fn new(
+    pub const fn new(
         num_files_distr: DF,
         num_dirs_distr: DD,
         num_bytes_distr: Option<DB>,
         random: R,
         files_exact: Option<NonZeroUsize>,
         bytes_exact: Option<usize>,
-    ) -> OtherFilesAndContentsGenerator<DF, DD, DB, R> {
-        OtherFilesAndContentsGenerator {
+    ) -> Self {
+        Self {
             num_files_distr,
             num_dirs_distr,
             num_bytes_distr,

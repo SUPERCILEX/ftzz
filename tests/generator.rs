@@ -1,7 +1,7 @@
 use std::{
     cmp::{max, min},
     collections::VecDeque,
-    fs::{create_dir, create_dir_all, File},
+    fs::{create_dir, create_dir_all, DirEntry, File},
     hash::Hasher,
     io::{Read, Write},
     num::NonZeroUsize,
@@ -258,10 +258,10 @@ fn hash_dir(dir: &Path) -> u64 {
             entries.push(entry.unwrap());
         }
 
-        entries.sort_by_key(|e| e.file_name());
+        entries.sort_by_key(DirEntry::file_name);
         for entry in &entries {
             if entry.file_type().unwrap().is_dir() {
-                queue.push_back(entry.path())
+                queue.push_back(entry.path());
             } else if entry.metadata().unwrap().len() > 0 {
                 for byte in
                     StackBufReader::<_, 4096>::new(File::open(entry.path()).unwrap()).bytes()
@@ -284,7 +284,7 @@ fn assert_matching_hashes(hash: u64, hash_file: &Path) {
         File::create(hash_file)
             .unwrap()
             .write_all(&hash.to_be_bytes())
-            .unwrap()
+            .unwrap();
     } else {
         let mut expected_hash = Vec::new();
         File::open(&hash_file)
@@ -337,9 +337,9 @@ fn count_num_bytes(dir: &Path) -> usize {
             if entry.file_type().unwrap().is_dir() {
                 queue.push_back(entry.path());
             } else {
-                num_bytes += entry.metadata().unwrap().len();
+                num_bytes += usize::try_from(entry.metadata().unwrap().len()).unwrap();
             }
         }
     }
-    num_bytes as usize
+    num_bytes
 }

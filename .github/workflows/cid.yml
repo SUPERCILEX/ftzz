@@ -49,7 +49,13 @@ jobs:
       - name: Run lint
         run: |
           cargo fmt --check
-          cargo clippy --all-targets --all-features -- -D warnings
+          cargo clippy --all-targets --all-features -- -D warnings \
+            -W clippy::all \
+            -W clippy::float_cmp_const \
+            -W clippy::empty_structs_with_brackets \
+            -W clippy::pedantic \
+            -W clippy::nursery \
+            -W clippy::cargo
 
   deploy_release:
     needs: [build, test, lint]

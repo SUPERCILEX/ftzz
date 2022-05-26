@@ -1,3 +1,9 @@
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation
+)]
+
 use std::{cmp::max, fs::create_dir_all, num::NonZeroUsize, path::PathBuf, thread};
 
 use anyhow::{anyhow, Context};
@@ -86,6 +92,7 @@ mod tests {
 }
 
 impl Generator {
+    #[allow(clippy::missing_errors_doc)]
     pub fn generate(self) -> CliResult<()> {
         let options = validated_options(self)?;
         print_configuration_info(&options);
@@ -124,10 +131,10 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
         .count()
         != 0
     {
-        return Err(anyhow!(format!(
+        return Err(anyhow!(
             "The root directory {:?} must be empty.",
             generator.root_dir,
-        )))
+        ))
         .with_code(exitcode::DATAERR);
     }
 
@@ -157,7 +164,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
     let num_dirs = num_files / ratio;
     // This formula was derived from the following equation:
     // num_dirs = unknown_num_dirs_per_dir^max_depth
-    let dirs_per_dir = num_dirs.powf(1f64 / generator.max_depth as f64);
+    let dirs_per_dir = num_dirs.powf(1f64 / f64::from(generator.max_depth));
 
     Ok(Configuration {
         root_dir: generator.root_dir,

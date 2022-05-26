@@ -17,11 +17,11 @@ struct FileNameCache {
 /// since this cache is so small, we construct it at compile time and ship it
 /// with the binary.
 impl FileNameCache {
-    const fn new() -> FileNameCache {
+    const fn new() -> Self {
         let mut buf = [MaybeUninit::<u8>::uninit(); 3000];
         let mut num_buf = itoa::Buffer::new();
 
-        let buf_ptr = buf.as_mut_ptr() as *mut u8;
+        let buf_ptr = buf.as_mut_ptr().cast::<u8>();
         // TODO use for loop once possible
         let mut i = 0;
         while i < Self::max_cache_size() {
@@ -36,15 +36,15 @@ impl FileNameCache {
             i += 1;
         }
 
-        FileNameCache { cache: buf }
+        Self { cache: buf }
     }
 
-    const fn with_file_name<T, F: ~const FnOnce(&str) -> T>(&self, i: usize, f: F) -> T {
-        debug_assert!(i < Self::max_cache_size() as usize);
+    const fn with_file_name<T, F: ~const FnOnce(&str) -> T>(&self, i: u16, f: F) -> T {
+        debug_assert!(i < Self::max_cache_size());
         f(unsafe {
             std::str::from_utf8_unchecked(slice::from_raw_parts(
-                self.cache.as_ptr().add(i * 3) as *const u8,
-                Self::str_bytes_used(i as u16),
+                self.cache.as_ptr().add((i * 3) as usize).cast::<u8>(),
+                Self::str_bytes_used(i),
             ))
         })
     }
@@ -54,7 +54,7 @@ impl FileNameCache {
     }
 
     /// Inspired by
-    /// https://github.com/rust-lang/rust/blob/7b0bf9efc939341b48c6e9a335dee8a280085100/library/core/src/num/int_log10.rs
+    /// <https://github.com/rust-lang/rust/blob/7b0bf9efc939341b48c6e9a335dee8a280085100/library/core/src/num/int_log10.rs>
     const fn str_bytes_used(val: u16) -> usize {
         const C1: u16 = 0b100_0000_0000 - 10;
         const C2: u16 = 0b010_0000_0000 - 100;
@@ -65,9 +65,10 @@ impl FileNameCache {
 
 static CACHE: FileNameCache = FileNameCache::new();
 
+#[allow(clippy::cast_possible_truncation)]
 pub fn with_file_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
     if i < FileNameCache::max_cache_size() as usize {
-        CACHE.with_file_name(i, f)
+        CACHE.with_file_name(i as u16, f)
     } else {
         f(itoa::Buffer::new().format(i))
     }
@@ -78,12 +79,12 @@ pub fn with_dir_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
     with_file_name(i, |s| {
         let mut buf = [MaybeUninit::<u8>::uninit(); 39 + SUFFIX.len()]; // 39 to support u128
         unsafe {
-            let buf_ptr = buf.as_mut_ptr() as *mut u8;
+            let buf_ptr = buf.as_mut_ptr().cast::<u8>();
             ptr::copy_nonoverlapping(s.as_ptr(), buf_ptr, s.len());
             ptr::copy_nonoverlapping(SUFFIX.as_ptr(), buf_ptr.add(s.len()), SUFFIX.len());
 
             f(std::str::from_utf8_unchecked(slice::from_raw_parts(
-                buf.as_ptr() as *const u8,
+                buf.as_ptr().cast::<u8>(),
                 s.len() + SUFFIX.len(),
             )))
         }

@@ -23,7 +23,7 @@ fn simple_generate(c: &mut Criterion) {
 
                     GeneratorBuilder::default()
                         .root_dir(dir.path().to_path_buf())
-                        .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
+                        .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
                         .max_depth(5)
                         .build()
                         .unwrap()
@@ -31,7 +31,7 @@ fn simple_generate(c: &mut Criterion) {
                         .unwrap();
 
                     dir
-                })
+                });
             },
         );
     }
@@ -53,7 +53,7 @@ fn huge_generate(c: &mut Criterion) {
 
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
+                    .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
                     .max_depth(5)
                     .build()
                     .unwrap()
@@ -61,7 +61,7 @@ fn huge_generate(c: &mut Criterion) {
                     .unwrap();
 
                 dir
-            })
+            });
         },
     );
 }
@@ -80,7 +80,7 @@ fn deep_generate(c: &mut Criterion) {
 
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
+                    .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
                     .max_depth(100)
                     .build()
                     .unwrap()
@@ -88,7 +88,7 @@ fn deep_generate(c: &mut Criterion) {
                     .unwrap();
 
                 dir
-            })
+            });
         },
     );
 }
@@ -107,7 +107,7 @@ fn shallow_generate(c: &mut Criterion) {
 
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
+                    .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
                     .max_depth(0)
                     .build()
                     .unwrap()
@@ -115,7 +115,7 @@ fn shallow_generate(c: &mut Criterion) {
                     .unwrap();
 
                 dir
-            })
+            });
         },
     );
 }
@@ -134,7 +134,7 @@ fn sparse_generate(c: &mut Criterion) {
 
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(NonZeroUsize::new(*num_files as usize).unwrap())
+                    .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
                     .max_depth(5)
                     .file_to_dir_ratio(NonZeroUsize::new(1).unwrap())
                     .build()
@@ -143,7 +143,7 @@ fn sparse_generate(c: &mut Criterion) {
                     .unwrap();
 
                 dir
-            })
+            });
         },
     );
 }
@@ -160,7 +160,7 @@ fn dense_generate(c: &mut Criterion) {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
-                let num_files = *num_files as usize;
+                let num_files = usize::try_from(*num_files).unwrap();
                 GeneratorBuilder::default()
                     .root_dir(dir.path().to_path_buf())
                     .num_files(NonZeroUsize::new(num_files).unwrap())
@@ -172,7 +172,7 @@ fn dense_generate(c: &mut Criterion) {
                     .unwrap();
 
                 dir
-            })
+            });
         },
     );
 }
@@ -193,14 +193,14 @@ fn bytes_generate(c: &mut Criterion) {
                         .root_dir(dir.path().to_path_buf())
                         .num_files(NonZeroUsize::new(10000).unwrap())
                         .max_depth(5)
-                        .num_bytes(*num_bytes as usize)
+                        .num_bytes(usize::try_from(*num_bytes).unwrap())
                         .build()
                         .unwrap()
                         .generate()
                         .unwrap();
 
                     dir
-                })
+                });
             },
         );
     }
