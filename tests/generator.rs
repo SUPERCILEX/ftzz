@@ -1,13 +1,14 @@
 use std::{
     cmp::{max, min},
     collections::VecDeque,
-    fs::{create_dir, create_dir_all, DirEntry, File},
+    fs::{create_dir, DirEntry, File},
     hash::Hasher,
     io::{Read, Write},
     num::NonZeroUsize,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
+use goldenfile::Mint;
 use more_asserts::assert_le;
 use rand::Rng;
 use rstest::rstest;
@@ -111,16 +112,9 @@ fn simple_create_files(#[case] num_files: usize) {
         .unwrap();
 
     let hash = hash_dir(&dir.path);
-    #[cfg(bazel)]
-    let hash_file: PathBuf = runfiles::Runfiles::create().unwrap().rlocation(format!(
-        "__main__/ftzz/testdata/generator/simple_create_files_{num_files}.hash",
-    ));
-    #[cfg(not(bazel))]
-    let hash_file = PathBuf::from(format!(
-        "testdata/generator/simple_create_files_{num_files}.hash",
-    ));
+    let hash_file = format!("simple_create_files_{num_files}.hash",);
 
-    assert_matching_hashes(hash, &hash_file);
+    assert_matching_hashes(hash, hash_file);
 }
 
 #[rstest]
@@ -150,9 +144,8 @@ fn advanced_create_files(
         .unwrap();
 
     let hash = hash_dir(&dir.path);
-    #[cfg(bazel)]
-    let hash_file: PathBuf = runfiles::Runfiles::create().unwrap().rlocation(format!(
-        "__main__/ftzz/testdata/generator/advanced_create_files{}{}{}_{}_{}_{}.hash",
+    let hash_file = format!(
+        "advanced_create_files{}{}{}_{}_{}_{}.hash",
         if files_exact { "_exact" } else { "" },
         if bytes.0 > 0 {
             format!("_bytes_{}", bytes.0)
@@ -163,23 +156,9 @@ fn advanced_create_files(
         num_files,
         max_depth,
         ftd_ratio,
-    ));
-    #[cfg(not(bazel))]
-    let hash_file = PathBuf::from(format!(
-        "testdata/generator/advanced_create_files{}{}{}_{}_{}_{}.hash",
-        if files_exact { "_exact" } else { "" },
-        if bytes.0 > 0 {
-            format!("_bytes_{}", bytes.0)
-        } else {
-            "".to_string()
-        },
-        if bytes.1 { "_exact" } else { "" },
-        num_files,
-        max_depth,
-        ftd_ratio,
-    ));
+    );
 
-    assert_matching_hashes(hash, &hash_file);
+    assert_matching_hashes(hash, hash_file);
     if files_exact {
         assert_eq!(count_num_files(&dir.path), num_files);
     }
@@ -278,27 +257,12 @@ fn hash_dir(dir: &Path) -> u64 {
     hasher.finish()
 }
 
-fn assert_matching_hashes(hash: u64, hash_file: &Path) {
-    if option_env!("REGEN").is_some() {
-        create_dir_all(hash_file.parent().unwrap()).unwrap();
-        File::create(hash_file)
-            .unwrap()
-            .write_all(&hash.to_be_bytes())
-            .unwrap();
-    } else {
-        let mut expected_hash = Vec::new();
-        File::open(&hash_file)
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Regenerate test files with `REGEN=true cargo test` \n{}: {:?}",
-                    e, hash_file,
-                )
-            })
-            .read_to_end(&mut expected_hash)
-            .unwrap();
-
-        assert_eq!(hash.to_be_bytes(), expected_hash.as_slice());
-    }
+fn assert_matching_hashes(hash: u64, hash_file: String) {
+    let mut mint = Mint::new("testdata/generator");
+    let mut file = mint
+        .new_goldenfile_with_differ(hash_file, Box::new(goldenfile::differs::binary_diff))
+        .unwrap();
+    file.write_all(&hash.to_be_bytes()).unwrap();
 }
 
 fn find_max_depth(dir: &Path) -> u32 {
