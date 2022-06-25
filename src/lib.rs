@@ -3,7 +3,6 @@
 #![feature(const_trait_impl)]
 #![feature(const_slice_from_raw_parts)]
 #![feature(const_mut_refs)]
-#![feature(const_intrinsic_copy)]
 #![allow(clippy::multiple_crate_versions)]
 #![allow(clippy::module_name_repetitions)]
 
