@@ -110,7 +110,6 @@ dependencies = [
  "once_cell",
  "strsim",
  "termcolor",
- "terminal_size",
  "textwrap 0.15.0",
 ]
 
@@ -1213,9 +1212,6 @@ name = "textwrap"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
-dependencies = [
- "terminal_size",
-]
 
 [[package]]
 name = "thread_local"
