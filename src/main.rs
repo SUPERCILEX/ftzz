@@ -15,6 +15,7 @@ use ftzz::generator::{Generator, GeneratorBuilder};
 #[derive(Parser, Debug)]
 #[clap(version, author = "Alex Saveau (@SUPERCILEX)")]
 #[clap(infer_subcommands = true)]
+#[clap(infer_long_args = true)]
 #[cfg_attr(test, clap(help_expected = true))]
 struct Ftzz {
     #[clap(flatten)]
