@@ -1,0 +1,114 @@
+ftzz 1.1.0
+Alex Saveau (@SUPERCILEX)
+A random file and directory generator
+
+USAGE:
+    ftzz [OPTIONS] <SUBCOMMAND>
+
+OPTIONS:
+    -h, --help
+            Print help information
+
+    -q, --quiet
+            Less output per occurrence
+
+    -v, --verbose
+            More output per occurrence
+
+    -V, --version
+            Print version information
+
+SUBCOMMANDS:
+    generate
+            Generate a random directory hierarchy with some number of files
+    help
+            Print this message or the help of the given subcommand(s)
+
+---
+
+ftzz-generate 
+Generate a random directory hierarchy with some number of files
+
+A pseudo-random directory hierarchy will be generated (seeded by this command's input parameters) containing approximately the target number of files. The
+exact configuration of files and directories in the hierarchy is probabilistically determined to mostly match the specified parameters.
+
+Generated files and directories are named using monotonically increasing numbers, where files are named `n` and directories are named `n.dir` for a given
+natural number `n`.
+
+By default, generated files are empty, but random data can be used as the file contents with the `total-bytes` option.
+
+USAGE:
+    ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+
+ARGS:
+    <ROOT_DIR>
+            The directory in which to generate files
+            
+            The directory will be created if it does not exist.
+
+OPTIONS:
+    -b, --total-bytes <NUM_BYTES>
+            The total amount of random data to be distributed across the generated files
+            
+            Note: this value is probabilistically respected, meaning any amount of data may be generated so long as we attempt to get close to N.
+            
+            [default: 0]
+
+        --bytes-exact
+            Whether or not to generate exactly N bytes
+
+    -d, --max-depth <MAX_DEPTH>
+            The maximum directory tree depth
+            
+            [default: 5]
+
+    -e, --exact
+            Whether or not to generate exactly N files and bytes
+
+        --files-exact
+            Whether or not to generate exactly N files
+
+    -h, --help
+            Print help information
+
+    -n, --files <NUM_FILES>
+            The number of files to generate
+            
+            Note: this value is probabilistically respected, meaning any number of files may be generated so long as we attempt to get close to N.
+
+    -q, --quiet
+            Less output per occurrence
+
+    -r, --ftd-ratio <FILE_TO_DIR_RATIO>
+            The number of files to generate per directory (default: files / 1000)
+            
+            Note: this value is probabilistically respected, meaning not all directories will have N files).
+
+        --seed <SEED>
+            Change the PRNG's starting seed
+            
+            For example, you can use bash's `$RANDOM` function.
+            
+            [default: 0]
+
+    -v, --verbose
+            More output per occurrence
+
+---
+
+ftzz-help 
+Print this message or the help of the given subcommand(s)
+
+USAGE:
+    ftzz help [OPTIONS] [SUBCOMMAND]...
+
+ARGS:
+    <SUBCOMMAND>...
+            The subcommand whose help message to display
+
+OPTIONS:
+    -q, --quiet
+            Less output per occurrence
+
+    -v, --verbose
+            More output per occurrence

@@ -258,13 +258,38 @@ fn lenient_si_number(s: &str) -> Result<usize, String> {
 
 #[cfg(test)]
 mod cli_tests {
-    use clap::IntoApp;
+    use std::io::Write;
+
+    use clap::{Command, IntoApp};
+    use goldenfile::Mint;
 
     use super::*;
 
     #[test]
     fn verify_app() {
         Ftzz::command().debug_assert();
+    }
+
+    #[test]
+    fn help_for_review() {
+        let mut command = Ftzz::command();
+
+        command.build();
+
+        let mut mint = Mint::new(".");
+        let mut file = mint.new_goldenfile("help-for-review").unwrap();
+        write_help(&mut file, &mut command);
+    }
+
+    fn write_help(buffer: &mut impl Write, cmd: &mut Command<'_>) {
+        cmd.write_long_help(buffer).unwrap();
+        for sub in cmd.get_subcommands_mut() {
+            writeln!(buffer).unwrap();
+            writeln!(buffer, "---").unwrap();
+            writeln!(buffer).unwrap();
+
+            write_help(buffer, sub);
+        }
     }
 }
 

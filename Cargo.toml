@@ -37,7 +37,7 @@ nix = { version = "0.24.1", default-features = false, features = ["fs"] }
 [dev-dependencies]
 criterion = "0.3.5"
 more-asserts = "0.3.0"
-rstest = "0.14.0"
+rstest = "0.15.0"
 seahash = "4.1.0"
 stack-buffer = "0.3.0"
 tempfile = "3.3.0"

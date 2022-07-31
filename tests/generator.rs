@@ -78,7 +78,7 @@ fn gen_in_non_emtpy_existing_dir_is_disallowed() {
         .unwrap()
         .generate();
 
-    assert!(result.is_err());
+    result.unwrap_err();
 }
 
 #[test]

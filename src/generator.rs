@@ -87,7 +87,7 @@ mod tests {
             .file_to_dir_ratio(NonZeroUsize::new(2).unwrap())
             .build();
 
-        assert!(g.is_err());
+        g.unwrap_err();
     }
 }
 
