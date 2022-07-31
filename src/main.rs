@@ -7,7 +7,7 @@ use anyhow::Context;
 use clap::{Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
-use cli_errors::{CliExitAnyhowWrapper, CliExitError, CliResult};
+use cli_errors::{CliExitAnyhowWrapper, CliExitError};
 
 use ftzz::generator::{Generator, GeneratorBuilder};
 
@@ -206,7 +206,7 @@ mod generate_tests {
 }
 
 #[cli_errors::main]
-fn main() -> CliResult<()> {
+fn main() -> cli_errors::CliResult<()> {
     let args = Ftzz::parse();
 
     #[cfg(not(feature = "trace"))]

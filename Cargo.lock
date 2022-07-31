@@ -156,9 +156,9 @@ dependencies = [
 
 [[package]]
 name = "cli-errors"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77cb95d19068876aa759afc4013226892e580a466221e0381ae5d5b35bee363e"
+checksum = "47e46e6c5a5c8c8c6efcd9d1719214a9291305a55925756aa91b936838ddfbe7"
 dependencies = [
  "anyhow",
  "cli-errors-macros",
@@ -167,9 +167,9 @@ dependencies = [
 
 [[package]]
 name = "cli-errors-macros"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22f7f59ae34d67500ea47896e5afb2f58298e023e2077594cf31029d8509a6b9"
+checksum = "9782d8aa826b5aa1481d3f7347266ddcc20e82b6502d50509024527e42a21020"
 dependencies = [
  "quote",
  "syn",
