@@ -16,6 +16,7 @@ use ftzz::generator::{Generator, GeneratorBuilder};
 #[clap(version, author = "Alex Saveau (@SUPERCILEX)")]
 #[clap(infer_subcommands = true)]
 #[clap(infer_long_args = true)]
+#[clap(mut_arg("help", |arg| arg.short_alias('?')))]
 #[cfg_attr(test, clap(help_expected = true))]
 struct Ftzz {
     #[clap(flatten)]

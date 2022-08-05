@@ -113,6 +113,9 @@ ARGS:
             The subcommand whose help message to display
 
 OPTIONS:
+    -h, --help
+            Print help information
+
     -q, --quiet
             Less output per occurrence
 
