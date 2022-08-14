@@ -7,7 +7,7 @@ use public_api::public_api_from_rustdoc_json_str;
 fn api() {
     println!("Run before test:\n$ cargo +nightly rustdoc --all-features -- -Zunstable-options --output-format json");
 
-    let mut mint = Mint::new("testdata");
+    let mut mint = Mint::new(".");
     let mut goldenfile = mint.new_goldenfile("api.txt").unwrap();
 
     let json = read_to_string("target/doc/ftzz.json").unwrap();

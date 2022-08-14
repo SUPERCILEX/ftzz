@@ -1,2 +1,3 @@
 *.stdout text eol=lf
 help-for-review text eol=lf
+api.txt text eol=lf

@@ -284,10 +284,18 @@ fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
             }
 
             hasher.write(entry.file_name().to_str().unwrap().as_bytes());
+            #[cfg(not(windows))]
             writeln!(
                 output,
                 "{}",
                 &entry.path().to_str().unwrap()[dir.as_os_str().len()..]
+            )
+            .unwrap();
+            #[cfg(windows)]
+            writeln!(
+                output,
+                "{}",
+                &entry.path().to_str().unwrap()[dir.as_os_str().len()..].replace("\\", "/")
             )
             .unwrap();
         }
