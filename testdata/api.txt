@@ -1,0 +1,24 @@
+#[non_exhaustive] pub enum ftzz::generator::GeneratorBuilderError
+pub enum variant ftzz::generator::GeneratorBuilderError::UninitializedField(&'static str)
+pub enum variant ftzz::generator::GeneratorBuilderError::ValidationError(::derive_builder::export::core::string::String)
+pub fn ftzz::generator::Generator::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
+pub fn ftzz::generator::Generator::generate(self, output: &mut impl Write) -> CliResult<()>
+pub fn ftzz::generator::GeneratorBuilder::build(&self) -> ::derive_builder::export::core::result::Result<Generator, GeneratorBuilderError>
+pub fn ftzz::generator::GeneratorBuilder::bytes_exact(&mut self, value: bool) -> &mut Self
+pub fn ftzz::generator::GeneratorBuilder::clone(&self) -> GeneratorBuilder
+pub fn ftzz::generator::GeneratorBuilder::default() -> Self
+pub fn ftzz::generator::GeneratorBuilder::file_to_dir_ratio(&mut self, value: NonZeroUsize) -> &mut Self
+pub fn ftzz::generator::GeneratorBuilder::files_exact(&mut self, value: bool) -> &mut Self
+pub fn ftzz::generator::GeneratorBuilder::max_depth(&mut self, value: u32) -> &mut Self
+pub fn ftzz::generator::GeneratorBuilder::num_bytes(&mut self, value: usize) -> &mut Self
+pub fn ftzz::generator::GeneratorBuilder::num_files(&mut self, value: NonZeroUsize) -> &mut Self
+pub fn ftzz::generator::GeneratorBuilder::root_dir(&mut self, value: PathBuf) -> &mut Self
+pub fn ftzz::generator::GeneratorBuilder::seed(&mut self, value: u64) -> &mut Self
+pub fn ftzz::generator::GeneratorBuilderError::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
+pub fn ftzz::generator::GeneratorBuilderError::fmt(&self, f: &mut ::derive_builder::export::core::fmt::Formatter<'_>) -> ::derive_builder::export::core::fmt::Result
+pub fn ftzz::generator::GeneratorBuilderError::from(s: ::derive_builder::UninitializedFieldError) -> Self
+pub fn ftzz::generator::GeneratorBuilderError::from(s: ::derive_builder::export::core::string::String) -> Self
+pub mod ftzz
+pub mod ftzz::generator
+pub struct ftzz::generator::Generator
+pub struct ftzz::generator::GeneratorBuilder

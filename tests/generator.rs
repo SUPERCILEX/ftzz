@@ -10,6 +10,7 @@ use std::{
 
 use goldenfile::Mint;
 use more_asserts::assert_le;
+
 use rand::Rng;
 use rstest::rstest;
 use seahash::SeaHasher;
@@ -18,6 +19,8 @@ use stack_buffer::StackBufReader;
 use ftzz::generator::GeneratorBuilder;
 
 use crate::inspect::InspectableTempDir;
+
+mod api;
 
 mod inspect {
     use std::path::PathBuf;

@@ -55,7 +55,9 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - name: Run tests
-        run: cargo test
+        run: |
+          cargo +nightly rustdoc --all-features -- -Zunstable-options --output-format json 
+          cargo test
 
   lint:
     runs-on: ubuntu-latest

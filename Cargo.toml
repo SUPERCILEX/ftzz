@@ -43,6 +43,7 @@ stack-buffer = "0.3.0"
 tempfile = "3.3.0"
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 goldenfile = "1.4.3"
+public-api = "0.13.0"
 
 [features]
 trace = ["tracing-chrome", "tracing-subscriber"]
