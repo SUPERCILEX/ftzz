@@ -3,7 +3,7 @@ use std::{
     collections::VecDeque,
     fs::{create_dir, DirEntry, File},
     hash::Hasher,
-    io::{Read, Write},
+    io::{stdout, Read, Write},
     num::NonZeroUsize,
     path::Path,
 };
@@ -55,13 +55,20 @@ fn gen_in_empty_existing_dir_is_allowed() {
     let empty = dir.path.join("empty");
     create_dir(&empty).unwrap();
 
+    let mut mint = Mint::new("testdata/generator");
+    let mut goldenfile = mint
+        .new_goldenfile("gen_in_empty_existing_dir_is_allowed.stdout")
+        .unwrap();
+
     GeneratorBuilder::default()
         .root_dir(empty)
         .num_files(NonZeroUsize::new(1).unwrap())
         .build()
         .unwrap()
-        .generate()
+        .generate(&mut goldenfile)
         .unwrap();
+
+    print_and_hash_dir(&dir.path, &mut goldenfile);
 }
 
 #[test]
@@ -71,29 +78,41 @@ fn gen_in_non_emtpy_existing_dir_is_disallowed() {
     create_dir(&non_empty).unwrap();
     File::create(non_empty.join("file")).unwrap();
 
+    let mut mint = Mint::new("testdata/generator");
+    let mut goldenfile = mint
+        .new_goldenfile("gen_in_non_emtpy_existing_dir_is_disallowed.stdout")
+        .unwrap();
+
     let result = GeneratorBuilder::default()
         .root_dir(non_empty)
         .num_files(NonZeroUsize::new(1).unwrap())
         .build()
         .unwrap()
-        .generate();
+        .generate(&mut goldenfile);
 
     result.unwrap_err();
+    print_and_hash_dir(&dir.path, &mut goldenfile);
 }
 
 #[test]
 fn gen_creates_new_dir_if_not_present() {
     let dir = InspectableTempDir::new();
 
+    let mut mint = Mint::new("testdata/generator");
+    let mut goldenfile = mint
+        .new_goldenfile("gen_creates_new_dir_if_not_present.stdout")
+        .unwrap();
+
     GeneratorBuilder::default()
         .root_dir(dir.path.join("new"))
         .num_files(NonZeroUsize::new(1).unwrap())
         .build()
         .unwrap()
-        .generate()
+        .generate(&mut goldenfile)
         .unwrap();
 
     assert!(dir.path.join("new").exists());
+    print_and_hash_dir(&dir.path, &mut goldenfile);
 }
 
 #[rstest]
@@ -103,18 +122,20 @@ fn gen_creates_new_dir_if_not_present() {
 fn simple_create_files(#[case] num_files: usize) {
     let dir = InspectableTempDir::new();
 
+    let mut mint = Mint::new("testdata/generator");
+    let mut goldenfile = mint
+        .new_goldenfile(format!("simple_create_files_{num_files}.stdout"))
+        .unwrap();
+
     GeneratorBuilder::default()
         .root_dir(dir.path.clone())
         .num_files(NonZeroUsize::new(num_files).unwrap())
         .build()
         .unwrap()
-        .generate()
+        .generate(&mut goldenfile)
         .unwrap();
 
-    let hash = hash_dir(&dir.path);
-    let hash_file = format!("simple_create_files_{num_files}.hash",);
-
-    assert_matching_hashes(hash, hash_file);
+    print_and_hash_dir(&dir.path, &mut goldenfile);
 }
 
 #[rstest]
@@ -130,6 +151,23 @@ fn advanced_create_files(
 ) {
     let dir = InspectableTempDir::new();
 
+    let mut mint = Mint::new("testdata/generator");
+    let mut goldenfile = mint
+        .new_goldenfile(format!(
+            "advanced_create_files{}{}{}_{}_{}_{}.stdout",
+            if files_exact { "_exact" } else { "" },
+            if bytes.0 > 0 {
+                format!("_bytes_{}", bytes.0)
+            } else {
+                "".to_string()
+            },
+            if bytes.1 { "_exact" } else { "" },
+            num_files,
+            max_depth,
+            ftd_ratio,
+        ))
+        .unwrap();
+
     GeneratorBuilder::default()
         .root_dir(dir.path.clone())
         .num_files(NonZeroUsize::new(num_files).unwrap())
@@ -140,31 +178,16 @@ fn advanced_create_files(
         .file_to_dir_ratio(NonZeroUsize::new(min(num_files, ftd_ratio)).unwrap())
         .build()
         .unwrap()
-        .generate()
+        .generate(&mut goldenfile)
         .unwrap();
 
-    let hash = hash_dir(&dir.path);
-    let hash_file = format!(
-        "advanced_create_files{}{}{}_{}_{}_{}.hash",
-        if files_exact { "_exact" } else { "" },
-        if bytes.0 > 0 {
-            format!("_bytes_{}", bytes.0)
-        } else {
-            "".to_string()
-        },
-        if bytes.1 { "_exact" } else { "" },
-        num_files,
-        max_depth,
-        ftd_ratio,
-    );
-
-    assert_matching_hashes(hash, hash_file);
     if files_exact {
         assert_eq!(count_num_files(&dir.path), num_files);
     }
     if bytes.1 {
         assert_eq!(count_num_bytes(&dir.path), bytes.0);
     }
+    print_and_hash_dir(&dir.path, &mut goldenfile);
 }
 
 #[rstest]
@@ -176,16 +199,22 @@ fn advanced_create_files(
 fn max_depth_is_respected(#[case] max_depth: u32) {
     let dir = InspectableTempDir::new();
 
+    let mut mint = Mint::new("testdata/generator");
+    let mut goldenfile = mint
+        .new_goldenfile(format!("max_depth_is_respected_{max_depth}.stdout"))
+        .unwrap();
+
     GeneratorBuilder::default()
         .root_dir(dir.path.clone())
         .num_files(NonZeroUsize::new(10_000).unwrap())
         .max_depth(max_depth)
         .build()
         .unwrap()
-        .generate()
+        .generate(&mut goldenfile)
         .unwrap();
 
     assert_le!(find_max_depth(&dir.path), max_depth);
+    print_and_hash_dir(&dir.path, &mut goldenfile);
 }
 
 #[test]
@@ -215,7 +244,7 @@ fn fuzz_test() {
         .build()
         .unwrap();
     println!("Params: {g:?}");
-    g.generate().unwrap();
+    g.generate(&mut stdout()).unwrap();
 
     assert_le!(find_max_depth(&dir.path), max_depth);
     if files_exact {
@@ -227,7 +256,9 @@ fn fuzz_test() {
 }
 
 /// Recursively hashes the file and directory names in dir
-fn hash_dir(dir: &Path) -> u64 {
+fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
+    writeln!(output).unwrap();
+
     let mut hasher = SeaHasher::new();
 
     let mut entries = Vec::new();
@@ -250,19 +281,17 @@ fn hash_dir(dir: &Path) -> u64 {
             }
 
             hasher.write(entry.file_name().to_str().unwrap().as_bytes());
+            writeln!(
+                output,
+                "{}",
+                &entry.path().to_str().unwrap()[dir.as_os_str().len()..]
+            )
+            .unwrap();
         }
         entries.clear();
     }
 
-    hasher.finish()
-}
-
-fn assert_matching_hashes(hash: u64, hash_file: String) {
-    let mut mint = Mint::new("testdata/generator");
-    let mut file = mint
-        .new_goldenfile_with_differ(hash_file, Box::new(goldenfile::differs::binary_diff))
-        .unwrap();
-    file.write_all(&hash.to_be_bytes()).unwrap();
+    writeln!(output, "\n0x{:x}", hasher.finish()).unwrap();
 }
 
 fn find_max_depth(dir: &Path) -> u32 {

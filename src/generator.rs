@@ -4,7 +4,7 @@
     clippy::cast_possible_truncation
 )]
 
-use std::{cmp::max, fs::create_dir_all, num::NonZeroUsize, path::PathBuf, thread};
+use std::{cmp::max, fs::create_dir_all, io::Write, num::NonZeroUsize, path::PathBuf, thread};
 
 use anyhow::{anyhow, Context};
 use cli_errors::{CliExitAnyhowWrapper, CliResult};
@@ -93,10 +93,10 @@ mod tests {
 
 impl Generator {
     #[allow(clippy::missing_errors_doc)]
-    pub fn generate(self) -> CliResult<()> {
+    pub fn generate(self, output: &mut impl Write) -> CliResult<()> {
         let options = validated_options(self)?;
-        print_configuration_info(&options);
-        print_stats(run_generator(options)?);
+        print_configuration_info(&options, output);
+        print_stats(run_generator(options)?, output);
         Ok(())
     }
 }
@@ -184,9 +184,10 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
     })
 }
 
-fn print_configuration_info(config: &Configuration) {
+fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
     let locale = Locale::en;
-    println!(
+    writeln!(
+        output,
         "{file_count_type} {} {files_maybe_plural} will be generated in approximately \
         {} {directories_maybe_plural} distributed across a tree of maximum depth {} where each \
         directory contains approximately {} other {dpd_directories_maybe_plural}.\
@@ -233,12 +234,14 @@ fn print_configuration_info(config: &Configuration) {
         } else {
             "".to_string()
         },
-    );
+    )
+    .unwrap();
 }
 
-fn print_stats(stats: GeneratorStats) {
+fn print_stats(stats: GeneratorStats, output: &mut impl Write) {
     let locale = Locale::en;
-    println!(
+    writeln!(
+        output,
         "Created {} {files_maybe_plural}{bytes_info} across {} {directories_maybe_plural}.",
         stats.files.to_formatted_string(&locale),
         stats.dirs.to_formatted_string(&locale),
@@ -254,7 +257,8 @@ fn print_stats(stats: GeneratorStats) {
         } else {
             "".to_string()
         }
-    );
+    )
+    .unwrap();
 }
 
 fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {

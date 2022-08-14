@@ -1,0 +1,17 @@
+About 1 file will be generated in approximately 1 directory distributed across a tree of maximum depth 5 where each directory contains approximately 1 other directory.
+Created 6 files across 5 directories.
+
+/new
+/new/0
+/new/0.dir
+/new/0.dir/0
+/new/0.dir/0.dir
+/new/0.dir/0.dir/0
+/new/0.dir/0.dir/0.dir
+/new/0.dir/0.dir/0.dir/0
+/new/0.dir/0.dir/0.dir/0.dir
+/new/0.dir/0.dir/0.dir/0.dir/0
+/new/0.dir/0.dir/0.dir/0.dir/0.dir
+/new/0.dir/0.dir/0.dir/0.dir/0.dir/0
+
+0x60953883ce71f4e6

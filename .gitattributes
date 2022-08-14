@@ -1,2 +1,2 @@
-*.hash binary
+*.stdout text eol=lf
 help-for-review text eol=lf

@@ -1,7 +1,7 @@
 #![feature(string_remove_matches)]
 #![allow(clippy::multiple_crate_versions)]
 
-use std::{num::NonZeroUsize, path::PathBuf};
+use std::{io::stdout, num::NonZeroUsize, path::PathBuf};
 
 use anyhow::Context;
 use clap::{Args, Parser, Subcommand, ValueHint};
@@ -225,7 +225,7 @@ fn main() -> cli_errors::CliResult<()> {
     };
 
     match args.cmd {
-        Cmd::Generate(options) => Generator::try_from(options)?.generate(),
+        Cmd::Generate(options) => Generator::try_from(options)?.generate(&mut stdout()),
     }
 }
 

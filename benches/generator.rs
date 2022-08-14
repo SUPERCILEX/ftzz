@@ -1,4 +1,4 @@
-use std::{num::NonZeroUsize, time::Duration};
+use std::{io::sink, num::NonZeroUsize, time::Duration};
 
 use criterion::{
     criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion, PlotConfiguration,
@@ -27,7 +27,7 @@ fn simple_generate(c: &mut Criterion) {
                         .max_depth(5)
                         .build()
                         .unwrap()
-                        .generate()
+                        .generate(&mut sink())
                         .unwrap();
 
                     dir
@@ -57,7 +57,7 @@ fn huge_generate(c: &mut Criterion) {
                     .max_depth(5)
                     .build()
                     .unwrap()
-                    .generate()
+                    .generate(&mut sink())
                     .unwrap();
 
                 dir
@@ -84,7 +84,7 @@ fn deep_generate(c: &mut Criterion) {
                     .max_depth(100)
                     .build()
                     .unwrap()
-                    .generate()
+                    .generate(&mut sink())
                     .unwrap();
 
                 dir
@@ -111,7 +111,7 @@ fn shallow_generate(c: &mut Criterion) {
                     .max_depth(0)
                     .build()
                     .unwrap()
-                    .generate()
+                    .generate(&mut sink())
                     .unwrap();
 
                 dir
@@ -139,7 +139,7 @@ fn sparse_generate(c: &mut Criterion) {
                     .file_to_dir_ratio(NonZeroUsize::new(1).unwrap())
                     .build()
                     .unwrap()
-                    .generate()
+                    .generate(&mut sink())
                     .unwrap();
 
                 dir
@@ -168,7 +168,7 @@ fn dense_generate(c: &mut Criterion) {
                     .file_to_dir_ratio(NonZeroUsize::new(num_files).unwrap())
                     .build()
                     .unwrap()
-                    .generate()
+                    .generate(&mut sink())
                     .unwrap();
 
                 dir
@@ -196,7 +196,7 @@ fn bytes_generate(c: &mut Criterion) {
                         .num_bytes(usize::try_from(*num_bytes).unwrap())
                         .build()
                         .unwrap()
-                        .generate()
+                        .generate(&mut sink())
                         .unwrap();
 
                     dir
