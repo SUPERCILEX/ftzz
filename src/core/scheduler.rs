@@ -100,7 +100,7 @@ pub async fn run(
         'outer: while let Some((tot_dirs, dirs_left)) = stack.last_mut() {
             let num_dirs_to_generate = dirs_left.pop();
 
-            if num_dirs_to_generate == None {
+            if num_dirs_to_generate.is_none() {
                 vec_pool.push(unsafe { stack.pop().unwrap_unchecked().1 });
 
                 if let Some((tot_dirs, dirs_left)) = stack.last() {
