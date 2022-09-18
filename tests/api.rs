@@ -11,8 +11,8 @@ fn api() {
     let mut goldenfile = mint.new_goldenfile("api.txt").unwrap();
 
     let json = read_to_string("target/doc/ftzz.json").unwrap();
-    let items = public_api_from_rustdoc_json_str(&json, public_api::Options::default()).unwrap();
-    for public_item in items {
+    let api = public_api_from_rustdoc_json_str(&json, public_api::Options::default()).unwrap();
+    for public_item in api.items {
         writeln!(goldenfile, "{}", public_item).unwrap();
     }
 }

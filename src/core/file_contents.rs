@@ -128,7 +128,7 @@ impl<R: RngCore> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
 #[inline(never)] // Don't muck the stack for the GeneratedFileContents::None case
 #[instrument(level = "trace", skip(file, random))]
 fn write_random_bytes(mut file: File, mut num: usize, random: &mut impl RngCore) -> io::Result<()> {
-    #[allow(clippy::uninit_assumed_init)] // u8s do nothing when dropped
+    #[allow(clippy::uninit_assumed_init, invalid_value)] // u8s do nothing when dropped
     let mut buf: [u8; 4096] = unsafe { MaybeUninit::uninit().assume_init() };
     while num > 0 {
         let used = min(num, buf.len());

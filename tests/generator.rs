@@ -3,18 +3,16 @@ use std::{
     collections::VecDeque,
     fs::{create_dir, DirEntry, File},
     hash::Hasher,
-    io::{stdout, Read, Write},
+    io::{stdout, BufReader, Read, Write},
     num::NonZeroUsize,
     path::Path,
 };
 
 use goldenfile::Mint;
 use more_asserts::assert_le;
-
 use rand::Rng;
 use rstest::rstest;
 use seahash::SeaHasher;
-use stack_buffer::StackBufReader;
 
 use ftzz::generator::GeneratorBuilder;
 
@@ -162,7 +160,7 @@ fn advanced_create_files(
             if bytes.0 > 0 {
                 format!("_bytes_{}", bytes.0)
             } else {
-                "".to_string()
+                String::new()
             },
             if bytes.1 { "_exact" } else { "" },
             num_files,
@@ -276,9 +274,7 @@ fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
             if entry.file_type().unwrap().is_dir() {
                 queue.push_back(entry.path());
             } else if entry.metadata().unwrap().len() > 0 {
-                for byte in
-                    StackBufReader::<_, 4096>::new(File::open(entry.path()).unwrap()).bytes()
-                {
+                for byte in BufReader::new(File::open(entry.path()).unwrap()).bytes() {
                     hasher.write_u8(byte.unwrap());
                 }
             }

@@ -232,7 +232,7 @@ fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
                 },
             )
         } else {
-            "".to_string()
+            String::new()
         },
     )
     .unwrap();
@@ -255,7 +255,7 @@ fn print_stats(stats: GeneratorStats, output: &mut impl Write) {
             event!(Level::INFO, bytes = stats.bytes, "Exact bytes written");
             format!(" ({})", bytesize::to_string(stats.bytes as u64, false))
         } else {
-            "".to_string()
+            String::new()
         }
     )
     .unwrap();
