@@ -6,7 +6,7 @@ use criterion::{
 };
 use tempfile::tempdir;
 
-use ftzz::generator::GeneratorBuilder;
+use ftzz::generator::{Generator, NumFilesWithRatio};
 
 fn simple_generate(c: &mut Criterion) {
     let mut group = c.benchmark_group("simple_generate");
@@ -21,12 +21,13 @@ fn simple_generate(c: &mut Criterion) {
                 b.iter_with_large_drop(|| {
                     let dir = tempdir().unwrap();
 
-                    GeneratorBuilder::default()
+                    Generator::builder()
                         .root_dir(dir.path().to_path_buf())
-                        .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
+                        .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+                            NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
+                        ))
                         .max_depth(5)
                         .build()
-                        .unwrap()
                         .generate(&mut sink())
                         .unwrap();
 
@@ -51,12 +52,13 @@ fn huge_generate(c: &mut Criterion) {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
-                GeneratorBuilder::default()
+                Generator::builder()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
+                    .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+                        NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
+                    ))
                     .max_depth(5)
                     .build()
-                    .unwrap()
                     .generate(&mut sink())
                     .unwrap();
 
@@ -78,12 +80,13 @@ fn deep_generate(c: &mut Criterion) {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
-                GeneratorBuilder::default()
+                Generator::builder()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
+                    .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+                        NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
+                    ))
                     .max_depth(100)
                     .build()
-                    .unwrap()
                     .generate(&mut sink())
                     .unwrap();
 
@@ -105,12 +108,13 @@ fn shallow_generate(c: &mut Criterion) {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
-                GeneratorBuilder::default()
+                Generator::builder()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
+                    .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+                        NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
+                    ))
                     .max_depth(0)
                     .build()
-                    .unwrap()
                     .generate(&mut sink())
                     .unwrap();
 
@@ -132,13 +136,17 @@ fn sparse_generate(c: &mut Criterion) {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
-                GeneratorBuilder::default()
+                Generator::builder()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap())
+                    .num_files_with_ratio(
+                        NumFilesWithRatio::new(
+                            NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
+                            NonZeroUsize::new(1).unwrap(),
+                        )
+                        .unwrap(),
+                    )
                     .max_depth(5)
-                    .file_to_dir_ratio(NonZeroUsize::new(1).unwrap())
                     .build()
-                    .unwrap()
                     .generate(&mut sink())
                     .unwrap();
 
@@ -161,13 +169,17 @@ fn dense_generate(c: &mut Criterion) {
                 let dir = tempdir().unwrap();
 
                 let num_files = usize::try_from(*num_files).unwrap();
-                GeneratorBuilder::default()
+                Generator::builder()
                     .root_dir(dir.path().to_path_buf())
-                    .num_files(NonZeroUsize::new(num_files).unwrap())
+                    .num_files_with_ratio(
+                        NumFilesWithRatio::new(
+                            NonZeroUsize::new(num_files).unwrap(),
+                            NonZeroUsize::new(num_files).unwrap(),
+                        )
+                        .unwrap(),
+                    )
                     .max_depth(5)
-                    .file_to_dir_ratio(NonZeroUsize::new(num_files).unwrap())
                     .build()
-                    .unwrap()
                     .generate(&mut sink())
                     .unwrap();
 
@@ -189,13 +201,14 @@ fn bytes_generate(c: &mut Criterion) {
                 b.iter_with_large_drop(|| {
                     let dir = tempdir().unwrap();
 
-                    GeneratorBuilder::default()
+                    Generator::builder()
                         .root_dir(dir.path().to_path_buf())
-                        .num_files(NonZeroUsize::new(10000).unwrap())
+                        .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+                            NonZeroUsize::new(10000).unwrap(),
+                        ))
                         .max_depth(5)
                         .num_bytes(usize::try_from(*num_bytes).unwrap())
                         .build()
-                        .unwrap()
                         .generate(&mut sink())
                         .unwrap();
 

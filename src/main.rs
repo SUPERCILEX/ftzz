@@ -9,7 +9,7 @@ use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use cli_errors::{CliExitAnyhowWrapper, CliExitError};
 
-use ftzz::generator::{Generator, GeneratorBuilder};
+use ftzz::generator::{Generator, NumFilesWithRatio};
 
 /// A random file and directory generator
 #[derive(Parser, Debug)]
@@ -108,22 +108,22 @@ impl TryFrom<Generate> for Generator {
     type Error = CliExitError;
 
     fn try_from(options: Generate) -> Result<Self, Self::Error> {
-        let mut builder = GeneratorBuilder::default();
-        builder
+        let builder = Self::builder()
             .root_dir(options.root_dir)
-            .num_files(options.num_files)
             .files_exact(options.files_exact || options.exact)
             .num_bytes(options.num_bytes)
             .bytes_exact(options.bytes_exact || options.exact)
             .max_depth(options.max_depth);
-        if let Some(ratio) = options.file_to_dir_ratio {
-            builder.file_to_dir_ratio(ratio);
-        }
-        builder
-            .seed(options.seed)
-            .build()
-            .context("Input validation failed")
-            .with_code(exitcode::DATAERR)
+        let builder = if let Some(ratio) = options.file_to_dir_ratio {
+            builder.num_files_with_ratio(
+                NumFilesWithRatio::new(options.num_files, ratio)
+                    .context("Input validation failed")
+                    .with_code(exitcode::DATAERR)?,
+            )
+        } else {
+            builder.num_files_with_ratio(NumFilesWithRatio::from_num_files(options.num_files))
+        };
+        Ok(builder.seed(options.seed).build())
     }
 }
 

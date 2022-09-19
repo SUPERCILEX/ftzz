@@ -8,53 +8,73 @@ use std::{cmp::max, fs::create_dir_all, io::Write, num::NonZeroUsize, path::Path
 
 use anyhow::{anyhow, Context};
 use cli_errors::{CliExitAnyhowWrapper, CliResult};
-use derive_builder::Builder;
 use num_format::{Locale, ToFormattedString};
 use rand::SeedableRng;
 use rand_distr::Normal;
 use rand_xoshiro::Xoshiro256PlusPlus;
-
 use tracing::{event, Level};
+use typed_builder::TypedBuilder;
 
 use crate::core::{
     run, FilesAndContentsGenerator, FilesNoContentsGenerator, GeneratorStats,
     OtherFilesAndContentsGenerator,
 };
 
-#[derive(Builder, Debug)]
-#[builder(build_fn(validate = "Self::validate"))]
-pub struct Generator {
-    root_dir: PathBuf,
+#[derive(Debug)]
+pub struct NumFilesWithRatio {
     num_files: NonZeroUsize,
-    #[builder(default = "false")]
-    files_exact: bool,
-    #[builder(default = "0")]
-    num_bytes: usize,
-    #[builder(default = "false")]
-    bytes_exact: bool,
-    #[builder(default = "5")]
-    max_depth: u32,
-    #[builder(default = "self.default_ftd_ratio()")]
     file_to_dir_ratio: NonZeroUsize,
-    #[builder(default = "0")]
-    seed: u64,
 }
 
-impl GeneratorBuilder {
-    fn validate(&self) -> Result<(), String> {
-        if let Some(ratio) = self.file_to_dir_ratio && let Some(num_files) = self.num_files && ratio > num_files {
-            return Err(format!(
-                "The file to dir ratio ({ratio}) cannot be larger than the number of files to generate ({num_files}).",
+impl NumFilesWithRatio {
+    /// # Errors
+    ///
+    /// The file to directory ratio cannot be larger than the number of files to
+    /// generate since it is impossible to satisfy that condition.
+    pub fn new(
+        num_files: NonZeroUsize,
+        file_to_dir_ratio: NonZeroUsize,
+    ) -> Result<Self, anyhow::Error> {
+        if file_to_dir_ratio > num_files {
+            return Err(anyhow!(
+                "The file to dir ratio ({file_to_dir_ratio}) cannot be larger \
+                than the number of files to generate ({num_files}).",
             ));
         }
 
-        Ok(())
+        Ok(Self {
+            num_files,
+            file_to_dir_ratio,
+        })
     }
 
-    fn default_ftd_ratio(&self) -> NonZeroUsize {
-        let r = max(self.num_files.unwrap().get() / 1000, 1);
-        unsafe { NonZeroUsize::new_unchecked(r) }
+    #[must_use]
+    pub fn from_num_files(num_files: NonZeroUsize) -> Self {
+        Self {
+            num_files,
+            file_to_dir_ratio: {
+                let r = max(num_files.get() / 1000, 1);
+                unsafe { NonZeroUsize::new_unchecked(r) }
+            },
+        }
     }
+}
+
+#[derive(TypedBuilder, Debug)]
+#[builder(doc)]
+pub struct Generator {
+    root_dir: PathBuf,
+    num_files_with_ratio: NumFilesWithRatio,
+    #[builder(default = false)]
+    files_exact: bool,
+    #[builder(default = 0)]
+    num_bytes: usize,
+    #[builder(default = false)]
+    bytes_exact: bool,
+    #[builder(default = 5)]
+    max_depth: u32,
+    #[builder(default = 0)]
+    seed: u64,
 }
 
 #[cfg(test)]
@@ -63,31 +83,29 @@ mod tests {
 
     #[test]
     fn minimal_params_succeeds() {
-        let g = GeneratorBuilder::default()
+        let g = Generator::builder()
             .root_dir(PathBuf::from("abc"))
-            .num_files(NonZeroUsize::new(1).unwrap())
-            .build()
-            .unwrap();
+            .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+                NonZeroUsize::new(1).unwrap(),
+            ))
+            .build();
 
         assert_eq!(g.root_dir, PathBuf::from("abc"));
-        assert_eq!(g.num_files.get(), 1);
+        assert_eq!(g.num_files_with_ratio.num_files.get(), 1);
         assert!(!g.files_exact);
         assert_eq!(g.num_bytes, 0);
         assert!(!g.bytes_exact);
         assert_eq!(g.max_depth, 5);
-        assert_eq!(g.file_to_dir_ratio.get(), 1);
+        assert_eq!(g.num_files_with_ratio.file_to_dir_ratio.get(), 1);
         assert_eq!(g.seed, 0);
     }
 
     #[test]
     fn ratio_greater_than_num_files_fails() {
-        let g = GeneratorBuilder::default()
-            .root_dir(PathBuf::from("abc"))
-            .num_files(NonZeroUsize::new(1).unwrap())
-            .file_to_dir_ratio(NonZeroUsize::new(2).unwrap())
-            .build();
+        let r =
+            NumFilesWithRatio::new(NonZeroUsize::new(1).unwrap(), NonZeroUsize::new(2).unwrap());
 
-        g.unwrap_err();
+        r.unwrap_err();
     }
 }
 
@@ -138,13 +156,13 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
         .with_code(exitcode::DATAERR);
     }
 
-    let num_files = generator.num_files.get() as f64;
+    let num_files = generator.num_files_with_ratio.num_files.get() as f64;
     let bytes_per_file = generator.num_bytes as f64 / num_files;
 
     if generator.max_depth == 0 {
         return Ok(Configuration {
             root_dir: generator.root_dir,
-            files: generator.num_files.get(),
+            files: generator.num_files_with_ratio.num_files.get(),
             bytes: generator.num_bytes,
             files_exact: generator.files_exact,
             bytes_exact: generator.bytes_exact,
@@ -160,7 +178,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
         });
     }
 
-    let ratio = generator.file_to_dir_ratio.get() as f64;
+    let ratio = generator.num_files_with_ratio.file_to_dir_ratio.get() as f64;
     let num_dirs = num_files / ratio;
     // This formula was derived from the following equation:
     // num_dirs = unknown_num_dirs_per_dir^max_depth
@@ -168,7 +186,7 @@ fn validated_options(generator: Generator) -> CliResult<Configuration> {
 
     Ok(Configuration {
         root_dir: generator.root_dir,
-        files: generator.num_files.get(),
+        files: generator.num_files_with_ratio.num_files.get(),
         bytes: generator.num_bytes,
         files_exact: generator.files_exact,
         bytes_exact: generator.bytes_exact,

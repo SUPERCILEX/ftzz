@@ -14,7 +14,7 @@ use rand::Rng;
 use rstest::rstest;
 use seahash::SeaHasher;
 
-use ftzz::generator::GeneratorBuilder;
+use ftzz::generator::{Generator, NumFilesWithRatio};
 
 use crate::inspect::InspectableTempDir;
 
@@ -61,11 +61,12 @@ fn gen_in_empty_existing_dir_is_allowed() {
         .new_goldenfile("gen_in_empty_existing_dir_is_allowed.stdout")
         .unwrap();
 
-    GeneratorBuilder::default()
+    Generator::builder()
         .root_dir(empty)
-        .num_files(NonZeroUsize::new(1).unwrap())
+        .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+            NonZeroUsize::new(1).unwrap(),
+        ))
         .build()
-        .unwrap()
         .generate(&mut goldenfile)
         .unwrap();
 
@@ -84,11 +85,12 @@ fn gen_in_non_emtpy_existing_dir_is_disallowed() {
         .new_goldenfile("gen_in_non_emtpy_existing_dir_is_disallowed.stdout")
         .unwrap();
 
-    let result = GeneratorBuilder::default()
+    let result = Generator::builder()
         .root_dir(non_empty)
-        .num_files(NonZeroUsize::new(1).unwrap())
+        .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+            NonZeroUsize::new(1).unwrap(),
+        ))
         .build()
-        .unwrap()
         .generate(&mut goldenfile);
 
     result.unwrap_err();
@@ -104,11 +106,12 @@ fn gen_creates_new_dir_if_not_present() {
         .new_goldenfile("gen_creates_new_dir_if_not_present.stdout")
         .unwrap();
 
-    GeneratorBuilder::default()
+    Generator::builder()
         .root_dir(dir.path.join("new"))
-        .num_files(NonZeroUsize::new(1).unwrap())
+        .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+            NonZeroUsize::new(1).unwrap(),
+        ))
         .build()
-        .unwrap()
         .generate(&mut goldenfile)
         .unwrap();
 
@@ -128,11 +131,12 @@ fn simple_create_files(#[case] num_files: usize) {
         .new_goldenfile(format!("simple_create_files_{num_files}.stdout"))
         .unwrap();
 
-    GeneratorBuilder::default()
+    Generator::builder()
         .root_dir(dir.path.clone())
-        .num_files(NonZeroUsize::new(num_files).unwrap())
+        .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+            NonZeroUsize::new(num_files).unwrap(),
+        ))
         .build()
-        .unwrap()
         .generate(&mut goldenfile)
         .unwrap();
 
@@ -169,16 +173,20 @@ fn advanced_create_files(
         ))
         .unwrap();
 
-    GeneratorBuilder::default()
+    Generator::builder()
         .root_dir(dir.path.clone())
-        .num_files(NonZeroUsize::new(num_files).unwrap())
+        .num_files_with_ratio(
+            NumFilesWithRatio::new(
+                NonZeroUsize::new(num_files).unwrap(),
+                NonZeroUsize::new(min(num_files, ftd_ratio)).unwrap(),
+            )
+            .unwrap(),
+        )
         .num_bytes(bytes.0)
         .files_exact(files_exact)
         .bytes_exact(bytes.1)
         .max_depth(max_depth)
-        .file_to_dir_ratio(NonZeroUsize::new(min(num_files, ftd_ratio)).unwrap())
         .build()
-        .unwrap()
         .generate(&mut goldenfile)
         .unwrap();
 
@@ -205,12 +213,13 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
         .new_goldenfile(format!("max_depth_is_respected_{max_depth}.stdout"))
         .unwrap();
 
-    GeneratorBuilder::default()
+    Generator::builder()
         .root_dir(dir.path.clone())
-        .num_files(NonZeroUsize::new(10_000).unwrap())
+        .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+            NonZeroUsize::new(10_000).unwrap(),
+        ))
         .max_depth(max_depth)
         .build()
-        .unwrap()
         .generate(&mut goldenfile)
         .unwrap();
 
@@ -234,16 +243,20 @@ fn fuzz_test() {
     let files_exact = rng.gen();
     let bytes_exact = rng.gen();
 
-    let g = GeneratorBuilder::default()
+    let g = Generator::builder()
         .root_dir(dir.path.clone())
-        .num_files(NonZeroUsize::new(num_files).unwrap())
+        .num_files_with_ratio(
+            NumFilesWithRatio::new(
+                NonZeroUsize::new(num_files).unwrap(),
+                NonZeroUsize::new(ratio).unwrap(),
+            )
+            .unwrap(),
+        )
         .num_bytes(num_bytes)
         .max_depth(max_depth)
-        .file_to_dir_ratio(NonZeroUsize::new(ratio).unwrap())
         .files_exact(files_exact)
         .bytes_exact(bytes_exact)
-        .build()
-        .unwrap();
+        .build();
     println!("Params: {g:?}");
     g.generate(&mut stdout()).unwrap();
 
