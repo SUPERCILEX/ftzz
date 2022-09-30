@@ -26,7 +26,7 @@ struct Ftzz {
     verbose: Verbosity,
     #[arg(short, long, short_alias = '?', global = true)]
     #[arg(action = ArgAction::Help, help = "Print help information (use `-h` for a summary)")]
-    help: bool,
+    help: Option<bool>,
 }
 
 #[derive(Subcommand, Debug)]
