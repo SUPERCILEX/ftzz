@@ -4,7 +4,7 @@
 use std::{io::stdout, num::NonZeroUsize, path::PathBuf};
 
 use anyhow::Context;
-use clap::{Args, Parser, Subcommand, ValueHint};
+use clap::{ArgAction, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use cli_errors::{CliExitAnyhowWrapper, CliExitError};
@@ -14,15 +14,19 @@ use ftzz::generator::{Generator, NumFilesWithRatio};
 /// A random file and directory generator
 #[derive(Parser, Debug)]
 #[clap(version, author = "Alex Saveau (@SUPERCILEX)")]
-#[clap(infer_subcommands = true)]
-#[clap(infer_long_args = true)]
-#[clap(mut_arg("help", |arg| arg.short_alias('?')))]
+#[clap(infer_subcommands = true, infer_long_args = true)]
+#[clap(next_display_order = None)]
+#[clap(max_term_width = 100)]
+#[command(disable_help_flag = true)]
 #[cfg_attr(test, clap(help_expected = true))]
 struct Ftzz {
-    #[clap(flatten)]
-    verbose: Verbosity,
     #[clap(subcommand)]
     cmd: Cmd,
+    #[clap(flatten)]
+    verbose: Verbosity,
+    #[arg(short, long, short_alias = '?', global = true)]
+    #[arg(action = ArgAction::Help, help = "Print help information (use `-h` for a summary)")]
+    help: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -57,7 +61,7 @@ struct Generate {
     /// Note: this value is probabilistically respected, meaning any number of
     /// files may be generated so long as we attempt to get close to N.
     #[clap(short = 'n', long = "files", alias = "num-files")]
-    #[clap(parse(try_from_str = num_files_parser))]
+    #[clap(value_parser = num_files_parser)]
     num_files: NonZeroUsize,
 
     /// Whether or not to generate exactly N files
@@ -70,7 +74,7 @@ struct Generate {
     /// Note: this value is probabilistically respected, meaning any amount of
     /// data may be generated so long as we attempt to get close to N.
     #[clap(short = 'b', long = "total-bytes", aliases = & ["num-bytes", "num-total-bytes"])]
-    #[clap(parse(try_from_str = num_bytes_parser))]
+    #[clap(value_parser = num_bytes_parser)]
     #[clap(default_value = "0")]
     num_bytes: usize,
 
@@ -80,7 +84,7 @@ struct Generate {
 
     /// Whether or not to generate exactly N files and bytes
     #[clap(short = 'e', long = "exact")]
-    #[clap(conflicts_with_all = & ["files-exact", "bytes-exact"])]
+    #[clap(conflicts_with_all = & ["files_exact", "bytes_exact"])]
     exact: bool,
 
     /// The maximum directory tree depth
@@ -93,7 +97,7 @@ struct Generate {
     /// Note: this value is probabilistically respected, meaning not all
     /// directories will have N files).
     #[clap(short = 'r', long = "ftd-ratio")]
-    #[clap(parse(try_from_str = file_to_dir_ratio_parser))]
+    #[clap(value_parser = file_to_dir_ratio_parser)]
     file_to_dir_ratio: Option<NonZeroUsize>,
 
     /// Change the PRNG's starting seed
@@ -262,7 +266,7 @@ fn lenient_si_number(s: &str) -> Result<usize, String> {
 mod cli_tests {
     use std::io::Write;
 
-    use clap::{Command, IntoApp};
+    use clap::{Command, CommandFactory};
     use goldenfile::Mint;
 
     use super::*;
@@ -283,7 +287,7 @@ mod cli_tests {
         write_help(&mut file, &mut command);
     }
 
-    fn write_help(buffer: &mut impl Write, cmd: &mut Command<'_>) {
+    fn write_help(buffer: &mut impl Write, cmd: &mut Command) {
         cmd.write_long_help(buffer).unwrap();
         for sub in cmd.get_subcommands_mut() {
             writeln!(buffer).unwrap();
@@ -298,11 +302,11 @@ mod cli_tests {
 #[cfg(test)]
 mod cli_generate_tests {
     use clap::{
-        ErrorKind::{
+        error::ErrorKind::{
             ArgumentConflict, DisplayHelpOnMissingArgumentOrSubcommand, MissingRequiredArgument,
             UnknownArgument,
         },
-        FromArgMatches, IntoApp,
+        CommandFactory, FromArgMatches,
     };
 
     use super::*;
