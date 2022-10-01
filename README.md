@@ -11,7 +11,7 @@ Binaries for a number of platforms are available on the
 
 ### Build from source
 
-```bash
+```console,ignore
 $ cargo +nightly install ftzz
 ```
 
@@ -21,7 +21,7 @@ $ cargo +nightly install ftzz
 
 Generate a reproducibly random tree in the current directory with *approximately* 1 million files:
 
-```console,bash
+```console
 $ ftzz g simple -n 1M
 About 1,000,000 files will be generated in approximately 1,000 directories distributed across a tree of maximum depth 5 where each directory contains approximately 4 other directories.
 Created 1,216,988 files across 1,209 directories.
@@ -30,7 +30,7 @@ Created 1,216,988 files across 1,209 directories.
 
 Generate *exactly* 1 million files:
 
-```console,bash
+```console
 $ ftzz g exact -en 1M
 Exactly 1,000,000 files will be generated in approximately 1,000 directories distributed across a tree of maximum depth 5 where each directory contains approximately 4 other directories.
 Created 1,000,000 files across 1,011 directories.
@@ -39,7 +39,7 @@ Created 1,000,000 files across 1,011 directories.
 
 Generate ~10_000 files with ~1 MB of random data spread across them:
 
-```console,bash
+```console
 $ ftzz g with_data -n 10K -b 1M
 About 10,000 files will be generated in approximately 1,000 directories distributed across a tree of maximum depth 5 where each directory contains approximately 4 other directories. Each file will contain approximately 100 bytes of random data.
 Created 13,934 files (1.4 MB) across 1,395 directories.
@@ -50,7 +50,7 @@ Because FTZZ creates reproducible outputs, the generated directory will always h
 structure given the same inputs. To generate variations on a structure with the same parameters,
 change the starting seed:
 
-```console,bash
+```console
 $ ftzz g seeded -n 88K --seed 42 # Or $RANDOM
 About 88,000 files will be generated in approximately 1,000 directories distributed across a tree of maximum depth 5 where each directory contains approximately 4 other directories.
 Created 122,218 files across 1,394 directories.
@@ -59,7 +59,7 @@ Created 122,218 files across 1,394 directories.
 
 Other parameters can be found in the built-in docs:
 
-```console,bash
+```console
 $ ftzz help generate
 Generate a random directory hierarchy with some number of files
 
