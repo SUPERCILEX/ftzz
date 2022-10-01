@@ -51,9 +51,13 @@ structure given the same inputs. To generate variations on a structure with the 
 change the starting seed:
 
 ```console
-$ ftzz g seeded -n 88K --seed 42 # Or $RANDOM
-About 88,000 files will be generated in approximately 1,000 directories distributed across a tree of maximum depth 5 where each directory contains approximately 4 other directories.
-Created 122,218 files across 1,394 directories.
+$ ftzz g unseeded -n 100
+About 100 files will be generated in approximately 100 directories distributed across a tree of maximum depth 5 where each directory contains approximately 3 other directories.
+Created 108 files across 108 directories.
+
+$ ftzz g seeded -n 100 --seed 42 # Or $RANDOM
+About 100 files will be generated in approximately 100 directories distributed across a tree of maximum depth 5 where each directory contains approximately 3 other directories.
+Created 246 files across 244 directories.
 
 ```
 

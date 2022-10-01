@@ -8,6 +8,7 @@ use clap::{ArgAction, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use cli_errors::{CliExitAnyhowWrapper, CliExitError};
+use paste::paste;
 
 use ftzz::generator::{Generator, NumFilesWithRatio};
 
@@ -89,6 +90,7 @@ struct Generate {
 
     /// The maximum directory tree depth
     #[clap(short = 'd', long = "max-depth", alias = "depth")]
+    #[clap(value_parser = max_depth_parser)]
     #[clap(default_value = "5")]
     max_depth: u32,
 
@@ -234,7 +236,7 @@ fn main() -> cli_errors::CliResult<()> {
 }
 
 fn num_files_parser(s: &str) -> Result<NonZeroUsize, String> {
-    let files = lenient_si_number(s)?;
+    let files = lenient_si_number_usize(s)?;
     if files > 0 {
         Ok(unsafe { NonZeroUsize::new_unchecked(files) })
     } else {
@@ -243,11 +245,15 @@ fn num_files_parser(s: &str) -> Result<NonZeroUsize, String> {
 }
 
 fn num_bytes_parser(s: &str) -> Result<usize, String> {
-    lenient_si_number(s)
+    lenient_si_number_usize(s)
+}
+
+fn max_depth_parser(s: &str) -> Result<u32, String> {
+    lenient_si_number_u32(s)
 }
 
 fn file_to_dir_ratio_parser(s: &str) -> Result<NonZeroUsize, String> {
-    let ratio = lenient_si_number(s)?;
+    let ratio = lenient_si_number_usize(s)?;
     if ratio > 0 {
         Ok(unsafe { NonZeroUsize::new_unchecked(ratio) })
     } else {
@@ -255,12 +261,21 @@ fn file_to_dir_ratio_parser(s: &str) -> Result<NonZeroUsize, String> {
     }
 }
 
-fn lenient_si_number(s: &str) -> Result<usize, String> {
-    let mut s = s.replace('K', "k");
-    s.remove_matches(",");
-    s.remove_matches("_");
-    si_number(&s)
+macro_rules! lenient_si_number {
+    ($ty:ty) => {
+        paste! {
+            fn [<lenient_si_number_$ty>](s: &str) -> Result<$ty, String> {
+                let mut s = s.replace('K', "k");
+                s.remove_matches(",");
+                s.remove_matches("_");
+                si_number(&s)
+            }
+        }
+    };
 }
+
+lenient_si_number!(usize);
+lenient_si_number!(u32);
 
 #[cfg(test)]
 mod cli_tests {
@@ -296,346 +311,5 @@ mod cli_tests {
 
             write_help(buffer, sub);
         }
-    }
-}
-
-#[cfg(test)]
-mod cli_generate_tests {
-    use clap::{
-        error::ErrorKind::{
-            ArgumentConflict, DisplayHelpOnMissingArgumentOrSubcommand, MissingRequiredArgument,
-            UnknownArgument,
-        },
-        CommandFactory, FromArgMatches,
-    };
-
-    use super::*;
-
-    macro_rules! expect_error {
-        ($args:expr, $error:expr) => {
-            let f = Ftzz::try_parse_from($args);
-
-            assert!(f.is_err());
-            assert_eq!(f.unwrap_err().kind(), $error);
-        };
-    }
-
-    macro_rules! expect_success {
-        ($args:expr) => {{
-            let m = Ftzz::command().get_matches_from($args);
-            <Generate as FromArgMatches>::from_arg_matches(
-                m.subcommand_matches("generate").unwrap(),
-            )
-            .unwrap()
-        }};
-    }
-
-    #[test]
-    fn empty_args_displays_help() {
-        expect_error!(
-            Vec::<String>::new(),
-            DisplayHelpOnMissingArgumentOrSubcommand
-        );
-    }
-
-    #[test]
-    fn generate_empty_args_displays_error() {
-        expect_error!(vec!["ftzz", "generate"], MissingRequiredArgument);
-    }
-
-    #[test]
-    fn generate_minimal_use_case_uses_defaults() {
-        let g = expect_success!(vec!["ftzz", "generate", "-n", "1", "dir"]);
-
-        assert_eq!(g.root_dir, PathBuf::from("dir"));
-        assert_eq!(g.num_files.get(), 1);
-        assert_eq!(g.max_depth, 5);
-        assert_eq!(g.file_to_dir_ratio, None);
-        assert_eq!(g.seed, 0);
-        assert!(!g.files_exact);
-        assert!(!g.bytes_exact);
-        assert!(!g.exact);
-        assert_eq!(g.num_bytes, 0);
-    }
-
-    #[test]
-    fn generate_num_files_rejects_negatives() {
-        expect_error!(vec!["ftzz", "generate", "-n", "-1", "dir"], UnknownArgument);
-    }
-
-    #[test]
-    fn generate_num_files_accepts_plain_nums() {
-        let g = expect_success!(vec!["ftzz", "generate", "--files", "1000", "dir"]);
-
-        assert_eq!(g.num_files.get(), 1000);
-    }
-
-    #[test]
-    fn generate_short_num_files_accepts_plain_nums() {
-        let g = expect_success!(vec!["ftzz", "generate", "-n", "1000", "dir"]);
-
-        assert_eq!(g.num_files.get(), 1000);
-    }
-
-    #[test]
-    fn generate_num_files_accepts_si_numbers() {
-        let g = expect_success!(vec!["ftzz", "generate", "--files", "1K", "dir"]);
-
-        assert_eq!(g.num_files.get(), 1000);
-    }
-
-    #[test]
-    fn generate_num_files_accepts_commas() {
-        let g = expect_success!(vec!["ftzz", "generate", "--files", "1,000", "dir"]);
-
-        assert_eq!(g.num_files.get(), 1000);
-    }
-
-    #[test]
-    fn generate_num_files_accepts_underscores() {
-        let g = expect_success!(vec!["ftzz", "generate", "--files", "1_000", "dir"]);
-
-        assert_eq!(g.num_files.get(), 1000);
-    }
-
-    #[test]
-    fn generate_max_depth_rejects_negatives() {
-        expect_error!(
-            vec!["ftzz", "generate", "--depth", "-1", "-n", "1", "dir"],
-            UnknownArgument
-        );
-    }
-
-    #[test]
-    fn generate_max_depth_accepts_plain_nums() {
-        let g = expect_success!(vec!["ftzz", "generate", "--depth", "123", "-n", "1", "dir"]);
-
-        assert_eq!(g.max_depth, 123);
-    }
-
-    #[test]
-    fn generate_short_max_depth_accepts_plain_nums() {
-        let g = expect_success!(vec!["ftzz", "generate", "-d", "123", "-n", "1", "dir"]);
-
-        assert_eq!(g.max_depth, 123);
-    }
-
-    #[test]
-    fn generate_ratio_rejects_negatives() {
-        expect_error!(
-            vec!["ftzz", "generate", "--ftd-ratio", "-1", "-n", "1", "dir",],
-            UnknownArgument
-        );
-    }
-
-    #[test]
-    fn generate_ratio_accepts_plain_nums() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "--ftd-ratio",
-            "1000",
-            "-n",
-            "1",
-            "dir",
-        ]);
-
-        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(1000).unwrap()));
-    }
-
-    #[test]
-    fn generate_short_ratio_accepts_plain_nums() {
-        let g = expect_success!(vec!["ftzz", "generate", "-r", "321", "-n", "1", "dir"]);
-
-        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(321).unwrap()));
-    }
-
-    #[test]
-    fn generate_ratio_accepts_si_numbers() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "--ftd-ratio",
-            "1K",
-            "-n",
-            "1",
-            "dir",
-        ]);
-
-        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(1000).unwrap()));
-    }
-
-    #[test]
-    fn generate_ratio_accepts_commas() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "--ftd-ratio",
-            "1,000",
-            "-n",
-            "1",
-            "dir",
-        ]);
-
-        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(1000).unwrap()));
-    }
-
-    #[test]
-    fn generate_ratio_accepts_underscores() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "--ftd-ratio",
-            "1_000",
-            "-n",
-            "1",
-            "dir",
-        ]);
-
-        assert_eq!(g.file_to_dir_ratio, Some(NonZeroUsize::new(1000).unwrap()));
-    }
-
-    #[test]
-    fn generate_seed_rejects_negatives() {
-        expect_error!(
-            vec!["ftzz", "generate", "--seed", "-1", "-n", "1", "dir",],
-            UnknownArgument
-        );
-    }
-
-    #[test]
-    fn generate_seed_accepts_plain_nums() {
-        let g = expect_success!(vec!["ftzz", "generate", "--seed", "231", "-n", "1", "dir",]);
-
-        assert_eq!(g.seed, 231);
-    }
-
-    #[test]
-    fn generate_num_bytes_accepts_plain_nums() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "-n",
-            "1",
-            "dir",
-            "--total-bytes",
-            "1000",
-        ]);
-
-        assert_eq!(g.num_bytes, 1000);
-    }
-
-    #[test]
-    fn generate_short_num_bytes_accepts_plain_nums() {
-        let g = expect_success!(vec!["ftzz", "generate", "-n", "1", "dir", "-b", "1000"]);
-
-        assert_eq!(g.num_bytes, 1000);
-    }
-
-    #[test]
-    fn generate_num_bytes_accepts_si_numbers() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "-n",
-            "1",
-            "dir",
-            "--total-bytes",
-            "1K",
-        ]);
-
-        assert_eq!(g.num_bytes, 1000);
-    }
-
-    #[test]
-    fn generate_num_bytes_accepts_commas() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "-n",
-            "1",
-            "dir",
-            "--total-bytes",
-            "1,000",
-        ]);
-
-        assert_eq!(g.num_bytes, 1000);
-    }
-
-    #[test]
-    fn generate_num_bytes_accepts_underscores() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "-n",
-            "1",
-            "dir",
-            "--total-bytes",
-            "1_000",
-        ]);
-
-        assert_eq!(g.num_bytes, 1000);
-    }
-
-    #[test]
-    fn generate_files_exact_and_exact_conflict() {
-        expect_error!(
-            vec![
-                "ftzz",
-                "generate",
-                "-n",
-                "1",
-                "dir",
-                "--files-exact",
-                "--exact",
-            ],
-            ArgumentConflict
-        );
-    }
-
-    #[test]
-    fn generate_bytes_exact_and_exact_conflict() {
-        expect_error!(
-            vec![
-                "ftzz",
-                "generate",
-                "-n",
-                "1",
-                "dir",
-                "--bytes-exact",
-                "--exact",
-            ],
-            ArgumentConflict
-        );
-    }
-
-    #[test]
-    fn generate_files_exact_and_bytes_exact_can_be_used() {
-        let g = expect_success!(vec![
-            "ftzz",
-            "generate",
-            "-n",
-            "1",
-            "dir",
-            "--files-exact",
-            "--bytes-exact",
-        ]);
-
-        assert!(g.files_exact);
-        assert!(g.bytes_exact);
-    }
-
-    #[test]
-    fn generate_exact_can_be_used() {
-        let g = expect_success!(vec!["ftzz", "generate", "-n", "1", "dir", "--exact"]);
-
-        assert!(g.exact);
-    }
-
-    #[test]
-    fn generate_short_exact_can_be_used() {
-        let g = expect_success!(vec!["ftzz", "generate", "-n", "1", "dir", "-e"]);
-
-        assert!(g.exact);
     }
 }

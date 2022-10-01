@@ -22,3 +22,8 @@ fn api() {
 fn readme() {
     trycmd::TestCases::new().case("README.md");
 }
+
+#[test]
+fn cli() {
+    trycmd::TestCases::new().case("testdata/cmds/*.md");
+}
