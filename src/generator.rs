@@ -234,19 +234,23 @@ fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
         },
         bytes_info = if config.bytes > 0 {
             format!(
-                " Each file will contain {byte_count_type} {} {bytes_maybe_plural} of random data.",
+                " Each file will contain approximately {} {bytes_maybe_plural} of random data{exact_bytes_total}.",
                 config
                     .informational_bytes_per_files
                     .to_formatted_string(&locale),
-                byte_count_type = if config.bytes_exact {
-                    "exactly"
-                } else {
-                    "approximately"
-                },
                 bytes_maybe_plural = if config.informational_bytes_per_files == 1 {
                     "byte"
                 } else {
                     "bytes"
+                },
+                exact_bytes_total = if config.bytes_exact {
+                    format!(
+                        " totaling exactly {} {bytes_maybe_plural}",
+                        config.bytes,
+                        bytes_maybe_plural = if config.bytes == 1 { "byte" } else { "bytes" }
+                    )
+                } else {
+                    String::new()
                 },
             )
         } else {
