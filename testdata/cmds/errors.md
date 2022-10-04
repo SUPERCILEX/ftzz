@@ -7,7 +7,7 @@ error: The following required arguments were not provided:
   --files <NUM_FILES>
   <ROOT_DIR>
 
-Usage: ftzz generate --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
@@ -20,7 +20,7 @@ error: Found argument '-1' which wasn't expected, or isn't valid in this context
 
   If you tried to supply '-1' as a value rather than a flag, use '-- -1'
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 $ ftzz generate -n "-1" dir
 ? 2
@@ -28,7 +28,7 @@ error: Found argument '-1' which wasn't expected, or isn't valid in this context
 
   If you tried to supply '-1' as a value rather than a flag, use '-- -1'
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
@@ -41,7 +41,7 @@ error: Found argument '-1' which wasn't expected, or isn't valid in this context
 
   If you tried to supply '-1' as a value rather than a flag, use '-- -1'
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 $ ftzz generate -n 1 dir --depth "-1"
 ? 2
@@ -49,7 +49,7 @@ error: Found argument '-1' which wasn't expected, or isn't valid in this context
 
   If you tried to supply '-1' as a value rather than a flag, use '-- -1'
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
@@ -62,7 +62,7 @@ error: Found argument '-1' which wasn't expected, or isn't valid in this context
 
   If you tried to supply '-1' as a value rather than a flag, use '-- -1'
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 $ ftzz generate -n 1 dir --ftd-ratio "-1"
 ? 2
@@ -70,7 +70,7 @@ error: Found argument '-1' which wasn't expected, or isn't valid in this context
 
   If you tried to supply '-1' as a value rather than a flag, use '-- -1'
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
@@ -83,7 +83,7 @@ error: Found argument '-1' which wasn't expected, or isn't valid in this context
 
   If you tried to supply '-1' as a value rather than a flag, use '-- -1'
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 $ ftzz generate -n 1 dir --seed "-1"
 ? 2
@@ -91,7 +91,7 @@ error: Found argument '-1' which wasn't expected, or isn't valid in this context
 
   If you tried to supply '-1' as a value rather than a flag, use '-- -1'
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
@@ -102,7 +102,7 @@ $ ftzz generate -n 1 dir --files-exact --exact
 ? 2
 error: The argument '--files-exact' cannot be used with '--exact'
 
-Usage: ftzz generate --files <NUM_FILES> --files-exact <ROOT_DIR>
+Usage: ftzz[EXE] generate --files <NUM_FILES> --files-exact <ROOT_DIR>
 
 ```
 
@@ -113,7 +113,7 @@ $ ftzz generate -n 1 dir --bytes-exact --exact
 ? 2
 error: The argument '--bytes-exact' cannot be used with '--exact'
 
-Usage: ftzz generate --files <NUM_FILES> --bytes-exact <ROOT_DIR>
+Usage: ftzz[EXE] generate --files <NUM_FILES> --bytes-exact <ROOT_DIR>
 
 ```
 

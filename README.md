@@ -78,7 +78,7 @@ named `n` and directories are named `n.dir` for a given natural number `n`.
 By default, generated files are empty, but random data can be used as the file contents with the
 `total-bytes` option.
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 Arguments:
   <ROOT_DIR>
