@@ -1,20 +1,58 @@
-pub fn ftzz::generator::Generator::builder() -> GeneratorBuilder<((), (), (), (), (), (), ())>
+impl RefUnwindSafe for ftzz::generator::Error
+impl RefUnwindSafe for ftzz::generator::Generator
+impl RefUnwindSafe for ftzz::generator::NumFilesWithRatio
+impl RefUnwindSafe for ftzz::generator::NumFilesWithRatioError
+impl Send for ftzz::generator::Error
+impl Send for ftzz::generator::Generator
+impl Send for ftzz::generator::NumFilesWithRatio
+impl Send for ftzz::generator::NumFilesWithRatioError
+impl Sync for ftzz::generator::Error
+impl Sync for ftzz::generator::Generator
+impl Sync for ftzz::generator::NumFilesWithRatio
+impl Sync for ftzz::generator::NumFilesWithRatioError
+impl Unpin for ftzz::generator::Error
+impl Unpin for ftzz::generator::Generator
+impl Unpin for ftzz::generator::NumFilesWithRatio
+impl Unpin for ftzz::generator::NumFilesWithRatioError
+impl UnwindSafe for ftzz::generator::Error
+impl UnwindSafe for ftzz::generator::Generator
+impl UnwindSafe for ftzz::generator::NumFilesWithRatio
+impl UnwindSafe for ftzz::generator::NumFilesWithRatioError
+impl<TypedBuilderFields> RefUnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: RefUnwindSafe
+impl<TypedBuilderFields> Send for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: Send
+impl<TypedBuilderFields> Sync for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: Sync
+impl<TypedBuilderFields> Unpin for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: Unpin
+impl<TypedBuilderFields> UnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: UnwindSafe
+pub enum ftzz::generator::Error
+pub enum ftzz::generator::NumFilesWithRatioError
+pub enum variant ftzz::generator::Error::InvalidEnvironment
+pub enum variant ftzz::generator::Error::Io
+pub enum variant ftzz::generator::Error::RuntimeCreation
+pub enum variant ftzz::generator::Error::TaskJoin
+pub enum variant ftzz::generator::NumFilesWithRatioError::InvalidRatio
+pub fn ftzz::generator::Error::fmt(&self, __formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+pub fn ftzz::generator::Error::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
+pub fn ftzz::generator::Generator::builder() -> ftzz::generator::GeneratorBuilder<((), (), (), (), (), (), ())>
 pub fn ftzz::generator::Generator::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
-pub fn ftzz::generator::Generator::generate(self, output: &mut impl Write) -> CliResult<()>
-pub fn ftzz::generator::GeneratorBuilder::build(self) -> Generator
-pub fn ftzz::generator::GeneratorBuilder::bytes_exact(self, bytes_exact: bool) -> GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (bool), __max_depth, __seed)>
+pub fn ftzz::generator::Generator::generate(self, output: &mut impl Write) -> Result<(), ftzz::generator::Error>
+pub fn ftzz::generator::GeneratorBuilder::build(self) -> ftzz::generator::Generator
+pub fn ftzz::generator::GeneratorBuilder::bytes_exact(self, bytes_exact: bool) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (bool), __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::clone(&self) -> Self
-pub fn ftzz::generator::GeneratorBuilder::files_exact(self, files_exact: bool) -> GeneratorBuilder<(__root_dir, __num_files_with_ratio, (bool), __num_bytes, __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder::max_depth(self, max_depth: u32) -> GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, (u32), __seed)>
-pub fn ftzz::generator::GeneratorBuilder::num_bytes(self, num_bytes: usize) -> GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (usize), __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder::num_files_with_ratio(self, num_files_with_ratio: NumFilesWithRatio) -> GeneratorBuilder<(__root_dir, (NumFilesWithRatio), __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder::root_dir(self, root_dir: PathBuf) -> GeneratorBuilder<((PathBuf), __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder::seed(self, seed: u64) -> GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, (u64))>
+pub fn ftzz::generator::GeneratorBuilder::files_exact(self, files_exact: bool) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (bool), __num_bytes, __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::generator::GeneratorBuilder::max_depth(self, max_depth: u32) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, (u32), __seed)>
+pub fn ftzz::generator::GeneratorBuilder::num_bytes(self, num_bytes: usize) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (usize), __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::generator::GeneratorBuilder::num_files_with_ratio(self, num_files_with_ratio: ftzz::generator::NumFilesWithRatio) -> ftzz::generator::GeneratorBuilder<(__root_dir, (ftzz::generator::NumFilesWithRatio), __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::generator::GeneratorBuilder::root_dir(self, root_dir: PathBuf) -> ftzz::generator::GeneratorBuilder<((PathBuf), __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::generator::GeneratorBuilder::seed(self, seed: u64) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, (u64))>
 pub fn ftzz::generator::NumFilesWithRatio::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
 pub fn ftzz::generator::NumFilesWithRatio::from_num_files(num_files: NonZeroUsize) -> Self
-pub fn ftzz::generator::NumFilesWithRatio::new(num_files: NonZeroUsize, file_to_dir_ratio: NonZeroUsize) -> Result<Self, anyhow::Error>
+pub fn ftzz::generator::NumFilesWithRatio::new(num_files: NonZeroUsize, file_to_dir_ratio: NonZeroUsize) -> std::result::Result<Self, ftzz::generator::NumFilesWithRatioError>
+pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, __formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
 pub mod ftzz
 pub mod ftzz::generator
+pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: NonZeroUsize
+pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::num_files: NonZeroUsize
 pub struct ftzz::generator::Generator
 pub struct ftzz::generator::GeneratorBuilder<TypedBuilderFields>
 pub struct ftzz::generator::NumFilesWithRatio
