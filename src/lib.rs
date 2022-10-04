@@ -1,4 +1,4 @@
-#![feature(is_some_with)]
+#![feature(is_some_and)]
 #![feature(const_trait_impl)]
 #![feature(const_mut_refs)]
 #![feature(let_chains)]
