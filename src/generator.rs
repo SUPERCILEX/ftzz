@@ -5,7 +5,7 @@
 )]
 
 use std::{
-    cmp::max, fs::create_dir_all, io, io::Write, num::NonZeroUsize, path::PathBuf,
+    cmp::max, fs::create_dir_all, io::Write, num::NonZeroUsize, path::PathBuf,
     process::ExitCode, thread,
 };
 
@@ -180,12 +180,11 @@ fn validated_options(generator: Generator) -> Result<Configuration, Error> {
         .count()
         != 0
     {
-        return Err(Report::new(io::Error::from(io::ErrorKind::AlreadyExists)))
+        return Err(Report::new(Error::InvalidEnvironment))
             .attach_printable(format!(
                 "The root directory {:?} must be empty.",
                 generator.root_dir
             ))
-            .change_context(Error::InvalidEnvironment)
             .attach(ExitCode::from(u8::try_from(exitcode::DATAERR).unwrap()));
     }
 
