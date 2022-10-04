@@ -52,9 +52,9 @@ pub async fn run(
                 .await
                 .into_report()
                 .change_context(Error::TaskJoin)
-                .attach(ExitCode::from(u8::try_from(exitcode::SOFTWARE).unwrap()))?
+                .attach(ExitCode::from(sysexits::ExitCode::Software))?
                 .change_context(Error::Io)
-                .attach(ExitCode::from(u8::try_from(exitcode::IOERR).unwrap()))?;
+                .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
             #[cfg(dry_run)]
             let outcome = task;
 

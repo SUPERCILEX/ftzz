@@ -5,8 +5,8 @@
 )]
 
 use std::{
-    cmp::max, fs::create_dir_all, io::Write, num::NonZeroUsize, path::PathBuf,
-    process::ExitCode, thread,
+    cmp::max, fs::create_dir_all, io::Write, num::NonZeroUsize, path::PathBuf, process::ExitCode,
+    thread,
 };
 
 use error_stack::{IntoReport, Report, Result, ResultExt};
@@ -169,14 +169,14 @@ fn validated_options(generator: Generator) -> Result<Configuration, Error> {
         .into_report()
         .attach_printable_lazy(|| format!("Failed to create directory {:?}", generator.root_dir))
         .change_context(Error::InvalidEnvironment)
-        .attach(ExitCode::from(u8::try_from(exitcode::IOERR).unwrap()))?;
+        .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
     if generator
         .root_dir
         .read_dir()
         .into_report()
         .attach_printable_lazy(|| format!("Failed to read directory {:?}", generator.root_dir))
         .change_context(Error::InvalidEnvironment)
-        .attach(ExitCode::from(u8::try_from(exitcode::IOERR).unwrap()))?
+        .attach(ExitCode::from(sysexits::ExitCode::IoErr))?
         .count()
         != 0
     {
@@ -185,7 +185,7 @@ fn validated_options(generator: Generator) -> Result<Configuration, Error> {
                 "The root directory {:?} must be empty.",
                 generator.root_dir
             ))
-            .attach(ExitCode::from(u8::try_from(exitcode::DATAERR).unwrap()));
+            .attach(ExitCode::from(sysexits::ExitCode::DataErr));
     }
 
     let num_files = generator.num_files_with_ratio.num_files.get() as f64;
@@ -323,7 +323,7 @@ fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
         .build()
         .into_report()
         .change_context(Error::RuntimeCreation)
-        .attach(ExitCode::from(u8::try_from(exitcode::OSERR).unwrap()))?;
+        .attach(ExitCode::from(sysexits::ExitCode::OsErr))?;
 
     event!(Level::INFO, config = ?config, "Starting config");
     runtime.block_on(run_generator_async(config, parallelism))
