@@ -1,16 +1,21 @@
 #![feature(string_remove_matches)]
 #![allow(clippy::multiple_crate_versions)]
 
-use std::{io::stdout, num::NonZeroUsize, path::PathBuf};
+use std::{
+    io,
+    io::{stdout, Write},
+    num::NonZeroUsize,
+    path::PathBuf,
+    process::{ExitCode, Termination},
+};
 
-use anyhow::Context;
 use clap::{ArgAction, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
-use cli_errors::{CliExitAnyhowWrapper, CliExitError};
+use error_stack::{IntoReport, ResultExt};
 use paste::paste;
 
-use ftzz::generator::{Generator, NumFilesWithRatio};
+use ftzz::generator::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
 
 /// A random file and directory generator
 #[derive(Parser, Debug)]
@@ -111,7 +116,7 @@ struct Generate {
 }
 
 impl TryFrom<Generate> for Generator {
-    type Error = CliExitError;
+    type Error = NumFilesWithRatioError;
 
     fn try_from(options: Generate) -> Result<Self, Self::Error> {
         let builder = Self::builder()
@@ -121,11 +126,7 @@ impl TryFrom<Generate> for Generator {
             .bytes_exact(options.bytes_exact || options.exact)
             .max_depth(options.max_depth);
         let builder = if let Some(ratio) = options.file_to_dir_ratio {
-            builder.num_files_with_ratio(
-                NumFilesWithRatio::new(options.num_files, ratio)
-                    .context("Input validation failed")
-                    .with_code(exitcode::DATAERR)?,
-            )
+            builder.num_files_with_ratio(NumFilesWithRatio::new(options.num_files, ratio)?)
         } else {
             builder.num_files_with_ratio(NumFilesWithRatio::from_num_files(options.num_files))
         };
@@ -213,8 +214,15 @@ mod generate_tests {
     }
 }
 
-#[cli_errors::main]
-fn main() -> cli_errors::CliResult<()> {
+#[derive(thiserror::Error, Debug)]
+pub enum CliError {
+    #[error("File generator failed.")]
+    Generator,
+    #[error("An argument combination was invalid.")]
+    InvalidArgs,
+}
+
+fn main() -> ExitCode {
     let args = Ftzz::parse();
 
     #[cfg(not(feature = "trace"))]
@@ -230,8 +238,22 @@ fn main() -> cli_errors::CliResult<()> {
         guard
     };
 
-    match args.cmd {
-        Cmd::Generate(options) => Generator::try_from(options)?.generate(&mut stdout()),
+    match ftzz(args) {
+        Ok(o) => o.report(),
+        Err(err) => {
+            drop(writeln!(io::stderr(), "Error: {err:?}"));
+            err.report()
+        }
+    }
+}
+
+fn ftzz(ftzz: Ftzz) -> error_stack::Result<(), CliError> {
+    match ftzz.cmd {
+        Cmd::Generate(options) => Generator::try_from(options)
+            .into_report()
+            .change_context(CliError::InvalidArgs)?
+            .generate(&mut stdout())
+            .change_context(CliError::Generator),
     }
 }
 

@@ -93,7 +93,7 @@ fn gen_in_non_emtpy_existing_dir_is_disallowed() {
         .build()
         .generate(&mut goldenfile);
 
-    result.unwrap_err();
+    drop(result.unwrap_err());
     print_and_hash_dir(&dir.path, &mut goldenfile);
 }
 

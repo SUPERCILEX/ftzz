@@ -4,14 +4,17 @@
     clippy::cast_possible_truncation
 )]
 
-use std::{cmp::max, fs::create_dir_all, io::Write, num::NonZeroUsize, path::PathBuf, thread};
+use std::{
+    cmp::max, fs::create_dir_all, io, io::Write, num::NonZeroUsize, path::PathBuf,
+    process::ExitCode, thread,
+};
 
-use anyhow::{anyhow, Context};
-use cli_errors::{CliExitAnyhowWrapper, CliResult};
+use error_stack::{IntoReport, Report, Result, ResultExt};
 use num_format::{Locale, ToFormattedString};
 use rand::SeedableRng;
 use rand_distr::Normal;
 use rand_xoshiro::Xoshiro256PlusPlus;
+use thiserror::Error;
 use tracing::{event, Level};
 use typed_builder::TypedBuilder;
 
@@ -20,10 +23,34 @@ use crate::core::{
     OtherFilesAndContentsGenerator,
 };
 
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("Failed to retrieve subtask results.")]
+    TaskJoin,
+    #[error("An IO error occurred in a subtask.")]
+    Io,
+    #[error("Failed to achieve valid generator environment.")]
+    InvalidEnvironment,
+    #[error("Failed to create the async runtime.")]
+    RuntimeCreation,
+}
+
 #[derive(Debug)]
 pub struct NumFilesWithRatio {
     num_files: NonZeroUsize,
     file_to_dir_ratio: NonZeroUsize,
+}
+
+#[derive(Error, Debug)]
+pub enum NumFilesWithRatioError {
+    #[error(
+        "The file to dir ratio ({file_to_dir_ratio}) cannot be larger \
+        than the number of files to generate ({num_files})."
+    )]
+    InvalidRatio {
+        num_files: NonZeroUsize,
+        file_to_dir_ratio: NonZeroUsize,
+    },
 }
 
 impl NumFilesWithRatio {
@@ -34,12 +61,12 @@ impl NumFilesWithRatio {
     pub fn new(
         num_files: NonZeroUsize,
         file_to_dir_ratio: NonZeroUsize,
-    ) -> Result<Self, anyhow::Error> {
+    ) -> std::result::Result<Self, NumFilesWithRatioError> {
         if file_to_dir_ratio > num_files {
-            return Err(anyhow!(
-                "The file to dir ratio ({file_to_dir_ratio}) cannot be larger \
-                than the number of files to generate ({num_files}).",
-            ));
+            return Err(NumFilesWithRatioError::InvalidRatio {
+                num_files,
+                file_to_dir_ratio,
+            });
         }
 
         Ok(Self {
@@ -111,7 +138,7 @@ mod tests {
 
 impl Generator {
     #[allow(clippy::missing_errors_doc)]
-    pub fn generate(self, output: &mut impl Write) -> CliResult<()> {
+    pub fn generate(self, output: &mut impl Write) -> Result<(), Error> {
         let options = validated_options(self)?;
         print_configuration_info(&options, output);
         print_stats(run_generator(options)?, output);
@@ -137,23 +164,29 @@ struct Configuration {
     informational_bytes_per_files: usize,
 }
 
-fn validated_options(generator: Generator) -> CliResult<Configuration> {
+fn validated_options(generator: Generator) -> Result<Configuration, Error> {
     create_dir_all(&generator.root_dir)
-        .with_context(|| format!("Failed to create directory {:?}", generator.root_dir))
-        .with_code(exitcode::IOERR)?;
+        .into_report()
+        .attach_printable_lazy(|| format!("Failed to create directory {:?}", generator.root_dir))
+        .change_context(Error::InvalidEnvironment)
+        .attach(ExitCode::from(u8::try_from(exitcode::IOERR).unwrap()))?;
     if generator
         .root_dir
         .read_dir()
-        .with_context(|| format!("Failed to read directory {:?}", generator.root_dir))
-        .with_code(exitcode::IOERR)?
+        .into_report()
+        .attach_printable_lazy(|| format!("Failed to read directory {:?}", generator.root_dir))
+        .change_context(Error::InvalidEnvironment)
+        .attach(ExitCode::from(u8::try_from(exitcode::IOERR).unwrap()))?
         .count()
         != 0
     {
-        return Err(anyhow!(
-            "The root directory {:?} must be empty.",
-            generator.root_dir,
-        ))
-        .with_code(exitcode::DATAERR);
+        return Err(Report::new(io::Error::from(io::ErrorKind::AlreadyExists)))
+            .attach_printable(format!(
+                "The root directory {:?} must be empty.",
+                generator.root_dir
+            ))
+            .change_context(Error::InvalidEnvironment)
+            .attach(ExitCode::from(u8::try_from(exitcode::DATAERR).unwrap()));
     }
 
     let num_files = generator.num_files_with_ratio.num_files.get() as f64;
@@ -283,14 +316,15 @@ fn print_stats(stats: GeneratorStats, output: &mut impl Write) {
     .unwrap();
 }
 
-fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
+fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
     let parallelism =
         thread::available_parallelism().unwrap_or(unsafe { NonZeroUsize::new_unchecked(1) });
     let runtime = tokio::runtime::Builder::new_current_thread()
         .max_blocking_threads(parallelism.get())
         .build()
-        .context("Failed to create tokio runtime")
-        .with_code(exitcode::OSERR)?;
+        .into_report()
+        .change_context(Error::RuntimeCreation)
+        .attach(ExitCode::from(u8::try_from(exitcode::OSERR).unwrap()))?;
 
     event!(Level::INFO, config = ?config, "Starting config");
     runtime.block_on(run_generator_async(config, parallelism))
@@ -299,7 +333,7 @@ fn run_generator(config: Configuration) -> CliResult<GeneratorStats> {
 async fn run_generator_async(
     config: Configuration,
     parallelism: NonZeroUsize,
-) -> CliResult<GeneratorStats> {
+) -> Result<GeneratorStats, Error> {
     let max_depth = config.max_depth as usize;
     let random = {
         let seed = ((config.files.wrapping_add(max_depth) as f64

@@ -1,7 +1,9 @@
-use std::{collections::VecDeque, num::NonZeroUsize, ops::AddAssign, path::PathBuf};
+use std::{
+    collections::VecDeque, num::NonZeroUsize, ops::AddAssign, path::PathBuf, process::ExitCode,
+};
 
-use anyhow::Context;
-use cli_errors::{CliExitAnyhowWrapper, CliResult};
+use error_stack::{IntoReport, Result, ResultExt};
+
 use tracing::{event, span, Level};
 
 use crate::{
@@ -9,6 +11,7 @@ use crate::{
         files::GeneratorTaskOutcome,
         tasks::{QueueErrors, TaskGenerator},
     },
+    generator::Error,
     utils::{with_dir_name, FastPathBuf},
 };
 
@@ -33,7 +36,7 @@ pub async fn run(
     max_depth: usize,
     parallelism: NonZeroUsize,
     mut generator: impl TaskGenerator + Send,
-) -> CliResult<GeneratorStats> {
+) -> Result<GeneratorStats, Error> {
     // Minus 1 because VecDeque adds 1 and then rounds to a power of 2
     let mut tasks = VecDeque::with_capacity(parallelism.get().pow(2) - 1);
     let mut stats = GeneratorStats {
@@ -41,6 +44,25 @@ pub async fn run(
         dirs: 0,
         bytes: 0,
     };
+
+    macro_rules! handle_task_result {
+        ($task:expr) => {{
+            #[cfg(not(dry_run))]
+            let outcome = $task
+                .await
+                .into_report()
+                .change_context(Error::TaskJoin)
+                .attach(ExitCode::from(u8::try_from(exitcode::SOFTWARE).unwrap()))?
+                .change_context(Error::Io)
+                .attach(ExitCode::from(u8::try_from(exitcode::IOERR).unwrap()))?;
+            #[cfg(dry_run)]
+            let outcome = task;
+
+            stats += &outcome;
+
+            outcome
+        }};
+    }
 
     {
         let mut stack = Vec::with_capacity(max_depth);
@@ -67,16 +89,7 @@ pub async fn run(
             () => {
                 event!(Level::TRACE, "Flushing pending task queue");
                 for task in tasks.drain(..tasks.len() / 2) {
-                    #[cfg(not(dry_run))]
-                    let outcome = task
-                        .await
-                        .context("Failed to retrieve task result")
-                        .with_code(exitcode::SOFTWARE)??;
-                    #[cfg(dry_run)]
-                    let outcome = task;
-
-                    stats += &outcome;
-
+                    let outcome = handle_task_result!(task);
                     path_pool.push(outcome.pool_return_file);
                     if let Some(mut vec) = outcome.pool_return_byte_counts {
                         vec.clear();
@@ -195,16 +208,8 @@ pub async fn run(
         }
     }
 
-    #[cfg(not(dry_run))]
     for task in tasks {
-        stats += &task
-            .await
-            .context("Failed to retrieve task result")
-            .with_code(exitcode::SOFTWARE)??;
-    }
-    #[cfg(dry_run)]
-    for task in tasks {
-        stats += &task;
+        handle_task_result!(task);
     }
 
     Ok(stats)

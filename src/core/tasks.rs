@@ -1,8 +1,7 @@
 #![allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 
-use std::{cmp::min, num::NonZeroUsize};
+use std::{cmp::min, io, num::NonZeroUsize};
 
-use cli_errors::CliResult;
 use rand::{distributions::Distribution, RngCore};
 use tokio::{task, task::JoinHandle};
 
@@ -20,7 +19,7 @@ pub type QueueResult = Result<QueueOutcome, QueueErrors>;
 
 pub struct QueueOutcome {
     #[cfg(not(dry_run))]
-    pub task: JoinHandle<CliResult<GeneratorTaskOutcome>>,
+    pub task: JoinHandle<error_stack::Result<GeneratorTaskOutcome, io::Error>>,
     #[cfg(dry_run)]
     pub task: GeneratorTaskOutcome,
 
