@@ -1,5 +1,5 @@
 use std::{
-    ffi::{CStr, OsStr},
+    ffi::OsStr,
     fmt,
     ops::Deref,
     os::unix::ffi::{OsStrExt, OsStringExt},
@@ -52,8 +52,9 @@ impl FastPathBuf {
         self.push(name);
     }
 
-    pub fn to_cstr_mut(&mut self) -> CStrFastPathBufGuard {
-        CStrFastPathBufGuard::new(self)
+    #[cfg(target_os = "linux")]
+    pub fn to_cstr_mut(&mut self) -> linux::CStrFastPathBufGuard {
+        linux::CStrFastPathBufGuard::new(self)
     }
 }
 
@@ -101,37 +102,44 @@ impl Clone for FastPathBuf {
     }
 }
 
-pub struct CStrFastPathBufGuard<'a> {
-    buf: &'a mut FastPathBuf,
-}
+#[cfg(target_os = "linux")]
+mod linux {
+    use std::{ffi::CStr, ops::Deref};
 
-impl<'a> CStrFastPathBufGuard<'a> {
-    fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard {
-        buf.inner.push(0); // NUL terminator
-        CStrFastPathBufGuard { buf }
+    use super::FastPathBuf;
+
+    pub struct CStrFastPathBufGuard<'a> {
+        buf: &'a mut FastPathBuf,
     }
-}
 
-impl<'a> Deref for CStrFastPathBufGuard<'a> {
-    type Target = CStr;
-
-    fn deref(&self) -> &Self::Target {
-        if cfg!(debug_assertions) {
-            CStr::from_bytes_with_nul(&self.buf.inner).unwrap()
-        } else {
-            unsafe { CStr::from_bytes_with_nul_unchecked(&self.buf.inner) }
+    impl<'a> CStrFastPathBufGuard<'a> {
+        pub fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard {
+            buf.inner.push(0); // NUL terminator
+            CStrFastPathBufGuard { buf }
         }
     }
-}
 
-impl<'a> AsRef<CStr> for CStrFastPathBufGuard<'a> {
-    fn as_ref(&self) -> &CStr {
-        self
+    impl<'a> Deref for CStrFastPathBufGuard<'a> {
+        type Target = CStr;
+
+        fn deref(&self) -> &Self::Target {
+            if cfg!(debug_assertions) {
+                CStr::from_bytes_with_nul(&self.buf.inner).unwrap()
+            } else {
+                unsafe { CStr::from_bytes_with_nul_unchecked(&self.buf.inner) }
+            }
+        }
     }
-}
 
-impl<'a> Drop for CStrFastPathBufGuard<'a> {
-    fn drop(&mut self) {
-        self.buf.inner.pop();
+    impl<'a> AsRef<CStr> for CStrFastPathBufGuard<'a> {
+        fn as_ref(&self) -> &CStr {
+            self
+        }
+    }
+
+    impl<'a> Drop for CStrFastPathBufGuard<'a> {
+        fn drop(&mut self) {
+            self.buf.inner.pop();
+        }
     }
 }
