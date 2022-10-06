@@ -320,7 +320,7 @@ mod cli_tests {
         command.build();
 
         let mut mint = Mint::new(".");
-        let mut file = mint.new_goldenfile("help-for-review").unwrap();
+        let mut file = mint.new_goldenfile("command-reference.txt").unwrap();
         write_help(&mut file, &mut command);
     }
 
