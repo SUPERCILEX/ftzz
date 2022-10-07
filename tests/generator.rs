@@ -74,7 +74,7 @@ fn gen_in_empty_existing_dir_is_allowed() {
 }
 
 #[test]
-fn gen_in_non_emtpy_existing_dir_is_disallowed() {
+fn gen_in_non_empty_existing_dir_is_disallowed() {
     let dir = InspectableTempDir::new();
     let non_empty = dir.path.join("nonempty");
     create_dir(&non_empty).unwrap();
@@ -82,7 +82,7 @@ fn gen_in_non_emtpy_existing_dir_is_disallowed() {
 
     let mut mint = Mint::new("testdata/generator");
     let mut goldenfile = mint
-        .new_goldenfile("gen_in_non_emtpy_existing_dir_is_disallowed.stdout")
+        .new_goldenfile("gen_in_non_empty_existing_dir_is_disallowed.stdout")
         .unwrap();
 
     let result = Generator::builder()

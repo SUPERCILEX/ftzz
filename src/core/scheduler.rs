@@ -157,7 +157,7 @@ pub async fn run(
             for i in 0..num_dirs_to_generate {
                 let path = with_dir_name(i, |s| {
                     let mut buf = path_pool.pop().unwrap_or_else(|| {
-                        // Space for inner, the path seperator, name, and a NUL terminator
+                        // Space for inner, the path separator, name, and a NUL terminator
                         FastPathBuf::with_capacity(target_dir.capacity() + 1 + s.len() + 1)
                     });
 
