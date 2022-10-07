@@ -31,7 +31,8 @@ struct Ftzz {
     #[clap(flatten)]
     verbose: Verbosity,
     #[arg(short, long, short_alias = '?', global = true)]
-    #[arg(action = ArgAction::Help, help = "Print help information (use `-h` for a summary)")]
+    #[arg(action = ArgAction::Help, help = "Print help information (use `--help` for more detail)")]
+    #[arg(long_help = "Print help information (use `-h` for a summary)")]
     help: Option<bool>,
 }
 
