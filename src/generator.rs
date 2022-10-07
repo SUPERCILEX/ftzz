@@ -10,11 +10,11 @@ use std::{
 };
 
 use error_stack::{IntoReport, Report, Result, ResultExt};
-use num_format::{Locale, ToFormattedString};
 use rand::SeedableRng;
 use rand_distr::Normal;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use thiserror::Error;
+use thousands::Separable;
 use tracing::{event, Level};
 use typed_builder::TypedBuilder;
 
@@ -235,19 +235,18 @@ fn validated_options(generator: Generator) -> Result<Configuration, Error> {
 }
 
 fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
-    let locale = Locale::en;
     writeln!(
         output,
         "{file_count_type} {} {files_maybe_plural} will be generated in approximately \
         {} {directories_maybe_plural} distributed across a tree of maximum depth {} where each \
         directory contains approximately {} other {dpd_directories_maybe_plural}.\
         {bytes_info}",
-        config.files.to_formatted_string(&locale),
-        config.informational_total_dirs.to_formatted_string(&locale),
-        config.max_depth.to_formatted_string(&locale),
+        config.files.separate_with_commas(),
+        config.informational_total_dirs.separate_with_commas(),
+        config.max_depth.separate_with_commas(),
         config
             .informational_dirs_per_dir
-            .to_formatted_string(&locale),
+            .separate_with_commas(),
         file_count_type = if config.files_exact {
             "Exactly"
         } else {
@@ -269,7 +268,7 @@ fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
                 " Each file will contain approximately {} {bytes_maybe_plural} of random data{exact_bytes_total}.",
                 config
                     .informational_bytes_per_files
-                    .to_formatted_string(&locale),
+                    .separate_with_commas(),
                 bytes_maybe_plural = if config.informational_bytes_per_files == 1 {
                     "byte"
                 } else {
@@ -293,12 +292,11 @@ fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
 }
 
 fn print_stats(stats: GeneratorStats, output: &mut impl Write) {
-    let locale = Locale::en;
     writeln!(
         output,
         "Created {} {files_maybe_plural}{bytes_info} across {} {directories_maybe_plural}.",
-        stats.files.to_formatted_string(&locale),
-        stats.dirs.to_formatted_string(&locale),
+        stats.files.separate_with_commas(),
+        stats.dirs.separate_with_commas(),
         files_maybe_plural = if stats.files == 1 { "file" } else { "files" },
         directories_maybe_plural = if stats.dirs == 1 {
             "directory"
