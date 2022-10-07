@@ -321,18 +321,31 @@ mod cli_tests {
         command.build();
 
         let mut mint = Mint::new(".");
-        let mut file = mint.new_goldenfile("command-reference.txt").unwrap();
-        write_help(&mut file, &mut command);
+        let mut long = mint.new_goldenfile("command-reference.txt").unwrap();
+        let mut short = mint.new_goldenfile("command-reference-short.txt").unwrap();
+
+        write_help(&mut long, &mut command, LongOrShortHelp::Long);
+        write_help(&mut short, &mut command, LongOrShortHelp::Short);
     }
 
-    fn write_help(buffer: &mut impl Write, cmd: &mut Command) {
-        cmd.write_long_help(buffer).unwrap();
+    #[derive(Copy, Clone)]
+    enum LongOrShortHelp {
+        Long,
+        Short,
+    }
+
+    fn write_help(buffer: &mut impl Write, cmd: &mut Command, long_or_short_help: LongOrShortHelp) {
+        match long_or_short_help {
+            LongOrShortHelp::Long => cmd.write_long_help(buffer).unwrap(),
+            LongOrShortHelp::Short => cmd.write_help(buffer).unwrap(),
+        }
+
         for sub in cmd.get_subcommands_mut() {
             writeln!(buffer).unwrap();
             writeln!(buffer, "---").unwrap();
             writeln!(buffer).unwrap();
 
-            write_help(buffer, sub);
+            write_help(buffer, sub, long_or_short_help);
         }
     }
 }
