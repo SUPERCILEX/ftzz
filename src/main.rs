@@ -321,8 +321,10 @@ mod cli_tests {
         command.build();
 
         let mut mint = Mint::new(".");
-        let mut long = mint.new_goldenfile("command-reference.txt").unwrap();
-        let mut short = mint.new_goldenfile("command-reference-short.txt").unwrap();
+        let mut long = mint.new_goldenfile("command-reference.golden").unwrap();
+        let mut short = mint
+            .new_goldenfile("command-reference-short.golden")
+            .unwrap();
 
         write_help(&mut long, &mut command, LongOrShortHelp::Long);
         write_help(&mut short, &mut command, LongOrShortHelp::Short);

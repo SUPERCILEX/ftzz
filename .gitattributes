@@ -1,3 +1,2 @@
 *.stdout text eol=lf
-command-reference.txt text eol=lf
-api.txt text eol=lf
+*.golden text eol=lf
