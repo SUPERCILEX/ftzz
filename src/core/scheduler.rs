@@ -1,8 +1,4 @@
-use std::{
-    collections::VecDeque, num::NonZeroUsize, ops::AddAssign, path::PathBuf, process::ExitCode,
-};
-
-use error_stack::{IntoReport, Result, ResultExt};
+use std::{collections::VecDeque, num::NonZeroUsize, ops::AddAssign, path::PathBuf};
 
 use tracing::{event, span, Level};
 
@@ -48,13 +44,7 @@ pub async fn run(
     macro_rules! handle_task_result {
         ($task:expr) => {{
             #[cfg(not(dry_run))]
-            let outcome = $task
-                .await
-                .into_report()
-                .change_context(Error::TaskJoin)
-                .attach(ExitCode::from(sysexits::ExitCode::Software))?
-                .change_context(Error::Io)
-                .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
+            let outcome = $task.await.map_err(Error::TaskJoin)??;
             #[cfg(dry_run)]
             let outcome = task;
 

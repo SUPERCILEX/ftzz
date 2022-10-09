@@ -1,10 +1,10 @@
-use std::{fs::create_dir_all, io, io::ErrorKind::NotFound};
+use std::{fs::create_dir_all, io::ErrorKind::NotFound};
 
-use error_stack::{IntoReport, Report, Result, ResultExt};
 use tracing::{event, instrument, Level};
 
 use crate::{
     core::file_contents::FileContentsGenerator,
+    generator::Error,
     utils::{with_dir_name, with_file_name, FastPathBuf},
 };
 
@@ -28,7 +28,7 @@ pub struct GeneratorTaskOutcome {
 #[instrument(level = "trace", skip(params))]
 pub fn create_files_and_dirs(
     params: GeneratorTaskParams<impl FileContentsGenerator>,
-) -> Result<GeneratorTaskOutcome, io::Error> {
+) -> Result<GeneratorTaskOutcome, Error> {
     let mut file = params.target_dir;
     let mut file_contents = params.file_contents;
 
@@ -50,13 +50,14 @@ pub fn create_files_and_dirs(
 }
 
 #[instrument(level = "trace")]
-fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> Result<(), io::Error> {
+fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> Result<(), Error> {
     for i in 0..num_dirs {
         with_dir_name(i, |s| dir.push(s));
 
-        create_dir_all(&dir)
-            .into_report()
-            .attach_printable_lazy(|| format!("Failed to create directory {dir:?}"))?;
+        create_dir_all("/foo").map_err(|error| Error::Io {
+            error,
+            context: format!("Failed to create directory {dir:?}"),
+        })?;
 
         dir.pop();
     }
@@ -69,7 +70,7 @@ fn create_files(
     offset: usize,
     file: &mut FastPathBuf,
     contents: &mut impl FileContentsGenerator,
-) -> Result<usize, io::Error> {
+) -> Result<usize, Error> {
     let mut bytes_written = 0;
 
     let mut start_file = 0;
@@ -82,17 +83,20 @@ fn create_files(
                 start_file += 1;
                 file.pop();
             }
-            Err(e) => {
-                if e.kind() == NotFound {
+            Err(error) => {
+                if error.kind() == NotFound {
                     event!(Level::TRACE, file = ?file, "Parent directory not created in time");
 
                     file.pop();
-                    create_dir_all(&file)
-                        .into_report()
-                        .attach_printable_lazy(|| format!("Failed to create directory {file:?}"))?;
+                    create_dir_all(&file).map_err(|error| Error::Io {
+                        error,
+                        context: format!("Failed to create directory {file:?}"),
+                    })?;
                 } else {
-                    return Err(Report::new(e))
-                        .attach_printable_lazy(|| format!("Failed to create file {file:?}"));
+                    return Err(Error::Io {
+                        error,
+                        context: format!("Failed to create file {file:?}"),
+                    });
                 }
             }
         }
@@ -102,8 +106,10 @@ fn create_files(
 
         bytes_written += contents
             .create_file(file, i, false)
-            .into_report()
-            .attach_printable_lazy(|| format!("Failed to create file {file:?}"))?;
+            .map_err(|error| Error::Io {
+                error,
+                context: format!("Failed to create file {file:?}"),
+            })?;
 
         file.pop();
     }

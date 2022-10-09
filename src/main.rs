@@ -12,10 +12,10 @@ use std::{
 use clap::{ArgAction, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
-use error_stack::{IntoReport, ResultExt};
+use error_stack::{IntoReport, Report, ResultExt};
 use paste::paste;
 
-use ftzz::generator::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
+use ftzz::generator::{Error, Generator, NumFilesWithRatio, NumFilesWithRatioError};
 
 /// A random file and directory generator
 #[derive(Parser, Debug)]
@@ -217,6 +217,8 @@ mod generate_tests {
 
 #[derive(thiserror::Error, Debug)]
 pub enum CliError {
+    #[error("{0}")]
+    Wrapper(String),
     #[error("File generator failed.")]
     Generator,
     #[error("An argument combination was invalid.")]
@@ -254,6 +256,19 @@ fn ftzz(ftzz: Ftzz) -> error_stack::Result<(), CliError> {
             .into_report()
             .change_context(CliError::InvalidArgs)?
             .generate(&mut stdout())
+            .map_err(|e| {
+                let wrapper = CliError::Wrapper(format!("{e}"));
+                match e {
+                    Error::TaskJoin(e) => Report::from(e).change_context(wrapper),
+                    Error::Io { error, context } => Report::from(error)
+                        .attach_printable(context)
+                        .change_context(wrapper),
+                    Error::InvalidEnvironment(context) => {
+                        Report::from(wrapper).attach_printable(context)
+                    }
+                    Error::RuntimeCreation(e) => Report::from(e).change_context(wrapper),
+                }
+            })
             .change_context(CliError::Generator),
     }
 }

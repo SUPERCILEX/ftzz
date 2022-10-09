@@ -1,6 +1,6 @@
 #![allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 
-use std::{cmp::min, io, num::NonZeroUsize};
+use std::{cmp::min, num::NonZeroUsize};
 
 use rand::{distributions::Distribution, RngCore};
 use tokio::{task, task::JoinHandle};
@@ -12,6 +12,7 @@ use crate::{
         },
         files::{create_files_and_dirs, GeneratorTaskOutcome, GeneratorTaskParams},
     },
+    generator::Error,
     utils::FastPathBuf,
 };
 
@@ -19,7 +20,7 @@ pub type QueueResult = Result<QueueOutcome, QueueErrors>;
 
 pub struct QueueOutcome {
     #[cfg(not(dry_run))]
-    pub task: JoinHandle<error_stack::Result<GeneratorTaskOutcome, io::Error>>,
+    pub task: JoinHandle<Result<GeneratorTaskOutcome, Error>>,
     #[cfg(dry_run)]
     pub task: GeneratorTaskOutcome,
 
@@ -288,7 +289,9 @@ impl<
             }};
         }
 
-        if num_files > 0 && let Some(bytes_distr) = &self.num_bytes_distr {
+        if num_files > 0 &&
+        let Some(bytes_distr) = &self.num_bytes_distr
+        {
             if let Some(ref mut bytes) = self.bytes_exact {
                 if *bytes > 0 {
                     let mut byte_counts: Vec<usize> = byte_counts_pool.pop().unwrap_or_default();

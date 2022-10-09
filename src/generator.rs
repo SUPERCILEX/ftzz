@@ -4,17 +4,14 @@
     clippy::cast_possible_truncation
 )]
 
-use std::{
-    cmp::max, fs::create_dir_all, io::Write, num::NonZeroUsize, path::PathBuf, process::ExitCode,
-    thread,
-};
+use std::{cmp::max, fs::create_dir_all, io, io::Write, num::NonZeroUsize, path::PathBuf, thread};
 
-use error_stack::{IntoReport, Report, Result, ResultExt};
 use rand::SeedableRng;
 use rand_distr::Normal;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use thiserror::Error;
 use thousands::Separable;
+use tokio::task::JoinError;
 use tracing::{event, Level};
 use typed_builder::TypedBuilder;
 
@@ -26,13 +23,13 @@ use crate::core::{
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Failed to retrieve subtask results.")]
-    TaskJoin,
+    TaskJoin(JoinError),
     #[error("An IO error occurred in a subtask.")]
-    Io,
-    #[error("Failed to achieve valid generator environment.")]
-    InvalidEnvironment,
+    Io { error: io::Error, context: String },
+    #[error("Generator environment invalid.")]
+    InvalidEnvironment(String),
     #[error("Failed to create the async runtime.")]
-    RuntimeCreation,
+    RuntimeCreation(io::Error),
 }
 
 #[derive(Debug)]
@@ -165,27 +162,24 @@ struct Configuration {
 }
 
 fn validated_options(generator: Generator) -> Result<Configuration, Error> {
-    create_dir_all(&generator.root_dir)
-        .into_report()
-        .attach_printable_lazy(|| format!("Failed to create directory {:?}", generator.root_dir))
-        .change_context(Error::InvalidEnvironment)
-        .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
+    create_dir_all(&generator.root_dir).map_err(|error| Error::Io {
+        error,
+        context: format!("Failed to create directory {:?}", generator.root_dir),
+    })?;
     if generator
         .root_dir
         .read_dir()
-        .into_report()
-        .attach_printable_lazy(|| format!("Failed to read directory {:?}", generator.root_dir))
-        .change_context(Error::InvalidEnvironment)
-        .attach(ExitCode::from(sysexits::ExitCode::IoErr))?
+        .map_err(|error| Error::Io {
+            error,
+            context: format!("Failed to read directory {:?}", generator.root_dir),
+        })?
         .count()
         != 0
     {
-        return Err(Report::new(Error::InvalidEnvironment))
-            .attach_printable(format!(
-                "The root directory {:?} must be empty.",
-                generator.root_dir
-            ))
-            .attach(ExitCode::from(sysexits::ExitCode::DataErr));
+        return Err(Error::InvalidEnvironment(format!(
+            "The root directory {:?} must be empty.",
+            generator.root_dir
+        )));
     }
 
     let num_files = generator.num_files_with_ratio.num_files.get() as f64;
@@ -319,9 +313,7 @@ fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .max_blocking_threads(parallelism.get())
         .build()
-        .into_report()
-        .change_context(Error::RuntimeCreation)
-        .attach(ExitCode::from(sysexits::ExitCode::OsErr))?;
+        .map_err(Error::RuntimeCreation)?;
 
     event!(Level::INFO, config = ?config, "Starting config");
     runtime.block_on(run_generator_async(config, parallelism))
