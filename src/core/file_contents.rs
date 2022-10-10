@@ -24,6 +24,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
         #[cfg(target_os = "linux")]
         {
             use nix::sys::stat::{mknod, Mode, SFlag};
+
             let cstr = file.to_cstr_mut();
             mknod(
                 &*cstr,
@@ -34,7 +35,29 @@ impl FileContentsGenerator for NoGeneratedFileContents {
             .map_err(io::Error::from)
             .map(|_| 0)
         }
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(all(unix, not(target_os = "linux")))]
+        {
+            use nix::{
+                fcntl::{open, OFlag},
+                sys::stat::Mode,
+            };
+            use std::os::fd::{FromRawFd, OwnedFd};
+
+            let cstr = file.to_cstr_mut();
+            open(
+                &*cstr,
+                OFlag::O_CREAT,
+                Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
+            )
+            .map_err(io::Error::from)
+            .map(|fd| {
+                unsafe {
+                    OwnedFd::from_raw_fd(fd);
+                }
+                0
+            })
+        }
+        #[cfg(not(unix))]
         File::create(file).map(|_| 0)
     }
 

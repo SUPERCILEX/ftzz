@@ -52,9 +52,9 @@ impl FastPathBuf {
         self.push(name);
     }
 
-    #[cfg(target_os = "linux")]
-    pub fn to_cstr_mut(&mut self) -> linux::CStrFastPathBufGuard {
-        linux::CStrFastPathBufGuard::new(self)
+    #[cfg(unix)]
+    pub fn to_cstr_mut(&mut self) -> unix::CStrFastPathBufGuard {
+        unix::CStrFastPathBufGuard::new(self)
     }
 }
 
@@ -102,8 +102,8 @@ impl Clone for FastPathBuf {
     }
 }
 
-#[cfg(target_os = "linux")]
-mod linux {
+#[cfg(unix)]
+mod unix {
     use std::{ffi::CStr, ops::Deref};
 
     use super::FastPathBuf;
