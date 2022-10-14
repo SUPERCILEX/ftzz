@@ -2,12 +2,13 @@ use std::{fs::read_to_string, io::Write};
 
 use goldenfile::Mint;
 use public_api::PublicApi;
-use rustdoc_json::BuildOptions;
 
 #[test]
 fn api() {
-    let json_path =
-        rustdoc_json::Builder::build(BuildOptions::default().all_features(true)).unwrap();
+    let json_path = rustdoc_json::Builder::default()
+        .all_features(true)
+        .build()
+        .unwrap();
 
     let mut mint = Mint::new(".");
     let mut goldenfile = mint.new_goldenfile("api.golden").unwrap();
