@@ -121,8 +121,8 @@ fn gen_creates_new_dir_if_not_present() {
 
 #[rstest]
 #[case(1_000)]
-#[case(10_000)]
-#[case(100_000)]
+#[cfg_attr(not(miri), case(10_000))]
+#[cfg_attr(not(miri), case(100_000))]
 fn simple_create_files(#[case] num_files: u64) {
     let dir = InspectableTempDir::new();
 
@@ -154,6 +154,11 @@ fn advanced_create_files(
     #[values(1, 100, 1_000)] ftd_ratio: u64,
     #[values(false, true)] files_exact: bool,
 ) {
+    #[cfg(miri)]
+    if num_files > 100 || bytes.0 > 10_000 {
+        return;
+    }
+
     let dir = InspectableTempDir::new();
 
     let mut mint = Mint::new("testdata/generator");
@@ -205,6 +210,7 @@ fn advanced_create_files(
 #[case(2)]
 #[case(10)]
 #[case(100)]
+#[cfg_attr(miri, ignore)] // Miri is way too slow unfortunately
 fn max_depth_is_respected(#[case] max_depth: u32) {
     let dir = InspectableTempDir::new();
 
@@ -228,6 +234,7 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri is way too slow unfortunately
 fn fuzz_test() {
     let dir = InspectableTempDir::new();
 

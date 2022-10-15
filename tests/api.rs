@@ -4,6 +4,7 @@ use goldenfile::Mint;
 use public_api::PublicApi;
 
 #[test]
+#[cfg_attr(miri, ignore)] // gnu_get_libc_version breaks miri
 fn api() {
     let json_path = rustdoc_json::Builder::default()
         .all_features(true)
@@ -21,11 +22,13 @@ fn api() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn readme() {
     trycmd::TestCases::new().case("README.md");
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn cli() {
     trycmd::TestCases::new().case("testdata/cmds/*.md");
 }

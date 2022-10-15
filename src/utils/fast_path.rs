@@ -52,7 +52,7 @@ impl FastPathBuf {
         self.push(name);
     }
 
-    #[cfg(unix)]
+    #[cfg(all(unix, not(miri)))]
     pub fn to_cstr_mut(&mut self) -> unix::CStrFastPathBufGuard {
         unix::CStrFastPathBufGuard::new(self)
     }
@@ -102,7 +102,7 @@ impl Clone for FastPathBuf {
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(miri)))]
 mod unix {
     use std::{ffi::CStr, ops::Deref};
 

@@ -1,4 +1,5 @@
-use std::{cmp::min, fs::File, io, io::Write, mem::MaybeUninit};
+use cfg_if::cfg_if;
+use std::{fs::File, io, io::Read};
 
 use rand::{distributions::Distribution, RngCore};
 use tracing::instrument;
@@ -20,45 +21,44 @@ pub struct NoGeneratedFileContents;
 
 impl FileContentsGenerator for NoGeneratedFileContents {
     #[inline]
-    fn create_file(&mut self, file: &mut FastPathBuf, _: usize, _: bool) -> io::Result<usize> {
-        #[cfg(target_os = "linux")]
-        {
-            use nix::sys::stat::{mknod, Mode, SFlag};
+    fn create_file(&mut self, file: &mut FastPathBuf, _: usize, _: bool) -> io::Result<u64> {
+        cfg_if! {
+            if #[cfg(any(not(unix), miri))] {
+                File::create(file).map(|_| 0)
+            } else if #[cfg(target_os = "linux")] {
+                use nix::sys::stat::{mknod, Mode, SFlag};
 
-            let cstr = file.to_cstr_mut();
-            mknod(
-                &*cstr,
-                SFlag::S_IFREG,
-                Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
-                0,
-            )
-            .map_err(io::Error::from)
-            .map(|_| 0)
-        }
-        #[cfg(all(unix, not(target_os = "linux")))]
-        {
-            use nix::{
-                fcntl::{open, OFlag},
-                sys::stat::Mode,
-            };
-            use std::os::fd::{FromRawFd, OwnedFd};
+                let cstr = file.to_cstr_mut();
+                mknod(
+                    &*cstr,
+                    SFlag::S_IFREG,
+                    Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
+                    0,
+                )
+                .map_err(io::Error::from)
+                .map(|_| 0)
+            } else {
+                use nix::{
+                    fcntl::{open, OFlag},
+                    sys::stat::Mode,
+                };
+                use std::os::fd::{FromRawFd, OwnedFd};
 
-            let cstr = file.to_cstr_mut();
-            open(
-                &*cstr,
-                OFlag::O_CREAT,
-                Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
-            )
-            .map_err(io::Error::from)
-            .map(|fd| {
-                unsafe {
-                    OwnedFd::from_raw_fd(fd);
-                }
-                0
-            })
+                let cstr = file.to_cstr_mut();
+                open(
+                    &*cstr,
+                    OFlag::O_CREAT,
+                    Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
+                )
+                .map_err(io::Error::from)
+                .map(|fd| {
+                    unsafe {
+                        OwnedFd::from_raw_fd(fd);
+                    }
+                    0
+                })
+            }
         }
-        #[cfg(not(unix))]
-        File::create(file).map(|_| 0)
     }
 
     fn byte_counts_pool_return(self) -> Option<Vec<u64>> {
@@ -71,7 +71,7 @@ pub struct OnTheFlyGeneratedFileContents<D: Distribution<f64>, R: RngCore> {
     pub random: R,
 }
 
-impl<D: Distribution<f64>, R: RngCore> FileContentsGenerator
+impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
     for OnTheFlyGeneratedFileContents<D, R>
 {
     #[inline]
@@ -125,7 +125,7 @@ pub struct PreDefinedGeneratedFileContents<R: RngCore> {
     pub random: R,
 }
 
-impl<R: RngCore> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
+impl<R: RngCore + 'static> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
     #[inline]
     fn create_file(
         &mut self,
@@ -148,17 +148,13 @@ impl<R: RngCore> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
     }
 }
 
-#[inline(never)] // Don't muck the stack for the GeneratedFileContents::None case
 #[instrument(level = "trace", skip(file, random))]
-fn write_random_bytes(mut file: File, mut num: usize, random: &mut impl RngCore) -> io::Result<()> {
-    #[allow(clippy::uninit_assumed_init, invalid_value)] // u8s do nothing when dropped
-    let mut buf: [u8; 4096] = unsafe { MaybeUninit::uninit().assume_init() };
-    while num > 0 {
-        let used = min(num, buf.len());
-        random.fill_bytes(&mut buf[0..used]);
-        file.write_all(&buf[0..used])?;
-
-        num -= used;
-    }
+fn write_random_bytes(
+    mut file: File,
+    num: u64,
+    random: &mut (impl RngCore + 'static),
+) -> io::Result<()> {
+    let copied = io::copy(&mut (random as &mut dyn RngCore).take(num), &mut file)?;
+    debug_assert_eq!(num, copied);
     Ok(())
 }

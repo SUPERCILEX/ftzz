@@ -315,6 +315,7 @@ mod cli_tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] // wrap_help breaks miri
     fn help_for_review() {
         let mut command = Ftzz::command();
 
