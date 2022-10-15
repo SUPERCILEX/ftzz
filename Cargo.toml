@@ -11,10 +11,10 @@ license = "Apache-2.0"
 
 [dependencies]
 bytesize = "1.1.0"
-clap = { version = "4.0.11", features = ["derive", "wrap_help"] }
+clap = { version = "4.0.15", features = ["derive", "wrap_help"] }
 clap-num = "1.0.2"
 clap-verbosity-flag = "2.0.0"
-error-stack = "0.2.2"
+error-stack = "0.2.3"
 # TODO use the real itoa once https://github.com/dtolnay/itoa/pull/34 goes through
 itoa-const = "1.0.1"
 log = { version = "0.4.17", features = ["release_max_level_info"] }
@@ -43,8 +43,8 @@ seahash = "4.1.0"
 tempfile = "3.3.0"
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 goldenfile = "1.4.3"
-public-api = "0.20.0"
-rustdoc-json = "0.4.1"
+public-api = "0.20.1"
+rustdoc-json = "0.4.2"
 trycmd = "0.14.0"
 
 [features]
