@@ -66,8 +66,8 @@ impl FileNameCache {
 static CACHE: FileNameCache = FileNameCache::new();
 
 #[allow(clippy::cast_possible_truncation)]
-pub fn with_file_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
-    if i < FileNameCache::max_cache_size() as usize {
+pub fn with_file_name<T>(i: u64, f: impl FnOnce(&str) -> T) -> T {
+    if i < FileNameCache::max_cache_size().into() {
         CACHE.with_file_name(i as u16, f)
     } else {
         f(itoa::Buffer::new().format(i))
@@ -76,7 +76,7 @@ pub fn with_file_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
 
 pub fn with_dir_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
     const SUFFIX: &str = ".dir";
-    with_file_name(i, |s| {
+    with_file_name(i.try_into().unwrap(), |s| {
         let mut buf = [MaybeUninit::<u8>::uninit(); 39 + SUFFIX.len()]; // 39 to support u128
         unsafe {
             let buf_ptr = buf.as_mut_ptr().cast::<u8>();
@@ -111,11 +111,11 @@ mod tests {
 
     #[test]
     fn names_are_returned() {
-        for i in 0..(FileNameCache::max_cache_size() * 2) as usize {
-            with_file_name(i, |s| {
+        for i in 0..(FileNameCache::max_cache_size() * 2) {
+            with_file_name(i.into(), |s| {
                 assert_eq!(s, i.to_string());
             });
-            with_dir_name(i, |s| {
+            with_dir_name(i.try_into().unwrap(), |s| {
                 assert_eq!(s, format!("{i}.dir"));
             });
         }

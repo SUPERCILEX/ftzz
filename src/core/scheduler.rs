@@ -17,9 +17,9 @@ use crate::{
 
 #[derive(Debug, Copy, Clone)]
 pub struct GeneratorStats {
-    pub files: usize,
+    pub files: u64,
     pub dirs: usize,
-    pub bytes: usize,
+    pub bytes: u64,
 }
 
 impl AddAssign<&GeneratorTaskOutcome> for GeneratorStats {

@@ -5,7 +5,12 @@
 )]
 
 use std::{
-    cmp::max, fs::create_dir_all, io::Write, num::NonZeroUsize, path::PathBuf, process::ExitCode,
+    cmp::max,
+    fs::create_dir_all,
+    io::Write,
+    num::{NonZeroU64, NonZeroUsize},
+    path::PathBuf,
+    process::ExitCode,
     thread,
 };
 
@@ -37,8 +42,8 @@ pub enum Error {
 
 #[derive(Debug)]
 pub struct NumFilesWithRatio {
-    num_files: NonZeroUsize,
-    file_to_dir_ratio: NonZeroUsize,
+    num_files: NonZeroU64,
+    file_to_dir_ratio: NonZeroU64,
 }
 
 #[derive(Error, Debug)]
@@ -48,8 +53,8 @@ pub enum NumFilesWithRatioError {
         than the number of files to generate ({num_files})."
     )]
     InvalidRatio {
-        num_files: NonZeroUsize,
-        file_to_dir_ratio: NonZeroUsize,
+        num_files: NonZeroU64,
+        file_to_dir_ratio: NonZeroU64,
     },
 }
 
@@ -59,8 +64,8 @@ impl NumFilesWithRatio {
     /// The file to directory ratio cannot be larger than the number of files to
     /// generate since it is impossible to satisfy that condition.
     pub fn new(
-        num_files: NonZeroUsize,
-        file_to_dir_ratio: NonZeroUsize,
+        num_files: NonZeroU64,
+        file_to_dir_ratio: NonZeroU64,
     ) -> std::result::Result<Self, NumFilesWithRatioError> {
         if file_to_dir_ratio > num_files {
             return Err(NumFilesWithRatioError::InvalidRatio {
@@ -76,12 +81,12 @@ impl NumFilesWithRatio {
     }
 
     #[must_use]
-    pub fn from_num_files(num_files: NonZeroUsize) -> Self {
+    pub fn from_num_files(num_files: NonZeroU64) -> Self {
         Self {
             num_files,
             file_to_dir_ratio: {
                 let r = max(num_files.get() / 1000, 1);
-                unsafe { NonZeroUsize::new_unchecked(r) }
+                unsafe { NonZeroU64::new_unchecked(r) }
             },
         }
     }
@@ -95,7 +100,7 @@ pub struct Generator {
     #[builder(default = false)]
     files_exact: bool,
     #[builder(default = 0)]
-    num_bytes: usize,
+    num_bytes: u64,
     #[builder(default = false)]
     bytes_exact: bool,
     #[builder(default = 5)]
@@ -113,7 +118,7 @@ mod tests {
         let g = Generator::builder()
             .root_dir(PathBuf::from("abc"))
             .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                NonZeroUsize::new(1).unwrap(),
+                NonZeroU64::new(1).unwrap(),
             ))
             .build();
 
@@ -129,8 +134,7 @@ mod tests {
 
     #[test]
     fn ratio_greater_than_num_files_fails() {
-        let r =
-            NumFilesWithRatio::new(NonZeroUsize::new(1).unwrap(), NonZeroUsize::new(2).unwrap());
+        let r = NumFilesWithRatio::new(NonZeroU64::new(1).unwrap(), NonZeroU64::new(2).unwrap());
 
         r.unwrap_err();
     }
@@ -149,8 +153,8 @@ impl Generator {
 #[derive(Debug)]
 struct Configuration {
     root_dir: PathBuf,
-    files: usize,
-    bytes: usize,
+    files: u64,
+    bytes: u64,
     files_exact: bool,
     bytes_exact: bool,
     files_per_dir: f64,
@@ -305,7 +309,7 @@ fn print_stats(stats: GeneratorStats, output: &mut impl Write) {
         },
         bytes_info = if stats.bytes > 0 {
             event!(Level::INFO, bytes = stats.bytes, "Exact bytes written");
-            format!(" ({})", bytesize::to_string(stats.bytes as u64, false))
+            format!(" ({})", bytesize::to_string(stats.bytes, false))
         } else {
             String::new()
         }
@@ -331,9 +335,8 @@ async fn run_generator_async(
     config: Configuration,
     parallelism: NonZeroUsize,
 ) -> Result<GeneratorStats, Error> {
-    let max_depth = config.max_depth as usize;
     let random = {
-        let seed = ((config.files.wrapping_add(max_depth) as f64
+        let seed = ((config.files.wrapping_add(config.max_depth.into()) as f64
             * (config.files_per_dir + config.dirs_per_dir)) as u64)
             .wrapping_add(config.seed);
         event!(Level::DEBUG, seed = ?seed, "Starting seed");
@@ -345,7 +348,13 @@ async fn run_generator_async(
 
     macro_rules! run {
         ($generator:expr) => {{
-            run(config.root_dir, max_depth, parallelism, $generator).await
+            run(
+                config.root_dir,
+                config.max_depth.try_into().unwrap_or(usize::MAX),
+                parallelism,
+                $generator,
+            )
+            .await
         }};
     }
 
@@ -360,7 +369,7 @@ async fn run_generator_async(
             },
             random,
             if config.files_exact {
-                Some(unsafe { NonZeroUsize::new_unchecked(config.files) })
+                Some(unsafe { NonZeroU64::new_unchecked(config.files) })
             } else {
                 None
             },

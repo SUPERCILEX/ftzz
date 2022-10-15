@@ -1,6 +1,6 @@
 #![allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 
-use std::{cmp::min, io, num::NonZeroUsize};
+use std::{cmp::min, io, num::NonZeroU64};
 
 use rand::{distributions::Distribution, RngCore};
 use tokio::{task, task::JoinHandle};
@@ -37,10 +37,10 @@ pub trait TaskGenerator {
         &mut self,
         file: FastPathBuf,
         gen_dirs: bool,
-        byte_counts_pool: &mut Vec<Vec<usize>>,
+        byte_counts_pool: &mut Vec<Vec<u64>>,
     ) -> QueueResult;
 
-    fn maybe_queue_final_gen(&mut self, file: FastPathBuf, _: &mut Vec<Vec<usize>>) -> QueueResult {
+    fn maybe_queue_final_gen(&mut self, file: FastPathBuf, _: &mut Vec<Vec<u64>>) -> QueueResult {
         Err(QueueErrors::NothingToDo(file))
     }
 
@@ -88,9 +88,9 @@ impl<DF: Distribution<f64>, DD: Distribution<f64>, R: RngCore> TaskGenerator
         &mut self,
         file: FastPathBuf,
         gen_dirs: bool,
-        _: &mut Vec<Vec<usize>>,
+        _: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
-        let num_files = self.num_files_distr.sample(&mut self.random).round() as usize;
+        let num_files = self.num_files_distr.sample(&mut self.random).round() as u64;
         let params = GeneratorTaskParams {
             target_dir: file,
             num_files,
@@ -125,9 +125,9 @@ impl<
         &mut self,
         file: FastPathBuf,
         gen_dirs: bool,
-        _: &mut Vec<Vec<usize>>,
+        _: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
-        let num_files = self.num_files_distr.sample(&mut self.random).round() as usize;
+        let num_files = self.num_files_distr.sample(&mut self.random).round() as u64;
         let params = GeneratorTaskParams {
             target_dir: file,
             num_files,
@@ -153,11 +153,11 @@ pub struct OtherFilesAndContentsGenerator<DF, DD, DB, R> {
     num_bytes_distr: Option<DB>,
     random: R,
 
-    files_exact: Option<NonZeroUsize>,
-    bytes_exact: Option<usize>,
+    files_exact: Option<NonZeroU64>,
+    bytes_exact: Option<u64>,
 
     done: bool,
-    root_num_files_hack: Option<usize>,
+    root_num_files_hack: Option<u64>,
 }
 
 impl<
@@ -171,17 +171,17 @@ impl<
         &mut self,
         file: FastPathBuf,
         gen_dirs: bool,
-        byte_counts_pool: &mut Vec<Vec<usize>>,
+        byte_counts_pool: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
         debug_assert!(!self.done);
 
-        let mut num_files = self.num_files_distr.sample(&mut self.random).round() as usize;
+        let mut num_files = self.num_files_distr.sample(&mut self.random).round() as u64;
         if let Some(ref mut files) = self.files_exact {
             if num_files >= files.get() {
                 self.done = true;
                 num_files = files.get();
             } else {
-                *files = unsafe { NonZeroUsize::new_unchecked(files.get() - num_files) };
+                *files = unsafe { NonZeroU64::new_unchecked(files.get() - num_files) };
             }
         }
 
@@ -201,7 +201,7 @@ impl<
     fn maybe_queue_final_gen(
         &mut self,
         file: FastPathBuf,
-        byte_counts_pool: &mut Vec<Vec<usize>>,
+        byte_counts_pool: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
         if self.done {
             return Err(QueueErrors::NothingToDo(file));
@@ -253,8 +253,8 @@ impl<
         num_dirs_distr: DD,
         num_bytes_distr: Option<DB>,
         random: R,
-        files_exact: Option<NonZeroUsize>,
-        bytes_exact: Option<usize>,
+        files_exact: Option<NonZeroU64>,
+        bytes_exact: Option<u64>,
     ) -> Self {
         Self {
             num_files_distr,
@@ -271,10 +271,10 @@ impl<
     fn queue_gen_internal(
         &mut self,
         file: FastPathBuf,
-        num_files: usize,
+        num_files: u64,
         num_dirs: usize,
-        offset: usize,
-        byte_counts_pool: &mut Vec<Vec<usize>>,
+        offset: u64,
+        byte_counts_pool: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
         macro_rules! build_params {
             ($file_contents:expr) => {{
@@ -291,16 +291,17 @@ impl<
         if num_files > 0 && let Some(bytes_distr) = &self.num_bytes_distr {
             if let Some(ref mut bytes) = self.bytes_exact {
                 if *bytes > 0 {
-                    let mut byte_counts: Vec<usize> = byte_counts_pool.pop().unwrap_or_default();
+                    let mut byte_counts: Vec<u64> = byte_counts_pool.pop().unwrap_or_default();
                     debug_assert!(byte_counts.is_empty());
-                    byte_counts.reserve(num_files);
+                    let num_files_usize = num_files.try_into().unwrap_or(usize::MAX);
+                    byte_counts.reserve(num_files_usize);
                     let raw_byte_counts =
-                        byte_counts.spare_capacity_mut().split_at_mut(num_files).0;
+                        byte_counts.spare_capacity_mut().split_at_mut(num_files_usize).0;
 
                     for count in raw_byte_counts {
                         let num_bytes = min(
                             *bytes,
-                            bytes_distr.sample(&mut self.random).round() as usize,
+                            bytes_distr.sample(&mut self.random).round() as u64,
                         );
                         *bytes -= num_bytes;
 
@@ -308,7 +309,7 @@ impl<
                     }
 
                     unsafe {
-                        byte_counts.set_len(num_files);
+                        byte_counts.set_len(num_files_usize);
                     }
 
                     if self.done {

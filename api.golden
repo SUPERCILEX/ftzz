@@ -40,19 +40,19 @@ pub fn ftzz::generator::GeneratorBuilder::bytes_exact(self, bytes_exact: bool) -
 pub fn ftzz::generator::GeneratorBuilder::clone(&self) -> Self
 pub fn ftzz::generator::GeneratorBuilder::files_exact(self, files_exact: bool) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (bool), __num_bytes, __bytes_exact, __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::max_depth(self, max_depth: u32) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, (u32), __seed)>
-pub fn ftzz::generator::GeneratorBuilder::num_bytes(self, num_bytes: usize) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (usize), __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::generator::GeneratorBuilder::num_bytes(self, num_bytes: u64) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (u64), __bytes_exact, __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::num_files_with_ratio(self, num_files_with_ratio: ftzz::generator::NumFilesWithRatio) -> ftzz::generator::GeneratorBuilder<(__root_dir, (ftzz::generator::NumFilesWithRatio), __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::root_dir(self, root_dir: PathBuf) -> ftzz::generator::GeneratorBuilder<((PathBuf), __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::seed(self, seed: u64) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, (u64))>
 pub fn ftzz::generator::NumFilesWithRatio::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
-pub fn ftzz::generator::NumFilesWithRatio::from_num_files(num_files: NonZeroUsize) -> Self
-pub fn ftzz::generator::NumFilesWithRatio::new(num_files: NonZeroUsize, file_to_dir_ratio: NonZeroUsize) -> std::result::Result<Self, ftzz::generator::NumFilesWithRatioError>
+pub fn ftzz::generator::NumFilesWithRatio::from_num_files(num_files: NonZeroU64) -> Self
+pub fn ftzz::generator::NumFilesWithRatio::new(num_files: NonZeroU64, file_to_dir_ratio: NonZeroU64) -> std::result::Result<Self, ftzz::generator::NumFilesWithRatioError>
 pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, __formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
 pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
 pub mod ftzz
 pub mod ftzz::generator
-pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: NonZeroUsize
-pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::num_files: NonZeroUsize
+pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: NonZeroU64
+pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::num_files: NonZeroU64
 pub struct ftzz::generator::Generator
 pub struct ftzz::generator::GeneratorBuilder<TypedBuilderFields>
 pub struct ftzz::generator::NumFilesWithRatio

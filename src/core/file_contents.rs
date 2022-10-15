@@ -11,9 +11,9 @@ pub trait FileContentsGenerator {
         file: &mut FastPathBuf,
         file_num: usize,
         retryable: bool,
-    ) -> io::Result<usize>;
+    ) -> io::Result<u64>;
 
-    fn byte_counts_pool_return(self) -> Option<Vec<usize>>;
+    fn byte_counts_pool_return(self) -> Option<Vec<u64>>;
 }
 
 pub struct NoGeneratedFileContents;
@@ -61,7 +61,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
         File::create(file).map(|_| 0)
     }
 
-    fn byte_counts_pool_return(self) -> Option<Vec<usize>> {
+    fn byte_counts_pool_return(self) -> Option<Vec<u64>> {
         None
     }
 }
@@ -81,8 +81,8 @@ impl<D: Distribution<f64>, R: RngCore> FileContentsGenerator
         file: &mut FastPathBuf,
         file_num: usize,
         retryable: bool,
-    ) -> io::Result<usize> {
-        let num_bytes = self.num_bytes_distr.sample(&mut self.random).round() as usize;
+    ) -> io::Result<u64> {
+        let num_bytes = self.num_bytes_distr.sample(&mut self.random).round() as u64;
         if num_bytes > 0 || retryable {
             File::create(file).and_then(|f| {
                 // To stay deterministic, we need to ensure `random` is mutated in exactly
@@ -103,7 +103,7 @@ impl<D: Distribution<f64>, R: RngCore> FileContentsGenerator
                 //    - Notice that num_to_generate can be 0 which is a bummer b/c we can't use
                 //      mknod even though we'd like to.
                 let num_bytes = if retryable {
-                    self.num_bytes_distr.sample(&mut self.random).round() as usize
+                    self.num_bytes_distr.sample(&mut self.random).round() as u64
                 } else {
                     num_bytes
                 };
@@ -115,13 +115,13 @@ impl<D: Distribution<f64>, R: RngCore> FileContentsGenerator
         }
     }
 
-    fn byte_counts_pool_return(self) -> Option<Vec<usize>> {
+    fn byte_counts_pool_return(self) -> Option<Vec<u64>> {
         None
     }
 }
 
 pub struct PreDefinedGeneratedFileContents<R: RngCore> {
-    pub byte_counts: Vec<usize>,
+    pub byte_counts: Vec<u64>,
     pub random: R,
 }
 
@@ -132,7 +132,7 @@ impl<R: RngCore> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
         file: &mut FastPathBuf,
         file_num: usize,
         retryable: bool,
-    ) -> io::Result<usize> {
+    ) -> io::Result<u64> {
         let num_bytes = self.byte_counts[file_num];
         if num_bytes > 0 {
             File::create(file)
@@ -143,7 +143,7 @@ impl<R: RngCore> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
         }
     }
 
-    fn byte_counts_pool_return(self) -> Option<Vec<usize>> {
+    fn byte_counts_pool_return(self) -> Option<Vec<u64>> {
         Some(self.byte_counts)
     }
 }

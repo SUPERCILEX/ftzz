@@ -4,7 +4,7 @@
 use std::{
     io,
     io::{stdout, Write},
-    num::NonZeroUsize,
+    num::NonZeroU64,
     path::PathBuf,
     process::{ExitCode, Termination},
 };
@@ -69,7 +69,7 @@ struct Generate {
     /// files may be generated so long as we attempt to get close to N.
     #[clap(short = 'n', long = "files", alias = "num-files")]
     #[clap(value_parser = num_files_parser)]
-    num_files: NonZeroUsize,
+    num_files: NonZeroU64,
 
     /// Whether or not to generate exactly N files
     #[clap(long = "files-exact")]
@@ -83,7 +83,7 @@ struct Generate {
     #[clap(short = 'b', long = "total-bytes", aliases = & ["num-bytes", "num-total-bytes"])]
     #[clap(value_parser = num_bytes_parser)]
     #[clap(default_value = "0")]
-    num_bytes: usize,
+    num_bytes: u64,
 
     /// Whether or not to generate exactly N bytes
     #[clap(long = "bytes-exact")]
@@ -106,7 +106,7 @@ struct Generate {
     /// directories will have N files).
     #[clap(short = 'r', long = "ftd-ratio")]
     #[clap(value_parser = file_to_dir_ratio_parser)]
-    file_to_dir_ratio: Option<NonZeroUsize>,
+    file_to_dir_ratio: Option<NonZeroU64>,
 
     /// Change the PRNG's starting seed
     ///
@@ -145,10 +145,10 @@ mod generate_tests {
     fn params_are_mapped_correctly() {
         let options = Generate {
             root_dir: PathBuf::from("abc"),
-            num_files: NonZeroUsize::new(373).unwrap(),
+            num_files: NonZeroU64::new(373).unwrap(),
             num_bytes: 637,
             max_depth: 43,
-            file_to_dir_ratio: Some(NonZeroUsize::new(37).unwrap()),
+            file_to_dir_ratio: Some(NonZeroU64::new(37).unwrap()),
             seed: 775,
             files_exact: false,
             bytes_exact: false,
@@ -176,7 +176,7 @@ mod generate_tests {
             exact: global_exact,
 
             root_dir: PathBuf::new(),
-            num_files: NonZeroUsize::new(1).unwrap(),
+            num_files: NonZeroU64::new(1).unwrap(),
             num_bytes: 0,
             max_depth: 0,
             file_to_dir_ratio: None,
@@ -200,7 +200,7 @@ mod generate_tests {
             exact: global_exact,
 
             root_dir: PathBuf::new(),
-            num_files: NonZeroUsize::new(1).unwrap(),
+            num_files: NonZeroU64::new(1).unwrap(),
             num_bytes: 0,
             max_depth: 0,
             file_to_dir_ratio: None,
@@ -258,27 +258,27 @@ fn ftzz(ftzz: Ftzz) -> error_stack::Result<(), CliError> {
     }
 }
 
-fn num_files_parser(s: &str) -> Result<NonZeroUsize, String> {
-    let files = lenient_si_number_usize(s)?;
+fn num_files_parser(s: &str) -> Result<NonZeroU64, String> {
+    let files = lenient_si_number_u64(s)?;
     if files > 0 {
-        Ok(unsafe { NonZeroUsize::new_unchecked(files) })
+        Ok(unsafe { NonZeroU64::new_unchecked(files) })
     } else {
         Err(String::from("At least one file must be generated."))
     }
 }
 
-fn num_bytes_parser(s: &str) -> Result<usize, String> {
-    lenient_si_number_usize(s)
+fn num_bytes_parser(s: &str) -> Result<u64, String> {
+    lenient_si_number_u64(s)
 }
 
 fn max_depth_parser(s: &str) -> Result<u32, String> {
     lenient_si_number_u32(s)
 }
 
-fn file_to_dir_ratio_parser(s: &str) -> Result<NonZeroUsize, String> {
-    let ratio = lenient_si_number_usize(s)?;
+fn file_to_dir_ratio_parser(s: &str) -> Result<NonZeroU64, String> {
+    let ratio = lenient_si_number_u64(s)?;
     if ratio > 0 {
-        Ok(unsafe { NonZeroUsize::new_unchecked(ratio) })
+        Ok(unsafe { NonZeroU64::new_unchecked(ratio) })
     } else {
         Err(String::from("Cannot have no files per directory."))
     }
@@ -297,7 +297,7 @@ macro_rules! lenient_si_number {
     };
 }
 
-lenient_si_number!(usize);
+lenient_si_number!(u64);
 lenient_si_number!(u32);
 
 #[cfg(test)]

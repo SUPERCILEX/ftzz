@@ -122,6 +122,6 @@ Number overflow:
 ```console
 $ ftzz generate -n 1 dir -d 999999999999999999999999999
 ? 2
-error: Invalid value "999999999999999999999999999" for '--max-depth <MAX_DEPTH>': number too large to fit in target type
+error: Invalid value '999999999999999999999999999' for '--max-depth <MAX_DEPTH>': number too large to fit in target type
 
 ```

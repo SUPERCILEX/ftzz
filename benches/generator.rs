@@ -1,4 +1,4 @@
-use std::{io::sink, num::NonZeroUsize, time::Duration};
+use std::{io::sink, num::NonZeroU64, time::Duration};
 
 use criterion::{
     criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion, PlotConfiguration,
@@ -24,7 +24,7 @@ fn simple_generate(c: &mut Criterion) {
                     Generator::builder()
                         .root_dir(dir.path().to_path_buf())
                         .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                            NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
+                            NonZeroU64::new(*num_files).unwrap(),
                         ))
                         .max_depth(5)
                         .build()
@@ -55,7 +55,7 @@ fn huge_generate(c: &mut Criterion) {
                 Generator::builder()
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                        NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
+                        NonZeroU64::new(*num_files).unwrap(),
                     ))
                     .max_depth(5)
                     .build()
@@ -83,7 +83,7 @@ fn deep_generate(c: &mut Criterion) {
                 Generator::builder()
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                        NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
+                        NonZeroU64::new(*num_files).unwrap(),
                     ))
                     .max_depth(100)
                     .build()
@@ -111,7 +111,7 @@ fn shallow_generate(c: &mut Criterion) {
                 Generator::builder()
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                        NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
+                        NonZeroU64::new(*num_files).unwrap(),
                     ))
                     .max_depth(0)
                     .build()
@@ -140,8 +140,8 @@ fn sparse_generate(c: &mut Criterion) {
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(
                         NumFilesWithRatio::new(
-                            NonZeroUsize::new(usize::try_from(*num_files).unwrap()).unwrap(),
-                            NonZeroUsize::new(1).unwrap(),
+                            NonZeroU64::new(*num_files).unwrap(),
+                            NonZeroU64::new(1).unwrap(),
                         )
                         .unwrap(),
                     )
@@ -168,13 +168,13 @@ fn dense_generate(c: &mut Criterion) {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
-                let num_files = usize::try_from(*num_files).unwrap();
+                let num_files = *num_files;
                 Generator::builder()
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(
                         NumFilesWithRatio::new(
-                            NonZeroUsize::new(num_files).unwrap(),
-                            NonZeroUsize::new(num_files).unwrap(),
+                            NonZeroU64::new(num_files).unwrap(),
+                            NonZeroU64::new(num_files).unwrap(),
                         )
                         .unwrap(),
                     )
@@ -204,10 +204,10 @@ fn bytes_generate(c: &mut Criterion) {
                     Generator::builder()
                         .root_dir(dir.path().to_path_buf())
                         .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                            NonZeroUsize::new(10000).unwrap(),
+                            NonZeroU64::new(10000).unwrap(),
                         ))
                         .max_depth(5)
-                        .num_bytes(usize::try_from(*num_bytes).unwrap())
+                        .num_bytes(*num_bytes)
                         .build()
                         .generate(&mut sink())
                         .unwrap();

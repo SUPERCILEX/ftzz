@@ -4,7 +4,7 @@ use std::{
     fs::{create_dir, DirEntry, File},
     hash::Hasher,
     io::{stdout, BufReader, Read, Write},
-    num::NonZeroUsize,
+    num::NonZeroU64,
     path::Path,
 };
 
@@ -64,7 +64,7 @@ fn gen_in_empty_existing_dir_is_allowed() {
     Generator::builder()
         .root_dir(empty)
         .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-            NonZeroUsize::new(1).unwrap(),
+            NonZeroU64::new(1).unwrap(),
         ))
         .build()
         .generate(&mut goldenfile)
@@ -88,7 +88,7 @@ fn gen_in_non_empty_existing_dir_is_disallowed() {
     let result = Generator::builder()
         .root_dir(non_empty)
         .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-            NonZeroUsize::new(1).unwrap(),
+            NonZeroU64::new(1).unwrap(),
         ))
         .build()
         .generate(&mut goldenfile);
@@ -109,7 +109,7 @@ fn gen_creates_new_dir_if_not_present() {
     Generator::builder()
         .root_dir(dir.path.join("new"))
         .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-            NonZeroUsize::new(1).unwrap(),
+            NonZeroU64::new(1).unwrap(),
         ))
         .build()
         .generate(&mut goldenfile)
@@ -123,7 +123,7 @@ fn gen_creates_new_dir_if_not_present() {
 #[case(1_000)]
 #[case(10_000)]
 #[case(100_000)]
-fn simple_create_files(#[case] num_files: usize) {
+fn simple_create_files(#[case] num_files: u64) {
     let dir = InspectableTempDir::new();
 
     let mut mint = Mint::new("testdata/generator");
@@ -134,7 +134,7 @@ fn simple_create_files(#[case] num_files: usize) {
     Generator::builder()
         .root_dir(dir.path.clone())
         .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-            NonZeroUsize::new(num_files).unwrap(),
+            NonZeroU64::new(num_files).unwrap(),
         ))
         .build()
         .generate(&mut goldenfile)
@@ -145,13 +145,13 @@ fn simple_create_files(#[case] num_files: usize) {
 
 #[rstest]
 fn advanced_create_files(
-    #[values(1, 1_000, 10_000)] num_files: usize,
+    #[values(1, 1_000, 10_000)] num_files: u64,
     #[values((0, false), (1_000, false), (1_000, true), (100_000, false), (100_000, true))] bytes: (
-        usize,
+        u64,
         bool,
     ),
     #[values(0, 1, 10)] max_depth: u32,
-    #[values(1, 100, 1_000)] ftd_ratio: usize,
+    #[values(1, 100, 1_000)] ftd_ratio: u64,
     #[values(false, true)] files_exact: bool,
 ) {
     let dir = InspectableTempDir::new();
@@ -177,8 +177,8 @@ fn advanced_create_files(
         .root_dir(dir.path.clone())
         .num_files_with_ratio(
             NumFilesWithRatio::new(
-                NonZeroUsize::new(num_files).unwrap(),
-                NonZeroUsize::new(min(num_files, ftd_ratio)).unwrap(),
+                NonZeroU64::new(num_files).unwrap(),
+                NonZeroU64::new(min(num_files, ftd_ratio)).unwrap(),
             )
             .unwrap(),
         )
@@ -216,7 +216,7 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
     Generator::builder()
         .root_dir(dir.path.clone())
         .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-            NonZeroUsize::new(10_000).unwrap(),
+            NonZeroU64::new(10_000).unwrap(),
         ))
         .max_depth(max_depth)
         .build()
@@ -247,8 +247,8 @@ fn fuzz_test() {
         .root_dir(dir.path.clone())
         .num_files_with_ratio(
             NumFilesWithRatio::new(
-                NonZeroUsize::new(num_files).unwrap(),
-                NonZeroUsize::new(ratio).unwrap(),
+                NonZeroU64::new(num_files).unwrap(),
+                NonZeroU64::new(ratio).unwrap(),
             )
             .unwrap(),
         )
@@ -325,7 +325,7 @@ fn find_max_depth(dir: &Path) -> u32 {
     depth
 }
 
-fn count_num_files(dir: &Path) -> usize {
+fn count_num_files(dir: &Path) -> u64 {
     let mut num_files = 0;
     let mut queue = VecDeque::from([dir.to_path_buf()]);
     while let Some(path) = queue.pop_front() {
@@ -341,7 +341,7 @@ fn count_num_files(dir: &Path) -> usize {
     num_files
 }
 
-fn count_num_bytes(dir: &Path) -> usize {
+fn count_num_bytes(dir: &Path) -> u64 {
     let mut num_bytes = 0;
     let mut queue = VecDeque::from([dir.to_path_buf()]);
     while let Some(path) = queue.pop_front() {
@@ -350,7 +350,7 @@ fn count_num_bytes(dir: &Path) -> usize {
             if entry.file_type().unwrap().is_dir() {
                 queue.push_back(entry.path());
             } else {
-                num_bytes += usize::try_from(entry.metadata().unwrap().len()).unwrap();
+                num_bytes += entry.metadata().unwrap().len();
             }
         }
     }
