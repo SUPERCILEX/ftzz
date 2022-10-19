@@ -153,7 +153,7 @@ impl Generator {
 #[derive(Debug)]
 struct Configuration {
     root_dir: PathBuf,
-    files: u64,
+    files: NonZeroU64,
     bytes: u64,
     files_exact: bool,
     bytes_exact: bool,
@@ -198,7 +198,7 @@ fn validated_options(generator: Generator) -> Result<Configuration, Error> {
     if generator.max_depth == 0 {
         return Ok(Configuration {
             root_dir: generator.root_dir,
-            files: generator.num_files_with_ratio.num_files.get(),
+            files: generator.num_files_with_ratio.num_files,
             bytes: generator.num_bytes,
             files_exact: generator.files_exact,
             bytes_exact: generator.bytes_exact,
@@ -222,7 +222,7 @@ fn validated_options(generator: Generator) -> Result<Configuration, Error> {
 
     Ok(Configuration {
         root_dir: generator.root_dir,
-        files: generator.num_files_with_ratio.num_files.get(),
+        files: generator.num_files_with_ratio.num_files,
         bytes: generator.num_bytes,
         files_exact: generator.files_exact,
         bytes_exact: generator.bytes_exact,
@@ -256,7 +256,7 @@ fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
         } else {
             "About"
         },
-        files_maybe_plural = if config.files == 1 { "file" } else { "files" },
+        files_maybe_plural = if config.files.get() == 1 { "file" } else { "files" },
         directories_maybe_plural = if config.informational_total_dirs == 1 {
             "directory"
         } else {
@@ -319,7 +319,7 @@ fn print_stats(stats: GeneratorStats, output: &mut impl Write) {
 
 fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
     let parallelism =
-        thread::available_parallelism().unwrap_or(unsafe { NonZeroUsize::new_unchecked(1) });
+        thread::available_parallelism().unwrap_or(const { NonZeroUsize::new(1).unwrap() });
     let runtime = tokio::runtime::Builder::new_current_thread()
         .max_blocking_threads(parallelism.get())
         .build()
@@ -336,7 +336,7 @@ async fn run_generator_async(
     parallelism: NonZeroUsize,
 ) -> Result<GeneratorStats, Error> {
     let random = {
-        let seed = ((config.files.wrapping_add(config.max_depth.into()) as f64
+        let seed = ((config.files.get().wrapping_add(config.max_depth.into()) as f64
             * (config.files_per_dir + config.dirs_per_dir)) as u64)
             .wrapping_add(config.seed);
         event!(Level::DEBUG, seed = ?seed, "Starting seed");
@@ -362,22 +362,10 @@ async fn run_generator_async(
         run!(OtherFilesAndContentsGenerator::new(
             num_files_distr,
             num_dirs_distr,
-            if config.bytes > 0 {
-                Some(num_bytes_distr)
-            } else {
-                None
-            },
+            (config.bytes > 0).then_some(num_bytes_distr),
             random,
-            if config.files_exact {
-                Some(unsafe { NonZeroU64::new_unchecked(config.files) })
-            } else {
-                None
-            },
-            if config.bytes_exact {
-                Some(config.bytes)
-            } else {
-                None
-            },
+            config.files_exact.then_some(config.files),
+            config.bytes_exact.then_some(config.bytes),
         ))
     } else if config.bytes > 0 {
         run!(FilesAndContentsGenerator {

@@ -65,10 +65,9 @@ impl FileNameCache {
 
 static CACHE: FileNameCache = FileNameCache::new();
 
-#[allow(clippy::cast_possible_truncation)]
 pub fn with_file_name<T>(i: u64, f: impl FnOnce(&str) -> T) -> T {
     if i < FileNameCache::max_cache_size().into() {
-        CACHE.with_file_name(i as u16, f)
+        CACHE.with_file_name(i.try_into().unwrap(), f)
     } else {
         f(itoa::Buffer::new().format(i))
     }

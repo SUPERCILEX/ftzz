@@ -223,7 +223,7 @@ impl<
                 self.root_num_files_hack.unwrap_or(0),
                 byte_counts_pool,
             )
-        } else if self.bytes_exact.is_some_and(|b| b > 0) {
+        } else if matches!(self.bytes_exact, Some(b) if b > 0) {
             self.queue_gen_internal(
                 file,
                 1,
@@ -237,7 +237,7 @@ impl<
     }
 
     fn uses_byte_counts_pool(&self) -> bool {
-        self.num_bytes_distr.is_some() && self.bytes_exact.is_some_and(|b| b > 0)
+        self.num_bytes_distr.is_some() && matches!(self.bytes_exact, Some(b) if b > 0)
     }
 }
 
