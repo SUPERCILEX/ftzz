@@ -99,12 +99,11 @@ dependencies = [
 
 [[package]]
 name = "cargo_toml"
-version = "0.11.8"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e72c3ff59e3b7d24630206bb63a73af65da4ed5df1f76ee84dfafb9fee2ba60e"
+checksum = "aa0e3586af56b3bfa51fca452bd56e8dbbbd5d8d81cbf0b7e4e35b695b537eb8"
 dependencies = [
  "serde",
- "serde_derive",
  "toml",
 ]
 
@@ -972,9 +971,9 @@ dependencies = [
 
 [[package]]
 name = "public-api"
-version = "0.20.1"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e69a7cfc1b500e3a29f45787992d607a2fee6626d007d76f68601832954f3416"
+checksum = "072dd22372c99f9575189553518cc30e499ca0b120a1da40b7a1f5feecf6d647"
 dependencies = [
  "hashbag",
  "rustdoc-types",
@@ -1140,9 +1139,9 @@ dependencies = [
 
 [[package]]
 name = "rustdoc-json"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14ac1979477182058f04ca54f46a80e61228b5c11ce0bdffb6afb6e462c08b82"
+checksum = "cc436a65d0531ae3518f0784e6fa738dbe1669bf5c24b47984d7b5cabe1256f2"
 dependencies = [
  "cargo_metadata",
  "cargo_toml",

@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, io::Write};
+use std::io::Write;
 
 use goldenfile::Mint;
 use public_api::PublicApi;
@@ -14,9 +14,8 @@ fn api() {
     let mut mint = Mint::new(".");
     let mut goldenfile = mint.new_goldenfile("api.golden").unwrap();
 
-    let json = read_to_string(json_path).unwrap();
-    let api = PublicApi::from_rustdoc_json_str(&json, public_api::Options::default()).unwrap();
-    for public_item in api.items {
+    let api = PublicApi::from_rustdoc_json(json_path, public_api::Options::default()).unwrap();
+    for public_item in api.items() {
         writeln!(goldenfile, "{public_item}").unwrap();
     }
 }
