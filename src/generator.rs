@@ -63,6 +63,8 @@ impl NumFilesWithRatio {
     ///
     /// The file to directory ratio cannot be larger than the number of files to
     /// generate since it is impossible to satisfy that condition.
+    // TODO https://github.com/rust-lang/rust-clippy/issues/9646
+    #[allow(clippy::missing_const_for_fn)]
     pub fn new(
         num_files: NonZeroU64,
         file_to_dir_ratio: NonZeroU64,
