@@ -110,7 +110,7 @@ mod tests {
 
     #[test]
     fn names_are_returned() {
-        for i in 0..(FileNameCache::max_cache_size() * 2) {
+        for i in 0..FileNameCache::max_cache_size() * 2 {
             with_file_name(i.into(), |s| {
                 assert_eq!(s, i.to_string());
             });

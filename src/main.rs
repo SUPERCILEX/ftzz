@@ -80,7 +80,7 @@ struct Generate {
     ///
     /// Note: this value is probabilistically respected, meaning any amount of
     /// data may be generated so long as we attempt to get close to N.
-    #[clap(short = 'b', long = "total-bytes", aliases = & ["num-bytes", "num-total-bytes"])]
+    #[clap(short = 'b', long = "total-bytes", aliases = &["num-bytes", "num-total-bytes"])]
     #[clap(value_parser = num_bytes_parser)]
     #[clap(default_value = "0")]
     num_bytes: u64,
@@ -91,7 +91,7 @@ struct Generate {
 
     /// Whether or not to generate exactly N files and bytes
     #[clap(short = 'e', long = "exact")]
-    #[clap(conflicts_with_all = & ["files_exact", "bytes_exact"])]
+    #[clap(conflicts_with_all = &["files_exact", "bytes_exact"])]
     exact: bool,
 
     /// The maximum directory tree depth

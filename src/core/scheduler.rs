@@ -107,7 +107,7 @@ pub async fn run(
                 }
             }
             Err(QueueErrors::NothingToDo(path)) => path_pool.push(path),
-        };
+        }
 
         let gen_span = span!(Level::TRACE, "dir_gen");
         'outer: while let Some((tot_dirs, dirs_left)) = stack.last_mut() {

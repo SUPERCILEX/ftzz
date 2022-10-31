@@ -250,14 +250,8 @@ fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
         config.files.separate_with_commas(),
         config.informational_total_dirs.separate_with_commas(),
         config.max_depth.separate_with_commas(),
-        config
-            .informational_dirs_per_dir
-            .separate_with_commas(),
-        file_count_type = if config.files_exact {
-            "Exactly"
-        } else {
-            "About"
-        },
+        config.informational_dirs_per_dir.separate_with_commas(),
+        file_count_type = if config.files_exact { "Exactly" } else { "About" },
         files_maybe_plural = if config.files.get() == 1 { "file" } else { "files" },
         directories_maybe_plural = if config.informational_total_dirs == 1 {
             "directory"
@@ -272,9 +266,7 @@ fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
         bytes_info = if config.bytes > 0 {
             format!(
                 " Each file will contain approximately {} {bytes_maybe_plural} of random data{exact_bytes_total}.",
-                config
-                    .informational_bytes_per_files
-                    .separate_with_commas(),
+                config.informational_bytes_per_files.separate_with_commas(),
                 bytes_maybe_plural = if config.informational_bytes_per_files == 1 {
                     "byte"
                 } else {

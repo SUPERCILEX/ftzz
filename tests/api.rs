@@ -21,13 +21,13 @@ fn api() {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
+#[cfg_attr(miri, ignore)] // TODO https://github.com/assert-rs/trycmd/issues/152
 fn readme() {
     trycmd::TestCases::new().case("README.md");
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
+#[cfg_attr(miri, ignore)] // TODO https://github.com/assert-rs/trycmd/issues/152
 fn cli() {
     trycmd::TestCases::new().case("testdata/cmds/*.md");
 }

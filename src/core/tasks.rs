@@ -295,14 +295,14 @@ impl<
                     debug_assert!(byte_counts.is_empty());
                     let num_files_usize = num_files.try_into().unwrap_or(usize::MAX);
                     byte_counts.reserve(num_files_usize);
-                    let raw_byte_counts =
-                        byte_counts.spare_capacity_mut().split_at_mut(num_files_usize).0;
+                    let raw_byte_counts = byte_counts
+                        .spare_capacity_mut()
+                        .split_at_mut(num_files_usize)
+                        .0;
 
                     for count in raw_byte_counts {
-                        let num_bytes = min(
-                            *bytes,
-                            bytes_distr.sample(&mut self.random).round() as u64,
-                        );
+                        let num_bytes =
+                            min(*bytes, bytes_distr.sample(&mut self.random).round() as u64);
                         *bytes -= num_bytes;
 
                         count.write(num_bytes);
