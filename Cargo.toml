@@ -12,10 +12,10 @@ license = "Apache-2.0"
 [dependencies]
 bytesize = "1.1.0"
 cfg-if = "1.0.0"
-clap = { version = "4.0.15", features = ["derive", "wrap_help"] }
+clap = { version = "4.0.23", features = ["derive", "wrap_help"] }
 clap-num = "1.0.2"
 clap-verbosity-flag = "2.0.0"
-error-stack = "0.2.3"
+error-stack = "0.2.4"
 # TODO use the real itoa once https://github.com/dtolnay/itoa/pull/34 goes through
 itoa-const = "1.0.1"
 log = { version = "0.4.17", features = ["release_max_level_info"] }
@@ -23,15 +23,15 @@ paste = "1.0.9"
 rand = { version = "0.8.5", default-features = false, features = ["std"] }
 rand_distr = "0.4.3"
 rand_xoshiro = "0.6.0"
-simple_logger = { version = "2.3.0", default-features = false, features = ["colors"] }
-sysexits = "0.3.2"
+simple_logger = { version = "4.0.0", default-features = false, features = ["colors"] }
+sysexits = "0.3.3"
 thiserror = "1.0.37"
 thousands = "0.2.0"
 tokio = { version = "1.21.2", features = ["rt"] }
 tracing = { version = "0.1.37", features = ["release_max_level_off", "log"] }
 tracing-chrome = { version = "0.6.0", optional = true }
 tracing-subscriber = { version = "0.3.16", optional = true }
-typed-builder = "0.10.0"
+typed-builder = "0.11.0"
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.25.0", default-features = false, features = ["fs"] }
@@ -43,10 +43,10 @@ rstest = "0.15.0"
 seahash = "4.1.0"
 tempfile = "3.3.0"
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
-goldenfile = "1.4.3"
-public-api = "0.21.0"
-rustdoc-json = "0.5.0"
-trycmd = "0.14.0"
+goldenfile = "1.4.5"
+public-api = "0.22.0"
+rustdoc-json = "0.6.0"
+trycmd = "0.14.4"
 
 [features]
 trace = ["tracing-chrome", "tracing-subscriber"]

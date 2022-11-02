@@ -111,9 +111,7 @@ pub async fn run(
 
         let gen_span = span!(Level::TRACE, "dir_gen");
         'outer: while let Some((tot_dirs, dirs_left)) = stack.last_mut() {
-            let num_dirs_to_generate = if let Some(n) = dirs_left.pop() {
-                n
-            } else {
+            let Some(num_dirs_to_generate) = dirs_left.pop() else {
                 vec_pool.push(unsafe { stack.pop().unwrap_unchecked().1 });
 
                 if let Some((tot_dirs, dirs_left)) = stack.last() {
