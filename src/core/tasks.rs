@@ -1,18 +1,15 @@
 #![allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 
-use std::{cmp::min, io, num::NonZeroU64};
+use std::{cmp::min, io, num::NonZeroU64, os::unix::io::OwnedFd};
 
 use rand::{distributions::Distribution, RngCore};
 use tokio::{task, task::JoinHandle};
 
-use crate::{
-    core::{
-        file_contents::{
-            NoGeneratedFileContents, OnTheFlyGeneratedFileContents, PreDefinedGeneratedFileContents,
-        },
-        files::{create_files_and_dirs, GeneratorTaskOutcome, GeneratorTaskParams},
+use crate::core::{
+    file_contents::{
+        NoGeneratedFileContents, OnTheFlyGeneratedFileContents, PreDefinedGeneratedFileContents,
     },
-    utils::FastPathBuf,
+    files::{create_files_and_dirs, GeneratorTaskOutcome, GeneratorTaskParams},
 };
 
 pub type QueueResult = Result<QueueOutcome, QueueErrors>;
@@ -29,19 +26,19 @@ pub struct QueueOutcome {
 
 #[derive(Debug)]
 pub enum QueueErrors {
-    NothingToDo(FastPathBuf),
+    NothingToDo(OwnedFd),
 }
 
 pub trait TaskGenerator {
     fn queue_gen(
         &mut self,
-        file: FastPathBuf,
+        dir: OwnedFd,
         gen_dirs: bool,
         byte_counts_pool: &mut Vec<Vec<u64>>,
     ) -> QueueResult;
 
-    fn maybe_queue_final_gen(&mut self, file: FastPathBuf, _: &mut Vec<Vec<u64>>) -> QueueResult {
-        Err(QueueErrors::NothingToDo(file))
+    fn maybe_queue_final_gen(&mut self, dir: OwnedFd, _: &mut Vec<Vec<u64>>) -> QueueResult {
+        Err(QueueErrors::NothingToDo(dir))
     }
 
     fn uses_byte_counts_pool(&self) -> bool {
@@ -86,13 +83,13 @@ impl<DF: Distribution<f64>, DD: Distribution<f64>, R: RngCore> TaskGenerator
 {
     fn queue_gen(
         &mut self,
-        file: FastPathBuf,
+        target_dir: OwnedFd,
         gen_dirs: bool,
         _: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
         let num_files = self.num_files_distr.sample(&mut self.random).round() as u64;
         let params = GeneratorTaskParams {
-            target_dir: file,
+            target_dir,
             num_files,
             num_dirs: if gen_dirs {
                 self.num_dirs_distr.sample(&mut self.random).round() as usize
@@ -123,13 +120,13 @@ impl<
 {
     fn queue_gen(
         &mut self,
-        file: FastPathBuf,
+        target_dir: OwnedFd,
         gen_dirs: bool,
         _: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
         let num_files = self.num_files_distr.sample(&mut self.random).round() as u64;
         let params = GeneratorTaskParams {
-            target_dir: file,
+            target_dir,
             num_files,
             num_dirs: if gen_dirs {
                 self.num_dirs_distr.sample(&mut self.random).round() as usize
@@ -169,7 +166,7 @@ impl<
 {
     fn queue_gen(
         &mut self,
-        file: FastPathBuf,
+        dir: OwnedFd,
         gen_dirs: bool,
         byte_counts_pool: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
@@ -195,16 +192,16 @@ impl<
             0
         };
 
-        self.queue_gen_internal(file, num_files, num_dirs, 0, byte_counts_pool)
+        self.queue_gen_internal(dir, num_files, num_dirs, 0, byte_counts_pool)
     }
 
     fn maybe_queue_final_gen(
         &mut self,
-        file: FastPathBuf,
+        dir: OwnedFd,
         byte_counts_pool: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
         if self.done {
-            return Err(QueueErrors::NothingToDo(file));
+            return Err(QueueErrors::NothingToDo(dir));
         }
         self.done = true;
 
@@ -217,7 +214,7 @@ impl<
         // properly.
         if let Some(files) = self.files_exact {
             self.queue_gen_internal(
-                file,
+                dir,
                 files.get(),
                 0,
                 self.root_num_files_hack.unwrap_or(0),
@@ -225,14 +222,14 @@ impl<
             )
         } else if matches!(self.bytes_exact, Some(b) if b > 0) {
             self.queue_gen_internal(
-                file,
+                dir,
                 1,
                 0,
                 self.root_num_files_hack.unwrap_or(0),
                 byte_counts_pool,
             )
         } else {
-            Err(QueueErrors::NothingToDo(file))
+            Err(QueueErrors::NothingToDo(dir))
         }
     }
 
@@ -270,7 +267,7 @@ impl<
 
     fn queue_gen_internal(
         &mut self,
-        file: FastPathBuf,
+        target_dir: OwnedFd,
         num_files: u64,
         num_dirs: usize,
         offset: u64,
@@ -279,7 +276,7 @@ impl<
         macro_rules! build_params {
             ($file_contents:expr) => {{
                 GeneratorTaskParams {
-                    target_dir: file,
+                    target_dir,
                     num_files,
                     num_dirs,
                     file_offset: offset,

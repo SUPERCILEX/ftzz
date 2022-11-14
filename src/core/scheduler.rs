@@ -1,8 +1,12 @@
 use std::{
-    collections::VecDeque, num::NonZeroUsize, ops::AddAssign, path::PathBuf, process::ExitCode,
+    collections::VecDeque, io, num::NonZeroUsize, ops::AddAssign, path::PathBuf, process::ExitCode,
 };
 
 use error_stack::{IntoReport, Result, ResultExt};
+use nix::{
+    fcntl::{open, OFlag},
+    sys::stat::Mode,
+};
 
 use tracing::{event, span, Level};
 
@@ -66,7 +70,17 @@ pub async fn run(
 
     {
         let mut stack = Vec::with_capacity(max_depth);
-        let mut target_dir = FastPathBuf::from(root_dir);
+        let mut dir = {
+            open(
+                &root_dir,
+                OFlag::O_RDONLY | OFlag::O_DIRECTORY,
+                Mode::empty(),
+            )
+            .into_report()
+            .change_context(Error::Io)
+            .attach(ExitCode::from(sysexits::ExitCode::IoErr))?
+        };
+        drop(root_dir);
 
         let mut vec_pool = Vec::with_capacity(max_depth);
         let mut path_pool = Vec::with_capacity(tasks.capacity() / 2);
@@ -99,7 +113,7 @@ pub async fn run(
             };
         }
 
-        match generator.queue_gen(target_dir.clone(), max_depth > 0, &mut byte_counts_pool) {
+        match generator.queue_gen(target_dir, max_depth > 0, &mut byte_counts_pool) {
             Ok(outcome) => {
                 tasks.push_back(outcome.task);
                 if outcome.num_dirs > 0 {
