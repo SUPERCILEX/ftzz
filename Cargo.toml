@@ -38,15 +38,15 @@ nix = { version = "0.25.0", default-features = false, features = ["fs"] }
 
 [dev-dependencies]
 criterion = "0.4.0"
+expect-test = "1.4.0"
 more-asserts = "0.3.1"
+public-api = "0.22.0"
+rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 rstest = "0.15.0"
+rustdoc-json = "0.6.0"
 seahash = "4.1.0"
 tempfile = "3.3.0"
-rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
-public-api = "0.22.0"
-rustdoc-json = "0.6.0"
 trycmd = "0.14.4"
-expect-test = "1.4.0"
 
 [features]
 trace = ["tracing-chrome", "tracing-subscriber"]
