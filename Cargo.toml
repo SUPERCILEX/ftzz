@@ -43,10 +43,10 @@ rstest = "0.15.0"
 seahash = "4.1.0"
 tempfile = "3.3.0"
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
-goldenfile = "1.4.5"
 public-api = "0.22.0"
 rustdoc-json = "0.6.0"
 trycmd = "0.14.4"
+expect-test = "1.4.0"
 
 [features]
 trace = ["tracing-chrome", "tracing-subscriber"]

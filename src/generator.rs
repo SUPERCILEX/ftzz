@@ -6,8 +6,8 @@
 
 use std::{
     cmp::max,
+    fmt::Write,
     fs::create_dir_all,
-    io::Write,
     num::{NonZeroU64, NonZeroUsize},
     path::PathBuf,
     process::ExitCode,

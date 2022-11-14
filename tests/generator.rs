@@ -1,14 +1,16 @@
 use std::{
     cmp::{max, min},
     collections::VecDeque,
+    fmt::Write,
     fs::{create_dir, DirEntry, File},
     hash::Hasher,
-    io::{stdout, BufReader, Read, Write},
+    io,
+    io::{stdout, BufReader, Read},
     num::NonZeroU64,
     path::Path,
 };
 
-use goldenfile::Mint;
+use expect_test::expect_file;
 use more_asserts::assert_le;
 use rand::Rng;
 use rstest::rstest;
@@ -53,13 +55,10 @@ mod inspect {
 #[test]
 fn gen_in_empty_existing_dir_is_allowed() {
     let dir = InspectableTempDir::new();
+    let mut golden = String::new();
+
     let empty = dir.path.join("empty");
     create_dir(&empty).unwrap();
-
-    let mut mint = Mint::new("testdata/generator");
-    let mut goldenfile = mint
-        .new_goldenfile("gen_in_empty_existing_dir_is_allowed.stdout")
-        .unwrap();
 
     Generator::builder()
         .root_dir(empty)
@@ -67,23 +66,22 @@ fn gen_in_empty_existing_dir_is_allowed() {
             NonZeroU64::new(1).unwrap(),
         ))
         .build()
-        .generate(&mut goldenfile)
+        .generate(&mut golden)
         .unwrap();
+    print_and_hash_dir(&dir.path, &mut golden);
 
-    print_and_hash_dir(&dir.path, &mut goldenfile);
+    expect_file!["../testdata/generator/gen_in_empty_existing_dir_is_allowed.stdout"]
+        .assert_eq(&golden);
 }
 
 #[test]
 fn gen_in_non_empty_existing_dir_is_disallowed() {
     let dir = InspectableTempDir::new();
+    let mut golden = String::new();
+
     let non_empty = dir.path.join("nonempty");
     create_dir(&non_empty).unwrap();
     File::create(non_empty.join("file")).unwrap();
-
-    let mut mint = Mint::new("testdata/generator");
-    let mut goldenfile = mint
-        .new_goldenfile("gen_in_non_empty_existing_dir_is_disallowed.stdout")
-        .unwrap();
 
     let result = Generator::builder()
         .root_dir(non_empty)
@@ -91,20 +89,19 @@ fn gen_in_non_empty_existing_dir_is_disallowed() {
             NonZeroU64::new(1).unwrap(),
         ))
         .build()
-        .generate(&mut goldenfile);
+        .generate(&mut golden);
 
     drop(result.unwrap_err());
-    print_and_hash_dir(&dir.path, &mut goldenfile);
+    print_and_hash_dir(&dir.path, &mut golden);
+
+    expect_file!["../testdata/generator/gen_in_non_empty_existing_dir_is_disallowed.stdout"]
+        .assert_eq(&golden);
 }
 
 #[test]
 fn gen_creates_new_dir_if_not_present() {
     let dir = InspectableTempDir::new();
-
-    let mut mint = Mint::new("testdata/generator");
-    let mut goldenfile = mint
-        .new_goldenfile("gen_creates_new_dir_if_not_present.stdout")
-        .unwrap();
+    let mut golden = String::new();
 
     Generator::builder()
         .root_dir(dir.path.join("new"))
@@ -112,11 +109,14 @@ fn gen_creates_new_dir_if_not_present() {
             NonZeroU64::new(1).unwrap(),
         ))
         .build()
-        .generate(&mut goldenfile)
+        .generate(&mut golden)
         .unwrap();
 
     assert!(dir.path.join("new").exists());
-    print_and_hash_dir(&dir.path, &mut goldenfile);
+    print_and_hash_dir(&dir.path, &mut golden);
+
+    expect_file!["../testdata/generator/gen_creates_new_dir_if_not_present.stdout"]
+        .assert_eq(&golden);
 }
 
 #[rstest]
@@ -125,11 +125,7 @@ fn gen_creates_new_dir_if_not_present() {
 #[cfg_attr(not(miri), case(100_000))]
 fn simple_create_files(#[case] num_files: u64) {
     let dir = InspectableTempDir::new();
-
-    let mut mint = Mint::new("testdata/generator");
-    let mut goldenfile = mint
-        .new_goldenfile(format!("simple_create_files_{num_files}.stdout"))
-        .unwrap();
+    let mut golden = String::new();
 
     Generator::builder()
         .root_dir(dir.path.clone())
@@ -137,10 +133,15 @@ fn simple_create_files(#[case] num_files: u64) {
             NonZeroU64::new(num_files).unwrap(),
         ))
         .build()
-        .generate(&mut goldenfile)
+        .generate(&mut golden)
         .unwrap();
 
-    print_and_hash_dir(&dir.path, &mut goldenfile);
+    print_and_hash_dir(&dir.path, &mut golden);
+
+    expect_file![format!(
+        "../testdata/generator/simple_create_files_{num_files}.stdout"
+    )]
+    .assert_eq(&golden);
 }
 
 #[rstest]
@@ -160,23 +161,7 @@ fn advanced_create_files(
     }
 
     let dir = InspectableTempDir::new();
-
-    let mut mint = Mint::new("testdata/generator");
-    let mut goldenfile = mint
-        .new_goldenfile(format!(
-            "advanced_create_files{}{}{}_{}_{}_{}.stdout",
-            if files_exact { "_exact" } else { "" },
-            if bytes.0 > 0 {
-                format!("_bytes_{}", bytes.0)
-            } else {
-                String::new()
-            },
-            if bytes.1 { "_exact" } else { "" },
-            num_files,
-            max_depth,
-            ftd_ratio,
-        ))
-        .unwrap();
+    let mut golden = String::new();
 
     Generator::builder()
         .root_dir(dir.path.clone())
@@ -192,7 +177,7 @@ fn advanced_create_files(
         .bytes_exact(bytes.1)
         .max_depth(max_depth)
         .build()
-        .generate(&mut goldenfile)
+        .generate(&mut golden)
         .unwrap();
 
     if files_exact {
@@ -201,7 +186,22 @@ fn advanced_create_files(
     if bytes.1 {
         assert_eq!(count_num_bytes(&dir.path), bytes.0);
     }
-    print_and_hash_dir(&dir.path, &mut goldenfile);
+    print_and_hash_dir(&dir.path, &mut golden);
+
+    expect_file![format!(
+        "../testdata/generator/advanced_create_files{}{}{}_{}_{}_{}.stdout",
+        if files_exact { "_exact" } else { "" },
+        if bytes.0 > 0 {
+            format!("_bytes_{}", bytes.0)
+        } else {
+            String::new()
+        },
+        if bytes.1 { "_exact" } else { "" },
+        num_files,
+        max_depth,
+        ftd_ratio,
+    )]
+    .assert_eq(&golden);
 }
 
 #[rstest]
@@ -213,11 +213,7 @@ fn advanced_create_files(
 #[cfg_attr(miri, ignore)] // Miri is way too slow unfortunately
 fn max_depth_is_respected(#[case] max_depth: u32) {
     let dir = InspectableTempDir::new();
-
-    let mut mint = Mint::new("testdata/generator");
-    let mut goldenfile = mint
-        .new_goldenfile(format!("max_depth_is_respected_{max_depth}.stdout"))
-        .unwrap();
+    let mut golden = String::new();
 
     Generator::builder()
         .root_dir(dir.path.clone())
@@ -226,11 +222,16 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
         ))
         .max_depth(max_depth)
         .build()
-        .generate(&mut goldenfile)
+        .generate(&mut golden)
         .unwrap();
 
     assert_le!(find_max_depth(&dir.path), max_depth);
-    print_and_hash_dir(&dir.path, &mut goldenfile);
+    print_and_hash_dir(&dir.path, &mut golden);
+
+    expect_file![format!(
+        "../testdata/generator/max_depth_is_respected_{max_depth}.stdout"
+    )]
+    .assert_eq(&golden);
 }
 
 #[test]
@@ -265,7 +266,12 @@ fn fuzz_test() {
         .bytes_exact(bytes_exact)
         .build();
     println!("Params: {g:?}");
-    g.generate(&mut stdout()).unwrap();
+    {
+        // TODO https://github.com/rust-lang/rust/pull/104389
+        let mut output = String::new();
+        g.generate(&mut output).unwrap();
+        io::Write::write_all(&mut stdout(), output.as_bytes()).unwrap();
+    }
 
     assert_le!(find_max_depth(&dir.path), max_depth);
     if files_exact {

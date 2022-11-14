@@ -249,11 +249,12 @@ fn main() -> ExitCode {
 }
 
 fn ftzz(ftzz: Ftzz) -> error_stack::Result<(), CliError> {
+    let mut stdout = stdout();
     match ftzz.cmd {
         Cmd::Generate(options) => Generator::try_from(options)
             .into_report()
             .change_context(CliError::InvalidArgs)?
-            .generate(&mut stdout())
+            .generate(&mut fmt_adapter::FmtWriteAdapter::from(&mut stdout))
             .change_context(CliError::Generator),
     }
 }
@@ -300,12 +301,76 @@ macro_rules! lenient_si_number {
 lenient_si_number!(u64);
 lenient_si_number!(u32);
 
+// TODO https://github.com/rust-lang/rust/pull/104389
+mod fmt_adapter {
+    use std::{
+        fmt,
+        fmt::Debug,
+        io::{Error, Write},
+    };
+
+    /// Adapter that enables writing through a [`fmt::Write`] to an underlying
+    /// [`io::Write`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// #![feature(impl_fmt_write_for_io_write)]
+    /// # use std::{fmt, io};
+    /// # use std::io::FmtWriteAdapter;
+    ///
+    /// let mut output1 = String::new();
+    /// let mut output2 = io::stdout();
+    /// let mut output2 = FmtWriteAdapter::from(&mut output2);
+    ///
+    /// my_common_writer(&mut output1).unwrap();
+    /// my_common_writer(&mut output2).unwrap();
+    ///
+    /// fn my_common_writer(output: &mut impl fmt::Write) -> fmt::Result {
+    ///     writeln!(output, "Hello World!")
+    /// }
+    /// ```
+    pub struct FmtWriteAdapter<'a, W: Write + ?Sized> {
+        inner: &'a mut W,
+        error: Option<Error>,
+    }
+
+    impl<'a, W: Write + ?Sized> From<&'a mut W> for FmtWriteAdapter<'a, W> {
+        fn from(inner: &'a mut W) -> Self {
+            Self { inner, error: None }
+        }
+    }
+
+    impl<W: Write + ?Sized> fmt::Write for FmtWriteAdapter<'_, W> {
+        fn write_str(&mut self, s: &str) -> fmt::Result {
+            match self.inner.write_all(s.as_bytes()) {
+                Ok(()) => {
+                    self.error = None;
+                    Ok(())
+                }
+                Err(e) => {
+                    self.error = Some(e);
+                    Err(fmt::Error)
+                }
+            }
+        }
+    }
+
+    impl<W: Write + ?Sized> Debug for FmtWriteAdapter<'_, W> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            let mut builder = f.debug_struct("FmtWriteAdapter");
+            builder.field("error", &self.error);
+            builder.finish()
+        }
+    }
+}
+
 #[cfg(test)]
 mod cli_tests {
-    use std::io::Write;
+    use std::fmt::Write;
 
     use clap::{Command, CommandFactory};
-    use goldenfile::Mint;
+    use expect_test::expect_file;
 
     use super::*;
 
@@ -321,14 +386,14 @@ mod cli_tests {
 
         command.build();
 
-        let mut mint = Mint::new(".");
-        let mut long = mint.new_goldenfile("command-reference.golden").unwrap();
-        let mut short = mint
-            .new_goldenfile("command-reference-short.golden")
-            .unwrap();
+        let mut long = String::new();
+        let mut short = String::new();
 
         write_help(&mut long, &mut command, LongOrShortHelp::Long);
         write_help(&mut short, &mut command, LongOrShortHelp::Short);
+
+        expect_file!["../command-reference.golden"].assert_eq(&long);
+        expect_file!["../command-reference-short.golden"].assert_eq(&short);
     }
 
     #[derive(Copy, Clone)]
@@ -338,10 +403,15 @@ mod cli_tests {
     }
 
     fn write_help(buffer: &mut impl Write, cmd: &mut Command, long_or_short_help: LongOrShortHelp) {
-        match long_or_short_help {
-            LongOrShortHelp::Long => cmd.write_long_help(buffer).unwrap(),
-            LongOrShortHelp::Short => cmd.write_help(buffer).unwrap(),
-        }
+        write!(
+            buffer,
+            "{}",
+            match long_or_short_help {
+                LongOrShortHelp::Long => cmd.render_long_help(),
+                LongOrShortHelp::Short => cmd.render_help(),
+            }
+        )
+        .unwrap();
 
         for sub in cmd.get_subcommands_mut() {
             writeln!(buffer).unwrap();
