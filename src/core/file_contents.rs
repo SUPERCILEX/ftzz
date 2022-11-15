@@ -26,37 +26,30 @@ impl FileContentsGenerator for NoGeneratedFileContents {
             if #[cfg(any(not(unix), miri))] {
                 File::create(file).map(|_| 0)
             } else if #[cfg(target_os = "linux")] {
-                use nix::sys::stat::{mknod, Mode, SFlag};
+                use rustix::fs::{mknodat, FileType, Mode};
 
                 let cstr = file.to_cstr_mut();
-                mknod(
+                mknodat(
+                    rustix::fs::cwd(),
                     &*cstr,
-                    SFlag::S_IFREG,
-                    Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
+                    FileType::RegularFile,
+                    Mode::RUSR | Mode::WUSR | Mode::RGRP | Mode::WGRP | Mode::ROTH,
                     0,
                 )
                 .map_err(io::Error::from)
                 .map(|_| 0)
             } else {
-                use nix::{
-                    fcntl::{open, OFlag},
-                    sys::stat::Mode,
-                };
-                use std::os::fd::{FromRawFd, OwnedFd};
+                use rustix::fs::{openat, OFlags, Mode};
 
                 let cstr = file.to_cstr_mut();
-                open(
+                openat(
+                    rustix::fs::cwd(),
                     &*cstr,
-                    OFlag::O_CREAT,
-                    Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP | Mode::S_IROTH,
+                    OFlags::CREATE,
+                    Mode::RUSR | Mode::WUSR | Mode::RGRP | Mode::WGRP | Mode::ROTH,
                 )
                 .map_err(io::Error::from)
-                .map(|fd| {
-                    unsafe {
-                        OwnedFd::from_raw_fd(fd);
-                    }
-                    0
-                })
+                .map(|_| 0)
             }
         }
     }
