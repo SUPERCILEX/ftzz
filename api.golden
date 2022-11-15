@@ -5,42 +5,42 @@ pub enum variant ftzz::generator::Error::InvalidEnvironment
 pub enum variant ftzz::generator::Error::Io
 pub enum variant ftzz::generator::Error::RuntimeCreation
 pub enum variant ftzz::generator::Error::TaskJoin
-impl Debug for ftzz::generator::Error
-pub fn ftzz::generator::Error::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
-impl Display for ftzz::generator::Error
-pub fn ftzz::generator::Error::fmt(&self, __formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
-impl Error for ftzz::generator::Error
-impl RefUnwindSafe for ftzz::generator::Error
-impl Send for ftzz::generator::Error
-impl Sync for ftzz::generator::Error
-impl Unpin for ftzz::generator::Error
-impl UnwindSafe for ftzz::generator::Error
+impl core::fmt::Debug for ftzz::generator::Error
+pub fn ftzz::generator::Error::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for ftzz::generator::Error
+pub fn ftzz::generator::Error::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::error::Error for ftzz::generator::Error
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::Error
+impl core::marker::Send for ftzz::generator::Error
+impl core::marker::Sync for ftzz::generator::Error
+impl core::marker::Unpin for ftzz::generator::Error
+impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::Error
 pub enum ftzz::generator::NumFilesWithRatioError
 pub enum variant ftzz::generator::NumFilesWithRatioError::InvalidRatio
-pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: NonZeroU64
-pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::num_files: NonZeroU64
-impl Debug for ftzz::generator::NumFilesWithRatioError
-pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
-impl Display for ftzz::generator::NumFilesWithRatioError
-pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, __formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
-impl Error for ftzz::generator::NumFilesWithRatioError
-impl RefUnwindSafe for ftzz::generator::NumFilesWithRatioError
-impl Send for ftzz::generator::NumFilesWithRatioError
-impl Sync for ftzz::generator::NumFilesWithRatioError
-impl Unpin for ftzz::generator::NumFilesWithRatioError
-impl UnwindSafe for ftzz::generator::NumFilesWithRatioError
+pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: core::num::nonzero::NonZeroU64
+pub struct field ftzz::generator::NumFilesWithRatioError::InvalidRatio::num_files: core::num::nonzero::NonZeroU64
+impl core::fmt::Debug for ftzz::generator::NumFilesWithRatioError
+pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for ftzz::generator::NumFilesWithRatioError
+pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::error::Error for ftzz::generator::NumFilesWithRatioError
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::NumFilesWithRatioError
+impl core::marker::Send for ftzz::generator::NumFilesWithRatioError
+impl core::marker::Sync for ftzz::generator::NumFilesWithRatioError
+impl core::marker::Unpin for ftzz::generator::NumFilesWithRatioError
+impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::NumFilesWithRatioError
 pub struct ftzz::generator::Generator
 impl ftzz::generator::Generator
 impl ftzz::generator::Generator
 pub fn ftzz::generator::Generator::builder() -> ftzz::generator::GeneratorBuilder<((), (), (), (), (), (), ())>
-pub fn ftzz::generator::Generator::generate(self, output: &mut impl Write) -> Result<(), ftzz::generator::Error>
-impl Debug for ftzz::generator::Generator
-pub fn ftzz::generator::Generator::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
-impl RefUnwindSafe for ftzz::generator::Generator
-impl Send for ftzz::generator::Generator
-impl Sync for ftzz::generator::Generator
-impl Unpin for ftzz::generator::Generator
-impl UnwindSafe for ftzz::generator::Generator
+pub fn ftzz::generator::Generator::generate(self, output: &mut impl core::fmt::Write) -> error_stack::result::Result<(), ftzz::generator::Error>
+impl core::fmt::Debug for ftzz::generator::Generator
+pub fn ftzz::generator::Generator::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::Generator
+impl core::marker::Send for ftzz::generator::Generator
+impl core::marker::Sync for ftzz::generator::Generator
+impl core::marker::Unpin for ftzz::generator::Generator
+impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::Generator
 pub struct ftzz::generator::GeneratorBuilder<TypedBuilderFields>
 impl<__max_depth, __bytes_exact, __num_bytes, __files_exact, __num_files_with_ratio, __root_dir> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, ())>
 impl<__seed, __bytes_exact, __num_bytes, __files_exact, __num_files_with_ratio, __root_dir> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, (), __seed)>
@@ -49,30 +49,30 @@ impl<__seed, __max_depth, __bytes_exact, __num_bytes, __files_exact, __num_files
 impl<__seed, __max_depth, __bytes_exact, __num_bytes, __files_exact, __root_dir> ftzz::generator::GeneratorBuilder<(__root_dir, (), __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
 impl<__seed, __max_depth, __bytes_exact, __num_bytes, __num_files_with_ratio, __root_dir> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (), __num_bytes, __bytes_exact, __max_depth, __seed)>
 impl<__seed, __max_depth, __num_bytes, __files_exact, __num_files_with_ratio, __root_dir> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (), __max_depth, __seed)>
-impl<__seed: GeneratorBuilder_Optional<u64>, __max_depth: GeneratorBuilder_Optional<u32>, __bytes_exact: GeneratorBuilder_Optional<bool>, __num_bytes: GeneratorBuilder_Optional<u64>, __files_exact: GeneratorBuilder_Optional<bool>> ftzz::generator::GeneratorBuilder<((PathBuf), (ftzz::generator::NumFilesWithRatio), __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
+impl<__seed: GeneratorBuilder_Optional<u64>, __max_depth: GeneratorBuilder_Optional<u32>, __bytes_exact: GeneratorBuilder_Optional<bool>, __num_bytes: GeneratorBuilder_Optional<u64>, __files_exact: GeneratorBuilder_Optional<bool>> ftzz::generator::GeneratorBuilder<((std::path::PathBuf), (ftzz::generator::NumFilesWithRatio), __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::build(self) -> ftzz::generator::Generator
 pub fn ftzz::generator::GeneratorBuilder::bytes_exact(self, bytes_exact: bool) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (bool), __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::files_exact(self, files_exact: bool) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (bool), __num_bytes, __bytes_exact, __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::max_depth(self, max_depth: u32) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, (u32), __seed)>
 pub fn ftzz::generator::GeneratorBuilder::num_bytes(self, num_bytes: u64) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (u64), __bytes_exact, __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::num_files_with_ratio(self, num_files_with_ratio: ftzz::generator::NumFilesWithRatio) -> ftzz::generator::GeneratorBuilder<(__root_dir, (ftzz::generator::NumFilesWithRatio), __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder::root_dir(self, root_dir: PathBuf) -> ftzz::generator::GeneratorBuilder<((PathBuf), __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::generator::GeneratorBuilder::root_dir(self, root_dir: std::path::PathBuf) -> ftzz::generator::GeneratorBuilder<((std::path::PathBuf), __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed)>
 pub fn ftzz::generator::GeneratorBuilder::seed(self, seed: u64) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, (u64))>
-impl<TypedBuilderFields> Clone for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: Clone
+impl<TypedBuilderFields> core::clone::Clone for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::clone::Clone
 pub fn ftzz::generator::GeneratorBuilder::clone(&self) -> Self
-impl<TypedBuilderFields> RefUnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: RefUnwindSafe
-impl<TypedBuilderFields> Send for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: Send
-impl<TypedBuilderFields> Sync for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: Sync
-impl<TypedBuilderFields> Unpin for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: Unpin
-impl<TypedBuilderFields> UnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: UnwindSafe
+impl<TypedBuilderFields> core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::panic::unwind_safe::RefUnwindSafe
+impl<TypedBuilderFields> core::marker::Send for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Send
+impl<TypedBuilderFields> core::marker::Sync for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Sync
+impl<TypedBuilderFields> core::marker::Unpin for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Unpin
+impl<TypedBuilderFields> core::panic::unwind_safe::UnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::panic::unwind_safe::UnwindSafe
 pub struct ftzz::generator::NumFilesWithRatio
 impl ftzz::generator::NumFilesWithRatio
-pub fn ftzz::generator::NumFilesWithRatio::from_num_files(num_files: NonZeroU64) -> Self
-pub fn ftzz::generator::NumFilesWithRatio::new(num_files: NonZeroU64, file_to_dir_ratio: NonZeroU64) -> std::result::Result<Self, ftzz::generator::NumFilesWithRatioError>
-impl Debug for ftzz::generator::NumFilesWithRatio
-pub fn ftzz::generator::NumFilesWithRatio::fmt(&self, f: &mut $crate::fmt::Formatter<'_>) -> $crate::fmt::Result
-impl RefUnwindSafe for ftzz::generator::NumFilesWithRatio
-impl Send for ftzz::generator::NumFilesWithRatio
-impl Sync for ftzz::generator::NumFilesWithRatio
-impl Unpin for ftzz::generator::NumFilesWithRatio
-impl UnwindSafe for ftzz::generator::NumFilesWithRatio
+pub fn ftzz::generator::NumFilesWithRatio::from_num_files(num_files: core::num::nonzero::NonZeroU64) -> Self
+pub fn ftzz::generator::NumFilesWithRatio::new(num_files: core::num::nonzero::NonZeroU64, file_to_dir_ratio: core::num::nonzero::NonZeroU64) -> core::result::Result<Self, ftzz::generator::NumFilesWithRatioError>
+impl core::fmt::Debug for ftzz::generator::NumFilesWithRatio
+pub fn ftzz::generator::NumFilesWithRatio::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::NumFilesWithRatio
+impl core::marker::Send for ftzz::generator::NumFilesWithRatio
+impl core::marker::Sync for ftzz::generator::NumFilesWithRatio
+impl core::marker::Unpin for ftzz::generator::NumFilesWithRatio
+impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::NumFilesWithRatio
