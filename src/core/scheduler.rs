@@ -9,7 +9,7 @@ use tracing::{event, span, Level};
 use crate::{
     core::{
         files::GeneratorTaskOutcome,
-        tasks::{QueueErrors, TaskGenerator},
+        tasks::{QueueErrors, QueueOutcome, TaskGenerator},
     },
     generator::Error,
     utils::{with_dir_name, FastPathBuf},
@@ -23,10 +23,18 @@ pub struct GeneratorStats {
 }
 
 impl AddAssign<&GeneratorTaskOutcome> for GeneratorStats {
-    fn add_assign(&mut self, rhs: &GeneratorTaskOutcome) {
-        self.files += rhs.files_generated;
-        self.dirs += rhs.dirs_generated;
-        self.bytes += rhs.bytes_generated;
+    fn add_assign(
+        &mut self,
+        GeneratorTaskOutcome {
+            files_generated,
+            dirs_generated,
+            bytes_generated,
+            ..
+        }: &GeneratorTaskOutcome,
+    ) {
+        self.files += files_generated;
+        self.dirs += dirs_generated;
+        self.bytes += bytes_generated;
     }
 }
 
@@ -100,10 +108,14 @@ pub async fn run(
         }
 
         match generator.queue_gen(target_dir.clone(), max_depth > 0, &mut byte_counts_pool) {
-            Ok(outcome) => {
-                tasks.push_back(outcome.task);
-                if outcome.num_dirs > 0 {
-                    stack.push((1, vec![outcome.num_dirs]));
+            Ok(QueueOutcome {
+                task,
+                num_dirs,
+                done: _,
+            }) => {
+                tasks.push_back(task);
+                if num_dirs > 0 {
+                    stack.push((1, vec![num_dirs]));
                 }
             }
             Err(QueueErrors::NothingToDo(path)) => path_pool.push(path),
@@ -166,12 +178,16 @@ pub async fn run(
 
                 let num_dirs = match generator.queue_gen(path, gen_next_dirs, &mut byte_counts_pool)
                 {
-                    Ok(outcome) => {
-                        tasks.push_back(outcome.task);
-                        if outcome.done {
+                    Ok(QueueOutcome {
+                        task,
+                        num_dirs,
+                        done,
+                    }) => {
+                        tasks.push_back(task);
+                        if done {
                             break 'outer;
                         }
-                        outcome.num_dirs
+                        num_dirs
                     }
                     Err(QueueErrors::NothingToDo(path)) => {
                         path_pool.push(path);
@@ -200,8 +216,13 @@ pub async fn run(
             }
         }
 
-        if let Ok(outcome) = generator.maybe_queue_final_gen(target_dir, &mut byte_counts_pool) {
-            tasks.push_back(outcome.task);
+        if let Ok(QueueOutcome {
+            task,
+            num_dirs: _,
+            done: _,
+        }) = generator.maybe_queue_final_gen(target_dir, &mut byte_counts_pool)
+        {
+            tasks.push_back(task);
         }
     }
 

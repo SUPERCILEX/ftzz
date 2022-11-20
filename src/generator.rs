@@ -164,119 +164,143 @@ struct Configuration {
     bytes_per_file: f64,
     max_depth: u32,
     seed: u64,
-
-    informational_dirs_per_dir: usize,
-    informational_total_dirs: usize,
-    informational_bytes_per_files: usize,
+    human_info: HumanInfo,
 }
 
-fn validated_options(generator: Generator) -> Result<Configuration, Error> {
-    create_dir_all(&generator.root_dir)
+#[derive(Debug)]
+struct HumanInfo {
+    dirs_per_dir: usize,
+    total_dirs: usize,
+    bytes_per_files: usize,
+}
+
+fn validated_options(
+    Generator {
+        root_dir,
+        num_files_with_ratio,
+        files_exact,
+        num_bytes,
+        bytes_exact,
+        max_depth,
+        seed,
+    }: Generator,
+) -> Result<Configuration, Error> {
+    create_dir_all(&root_dir)
         .into_report()
-        .attach_printable_lazy(|| format!("Failed to create directory {:?}", generator.root_dir))
+        .attach_printable_lazy(|| format!("Failed to create directory {root_dir:?}"))
         .change_context(Error::InvalidEnvironment)
         .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
-    if generator
-        .root_dir
+    if root_dir
         .read_dir()
         .into_report()
-        .attach_printable_lazy(|| format!("Failed to read directory {:?}", generator.root_dir))
+        .attach_printable_lazy(|| format!("Failed to read directory {root_dir:?}"))
         .change_context(Error::InvalidEnvironment)
         .attach(ExitCode::from(sysexits::ExitCode::IoErr))?
         .count()
         != 0
     {
         return Err(Report::new(Error::InvalidEnvironment))
-            .attach_printable(format!(
-                "The root directory {:?} must be empty.",
-                generator.root_dir
-            ))
+            .attach_printable(format!("The root directory {root_dir:?} must be empty."))
             .attach(ExitCode::from(sysexits::ExitCode::DataErr));
     }
 
-    let num_files = generator.num_files_with_ratio.num_files.get() as f64;
-    let bytes_per_file = generator.num_bytes as f64 / num_files;
+    let num_files = num_files_with_ratio.num_files.get() as f64;
+    let bytes_per_file = num_bytes as f64 / num_files;
 
-    if generator.max_depth == 0 {
+    if max_depth == 0 {
         return Ok(Configuration {
-            root_dir: generator.root_dir,
-            files: generator.num_files_with_ratio.num_files,
-            bytes: generator.num_bytes,
-            files_exact: generator.files_exact,
-            bytes_exact: generator.bytes_exact,
+            root_dir,
+            files: num_files_with_ratio.num_files,
+            bytes: num_bytes,
+            files_exact,
+            bytes_exact,
             files_per_dir: num_files,
             dirs_per_dir: 0.,
             bytes_per_file,
             max_depth: 0,
-            seed: generator.seed,
-
-            informational_dirs_per_dir: 0,
-            informational_total_dirs: 1,
-            informational_bytes_per_files: bytes_per_file.round() as usize,
+            seed,
+            human_info: HumanInfo {
+                dirs_per_dir: 0,
+                total_dirs: 1,
+                bytes_per_files: bytes_per_file.round() as usize,
+            },
         });
     }
 
-    let ratio = generator.num_files_with_ratio.file_to_dir_ratio.get() as f64;
+    let ratio = num_files_with_ratio.file_to_dir_ratio.get() as f64;
     let num_dirs = num_files / ratio;
     // This formula was derived from the following equation:
     // num_dirs = unknown_num_dirs_per_dir^max_depth
-    let dirs_per_dir = num_dirs.powf(1f64 / f64::from(generator.max_depth));
+    let dirs_per_dir = num_dirs.powf(1f64 / f64::from(max_depth));
 
     Ok(Configuration {
-        root_dir: generator.root_dir,
-        files: generator.num_files_with_ratio.num_files,
-        bytes: generator.num_bytes,
-        files_exact: generator.files_exact,
-        bytes_exact: generator.bytes_exact,
+        root_dir,
+        files: num_files_with_ratio.num_files,
+        bytes: num_bytes,
+        files_exact,
+        bytes_exact,
         files_per_dir: ratio,
         bytes_per_file,
         dirs_per_dir,
-        max_depth: generator.max_depth,
-        seed: generator.seed,
-
-        informational_dirs_per_dir: dirs_per_dir.round() as usize,
-        informational_total_dirs: num_dirs.round() as usize,
-        informational_bytes_per_files: bytes_per_file.round() as usize,
+        max_depth,
+        seed,
+        human_info: HumanInfo {
+            dirs_per_dir: dirs_per_dir.round() as usize,
+            total_dirs: num_dirs.round() as usize,
+            bytes_per_files: bytes_per_file.round() as usize,
+        },
     })
 }
 
-fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
+fn print_configuration_info(
+    Configuration {
+        root_dir: _,
+        files,
+        bytes,
+        files_exact,
+        bytes_exact,
+        files_per_dir: _,
+        dirs_per_dir: _,
+        bytes_per_file: _,
+        max_depth,
+        seed: _,
+        human_info:
+            HumanInfo {
+                dirs_per_dir,
+                total_dirs,
+                bytes_per_files,
+            },
+    }: &Configuration,
+    output: &mut impl Write,
+) {
     writeln!(
         output,
         "{file_count_type} {} {files_maybe_plural} will be generated in approximately \
         {} {directories_maybe_plural} distributed across a tree of maximum depth {} where each \
         directory contains approximately {} other {dpd_directories_maybe_plural}.\
         {bytes_info}",
-        config.files.separate_with_commas(),
-        config.informational_total_dirs.separate_with_commas(),
-        config.max_depth.separate_with_commas(),
-        config.informational_dirs_per_dir.separate_with_commas(),
-        file_count_type = if config.files_exact { "Exactly" } else { "About" },
-        files_maybe_plural = if config.files.get() == 1 { "file" } else { "files" },
-        directories_maybe_plural = if config.informational_total_dirs == 1 {
-            "directory"
-        } else {
-            "directories"
-        },
-        dpd_directories_maybe_plural = if config.informational_dirs_per_dir == 1 {
-            "directory"
-        } else {
-            "directories"
-        },
-        bytes_info = if config.bytes > 0 {
+        files.separate_with_commas(),
+        total_dirs.separate_with_commas(),
+        max_depth.separate_with_commas(),
+        dirs_per_dir.separate_with_commas(),
+        file_count_type = if *files_exact { "Exactly" } else { "About" },
+        files_maybe_plural = if files.get() == 1 { "file" } else { "files" },
+        directories_maybe_plural = if *total_dirs == 1 { "directory" } else { "directories" },
+        dpd_directories_maybe_plural = if *dirs_per_dir == 1 { "directory" } else { "directories" },
+        bytes_info = if *bytes > 0 {
             format!(
                 " Each file will contain approximately {} {bytes_maybe_plural} of random data{exact_bytes_total}.",
-                config.informational_bytes_per_files.separate_with_commas(),
-                bytes_maybe_plural = if config.informational_bytes_per_files == 1 {
+                bytes_per_files.separate_with_commas(),
+                bytes_maybe_plural = if *bytes_per_files == 1 {
                     "byte"
                 } else {
                     "bytes"
                 },
-                exact_bytes_total = if config.bytes_exact {
+                exact_bytes_total = if *bytes_exact {
                     format!(
                         " totaling exactly {} {bytes_maybe_plural}",
-                        config.bytes,
-                        bytes_maybe_plural = if config.bytes == 1 { "byte" } else { "bytes" }
+                        bytes,
+                        bytes_maybe_plural = if *bytes == 1 { "byte" } else { "bytes" }
                     )
                 } else {
                     String::new()
@@ -289,21 +313,21 @@ fn print_configuration_info(config: &Configuration, output: &mut impl Write) {
     .unwrap();
 }
 
-fn print_stats(stats: GeneratorStats, output: &mut impl Write) {
+fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &mut impl Write) {
     writeln!(
         output,
         "Created {} {files_maybe_plural}{bytes_info} across {} {directories_maybe_plural}.",
-        stats.files.separate_with_commas(),
-        stats.dirs.separate_with_commas(),
-        files_maybe_plural = if stats.files == 1 { "file" } else { "files" },
-        directories_maybe_plural = if stats.dirs == 1 {
+        files.separate_with_commas(),
+        dirs.separate_with_commas(),
+        files_maybe_plural = if files == 1 { "file" } else { "files" },
+        directories_maybe_plural = if dirs == 1 {
             "directory"
         } else {
             "directories"
         },
-        bytes_info = if stats.bytes > 0 {
-            event!(Level::INFO, bytes = stats.bytes, "Exact bytes written");
-            format!(" ({})", bytesize::to_string(stats.bytes, false))
+        bytes_info = if bytes > 0 {
+            event!(Level::INFO, bytes, "Exact bytes written");
+            format!(" ({})", bytesize::to_string(bytes, false))
         } else {
             String::new()
         }
@@ -326,25 +350,37 @@ fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
 }
 
 async fn run_generator_async(
-    config: Configuration,
+    Configuration {
+        root_dir,
+        files,
+        bytes,
+        files_exact,
+        bytes_exact,
+        files_per_dir,
+        dirs_per_dir,
+        bytes_per_file,
+        max_depth,
+        seed,
+        human_info: _,
+    }: Configuration,
     parallelism: NonZeroUsize,
 ) -> Result<GeneratorStats, Error> {
     let random = {
-        let seed = ((config.files.get().wrapping_add(config.max_depth.into()) as f64
-            * (config.files_per_dir + config.dirs_per_dir)) as u64)
-            .wrapping_add(config.seed);
+        let seed = ((files.get().wrapping_add(max_depth.into()) as f64
+            * (files_per_dir + dirs_per_dir)) as u64)
+            .wrapping_add(seed);
         event!(Level::DEBUG, seed = ?seed, "Starting seed");
         Xoshiro256PlusPlus::seed_from_u64(seed)
     };
-    let num_files_distr = Normal::new(config.files_per_dir, config.files_per_dir * 0.2).unwrap();
-    let num_dirs_distr = Normal::new(config.dirs_per_dir, config.dirs_per_dir * 0.2).unwrap();
-    let num_bytes_distr = Normal::new(config.bytes_per_file, config.bytes_per_file * 0.2).unwrap();
+    let num_files_distr = Normal::new(files_per_dir, files_per_dir * 0.2).unwrap();
+    let num_dirs_distr = Normal::new(dirs_per_dir, dirs_per_dir * 0.2).unwrap();
+    let num_bytes_distr = Normal::new(bytes_per_file, bytes_per_file * 0.2).unwrap();
 
     macro_rules! run {
         ($generator:expr) => {{
             run(
-                config.root_dir,
-                config.max_depth.try_into().unwrap_or(usize::MAX),
+                root_dir,
+                max_depth.try_into().unwrap_or(usize::MAX),
                 parallelism,
                 $generator,
             )
@@ -352,16 +388,16 @@ async fn run_generator_async(
         }};
     }
 
-    if config.files_exact || config.bytes_exact {
+    if files_exact || bytes_exact {
         run!(OtherFilesAndContentsGenerator::new(
             num_files_distr,
             num_dirs_distr,
-            (config.bytes > 0).then_some(num_bytes_distr),
+            (bytes > 0).then_some(num_bytes_distr),
             random,
-            config.files_exact.then_some(config.files),
-            config.bytes_exact.then_some(config.bytes),
+            files_exact.then_some(files),
+            bytes_exact.then_some(bytes),
         ))
-    } else if config.bytes > 0 {
+    } else if bytes > 0 {
         run!(FilesAndContentsGenerator {
             num_files_distr,
             num_dirs_distr,

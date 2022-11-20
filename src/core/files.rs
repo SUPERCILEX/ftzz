@@ -25,27 +25,26 @@ pub struct GeneratorTaskOutcome {
     pub pool_return_byte_counts: Option<Vec<u64>>,
 }
 
-#[instrument(level = "trace", skip(params))]
+#[instrument(level = "trace", skip(file_contents))]
 pub fn create_files_and_dirs(
-    params: GeneratorTaskParams<impl FileContentsGenerator>,
+    GeneratorTaskParams {
+        mut target_dir,
+        num_files,
+        num_dirs,
+        file_offset,
+        mut file_contents,
+    }: GeneratorTaskParams<impl FileContentsGenerator>,
 ) -> Result<GeneratorTaskOutcome, io::Error> {
-    let mut file = params.target_dir;
-    let mut file_contents = params.file_contents;
+    create_dirs(num_dirs, &mut target_dir)?;
+    create_files(num_files, file_offset, &mut target_dir, &mut file_contents).map(|bytes_written| {
+        GeneratorTaskOutcome {
+            files_generated: num_files,
+            dirs_generated: num_dirs,
+            bytes_generated: bytes_written,
 
-    create_dirs(params.num_dirs, &mut file)?;
-    create_files(
-        params.num_files,
-        params.file_offset,
-        &mut file,
-        &mut file_contents,
-    )
-    .map(|bytes_written| GeneratorTaskOutcome {
-        files_generated: params.num_files,
-        dirs_generated: params.num_dirs,
-        bytes_generated: bytes_written,
-
-        pool_return_file: file,
-        pool_return_byte_counts: file_contents.byte_counts_pool_return(),
+            pool_return_file: target_dir,
+            pool_return_byte_counts: file_contents.byte_counts_pool_return(),
+        }
     })
 }
 
