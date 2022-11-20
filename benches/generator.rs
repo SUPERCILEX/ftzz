@@ -4,9 +4,8 @@ use criterion::{
     criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion, PlotConfiguration,
     Throughput,
 };
-use tempfile::tempdir;
-
 use ftzz::generator::{Generator, NumFilesWithRatio};
+use tempfile::tempdir;
 
 struct Sink;
 

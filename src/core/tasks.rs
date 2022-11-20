@@ -115,11 +115,11 @@ pub struct FilesAndContentsGenerator<DF, DD, DB, R> {
 }
 
 impl<
-        DF: Distribution<f64>,
-        DD: Distribution<f64>,
-        DB: Distribution<f64> + Clone + Send + 'static,
-        R: RngCore + Clone + Send + 'static,
-    > TaskGenerator for FilesAndContentsGenerator<DF, DD, DB, R>
+    DF: Distribution<f64>,
+    DD: Distribution<f64>,
+    DB: Distribution<f64> + Clone + Send + 'static,
+    R: RngCore + Clone + Send + 'static,
+> TaskGenerator for FilesAndContentsGenerator<DF, DD, DB, R>
 {
     fn queue_gen(
         &mut self,
@@ -161,11 +161,11 @@ pub struct OtherFilesAndContentsGenerator<DF, DD, DB, R> {
 }
 
 impl<
-        DF: Distribution<f64>,
-        DD: Distribution<f64>,
-        DB: Distribution<f64> + Clone + Send + 'static,
-        R: RngCore + Clone + Send + 'static,
-    > TaskGenerator for OtherFilesAndContentsGenerator<DF, DD, DB, R>
+    DF: Distribution<f64>,
+    DD: Distribution<f64>,
+    DB: Distribution<f64> + Clone + Send + 'static,
+    R: RngCore + Clone + Send + 'static,
+> TaskGenerator for OtherFilesAndContentsGenerator<DF, DD, DB, R>
 {
     fn queue_gen(
         &mut self,
@@ -242,11 +242,11 @@ impl<
 }
 
 impl<
-        DF: Distribution<f64>,
-        DD: Distribution<f64>,
-        DB: Distribution<f64> + Clone + Send + 'static,
-        R: RngCore + Clone + Send + 'static,
-    > OtherFilesAndContentsGenerator<DF, DD, DB, R>
+    DF: Distribution<f64>,
+    DD: Distribution<f64>,
+    DB: Distribution<f64> + Clone + Send + 'static,
+    R: RngCore + Clone + Send + 'static,
+> OtherFilesAndContentsGenerator<DF, DD, DB, R>
 {
     pub const fn new(
         num_files_distr: DF,

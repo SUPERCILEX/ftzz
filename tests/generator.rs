@@ -11,12 +11,11 @@ use std::{
 };
 
 use expect_test::expect_file;
+use ftzz::generator::{Generator, NumFilesWithRatio};
 use more_asserts::assert_le;
 use rand::Rng;
 use rstest::rstest;
 use seahash::SeaHasher;
-
-use ftzz::generator::{Generator, NumFilesWithRatio};
 
 use crate::inspect::InspectableTempDir;
 

@@ -1,6 +1,6 @@
-use cfg_if::cfg_if;
 use std::{fs::File, io, io::Read};
 
+use cfg_if::cfg_if;
 use rand::{distributions::Distribution, RngCore};
 use tracing::instrument;
 

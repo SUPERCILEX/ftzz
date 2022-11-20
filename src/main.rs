@@ -13,9 +13,8 @@ use clap::{ArgAction, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use error_stack::{IntoReport, ResultExt};
-use paste::paste;
-
 use ftzz::generator::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
+use paste::paste;
 
 /// A random file and directory generator
 #[derive(Parser, Debug)]

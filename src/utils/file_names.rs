@@ -1,5 +1,6 @@
-use itoa_const as itoa;
 use std::{mem::MaybeUninit, ptr, slice};
+
+use itoa_const as itoa;
 
 struct FileNameCache {
     cache: [MaybeUninit<u8>; 3000],

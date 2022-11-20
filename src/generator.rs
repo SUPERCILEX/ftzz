@@ -49,8 +49,8 @@ pub struct NumFilesWithRatio {
 #[derive(Error, Debug)]
 pub enum NumFilesWithRatioError {
     #[error(
-        "The file to dir ratio ({file_to_dir_ratio}) cannot be larger \
-        than the number of files to generate ({num_files})."
+        "The file to dir ratio ({file_to_dir_ratio}) cannot be larger than the number of files to \
+         generate ({num_files})."
     )]
     InvalidRatio {
         num_files: NonZeroU64,
@@ -275,21 +275,29 @@ fn print_configuration_info(
 ) {
     writeln!(
         output,
-        "{file_count_type} {} {files_maybe_plural} will be generated in approximately \
-        {} {directories_maybe_plural} distributed across a tree of maximum depth {} where each \
-        directory contains approximately {} other {dpd_directories_maybe_plural}.\
-        {bytes_info}",
+        "{file_count_type} {} {files_maybe_plural} will be generated in approximately {} \
+         {directories_maybe_plural} distributed across a tree of maximum depth {} where each \
+         directory contains approximately {} other {dpd_directories_maybe_plural}.{bytes_info}",
         files.separate_with_commas(),
         total_dirs.separate_with_commas(),
         max_depth.separate_with_commas(),
         dirs_per_dir.separate_with_commas(),
         file_count_type = if *files_exact { "Exactly" } else { "About" },
         files_maybe_plural = if files.get() == 1 { "file" } else { "files" },
-        directories_maybe_plural = if *total_dirs == 1 { "directory" } else { "directories" },
-        dpd_directories_maybe_plural = if *dirs_per_dir == 1 { "directory" } else { "directories" },
+        directories_maybe_plural = if *total_dirs == 1 {
+            "directory"
+        } else {
+            "directories"
+        },
+        dpd_directories_maybe_plural = if *dirs_per_dir == 1 {
+            "directory"
+        } else {
+            "directories"
+        },
         bytes_info = if *bytes > 0 {
             format!(
-                " Each file will contain approximately {} {bytes_maybe_plural} of random data{exact_bytes_total}.",
+                " Each file will contain approximately {} {bytes_maybe_plural} of random \
+                 data{exact_bytes_total}.",
                 bytes_per_files.separate_with_commas(),
                 bytes_maybe_plural = if *bytes_per_files == 1 {
                     "byte"

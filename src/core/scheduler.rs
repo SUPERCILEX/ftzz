@@ -3,7 +3,6 @@ use std::{
 };
 
 use error_stack::{IntoReport, Result, ResultExt};
-
 use tracing::{event, span, Level};
 
 use crate::{
