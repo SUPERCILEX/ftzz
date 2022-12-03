@@ -11,11 +11,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          default: true
       - name: Cargo Cache
         uses: actions/cache@v3
         with:
@@ -38,11 +33,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          default: true
       - name: Cargo Cache
         uses: actions/cache@v3
         with:
@@ -63,11 +53,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          default: true
-          components: miri
+        run: rustup component add miri
       - name: Cargo Cache
         uses: actions/cache@v3
         with:
@@ -90,11 +76,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          default: true
-          components: rustfmt, clippy
+        run: rustup component add rustfmt clippy
       - name: Cargo Cache
         uses: actions/cache@v3
         with:
@@ -124,11 +106,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          default: true
       - name: Publish release
         run: cargo publish
         env:
@@ -161,11 +138,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          target: ${{ matrix.target }}
-          default: true
+        run: rustup target add ${{ matrix.target }}
       - name: Install cross
         if: matrix.tool == 'cross'
         run: cargo install cross
