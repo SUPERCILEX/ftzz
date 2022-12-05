@@ -9,9 +9,11 @@ fn api() {
         .build()
         .unwrap();
 
-    let golden = PublicApi::from_rustdoc_json(json_path, public_api::Options::default()).unwrap().to_string();
+    let api = PublicApi::from_rustdoc_json(json_path, public_api::Options::default())
+        .unwrap()
+        .to_string();
 
-    expect_file!["../api.golden"].assert_eq(&golden);
+    expect_file!["../api.golden"].assert_eq(&api);
 }
 
 #[test]
