@@ -1,15 +1,19 @@
-use std::{fs::File, io, io::Read};
+use std::{
+    fs::File,
+    io,
+    io::Read,
+    os::fd::{AsFd, OwnedFd},
+};
 
 use cfg_if::cfg_if;
 use rand::{distributions::Distribution, RngCore};
 use tracing::instrument;
 
-use crate::utils::FastPathBuf;
-
 pub trait FileContentsGenerator {
     fn create_file(
         &mut self,
-        file: &mut FastPathBuf,
+        dir: impl AsFd,
+        file_name: &str,
         file_num: usize,
         retryable: bool,
     ) -> io::Result<u64>;
@@ -21,17 +25,22 @@ pub struct NoGeneratedFileContents;
 
 impl FileContentsGenerator for NoGeneratedFileContents {
     #[inline]
-    fn create_file(&mut self, file: &mut FastPathBuf, _: usize, _: bool) -> io::Result<u64> {
+    fn create_file(
+        &mut self,
+        dir: impl AsFd,
+        file_name: &str,
+        _: usize,
+        _: bool,
+    ) -> io::Result<u64> {
         cfg_if! {
             if #[cfg(any(not(unix), miri))] {
                 File::create(file).map(|_| 0)
             } else if #[cfg(target_os = "linux")] {
                 use rustix::fs::{mknodat, FileType, Mode};
 
-                let cstr = file.to_cstr_mut();
                 mknodat(
-                    rustix::fs::cwd(),
-                    &*cstr,
+                    dir,
+                    file_name,
                     FileType::RegularFile,
                     Mode::RUSR | Mode::WUSR | Mode::RGRP | Mode::WGRP | Mode::ROTH,
                     0,
@@ -39,12 +48,9 @@ impl FileContentsGenerator for NoGeneratedFileContents {
                 .map_err(io::Error::from)
                 .map(|_| 0)
             } else {
-                use rustix::fs::{openat, OFlags, Mode};
-
-                let cstr = file.to_cstr_mut();
                 openat(
-                    rustix::fs::cwd(),
-                    &*cstr,
+                    dir,
+                    file_name,
                     OFlags::CREATE,
                     Mode::RUSR | Mode::WUSR | Mode::RGRP | Mode::WGRP | Mode::ROTH,
                 )
@@ -71,13 +77,14 @@ impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn create_file(
         &mut self,
-        file: &mut FastPathBuf,
+        dir: impl AsFd,
+        file_name: &str,
         file_num: usize,
         retryable: bool,
     ) -> io::Result<u64> {
         let num_bytes = self.num_bytes_distr.sample(&mut self.random).round() as u64;
         if num_bytes > 0 || retryable {
-            File::create(file).and_then(|f| {
+            create_file(dir, file_name).and_then(|f| {
                 // To stay deterministic, we need to ensure `random` is mutated in exactly
                 // the same way regardless of whether or not creating the file fails and
                 // needs to be retried. To do this, we always run num_to_generate() twice
@@ -100,11 +107,11 @@ impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
                 } else {
                     num_bytes
                 };
-                write_random_bytes(f, num_bytes, &mut self.random)?;
+                write_random_bytes(f.into(), num_bytes, &mut self.random)?;
                 Ok(num_bytes)
             })
         } else {
-            NoGeneratedFileContents.create_file(file, file_num, retryable)
+            NoGeneratedFileContents.create_file(dir, file_name, file_num, retryable)
         }
     }
 
@@ -122,23 +129,36 @@ impl<R: RngCore + 'static> FileContentsGenerator for PreDefinedGeneratedFileCont
     #[inline]
     fn create_file(
         &mut self,
-        file: &mut FastPathBuf,
+        dir: impl AsFd,
+        file_name: &str,
         file_num: usize,
         retryable: bool,
     ) -> io::Result<u64> {
         let num_bytes = self.byte_counts[file_num];
         if num_bytes > 0 {
-            File::create(file)
-                .and_then(|f| write_random_bytes(f, num_bytes, &mut self.random))
+            create_file(dir, file_name)
+                .and_then(|f| write_random_bytes(f.into(), num_bytes, &mut self.random))
                 .map(|_| num_bytes)
         } else {
-            NoGeneratedFileContents.create_file(file, file_num, retryable)
+            NoGeneratedFileContents.create_file(dir, file_name, file_num, retryable)
         }
     }
 
     fn byte_counts_pool_return(self) -> Option<Vec<u64>> {
         Some(self.byte_counts)
     }
+}
+
+#[cfg(all(unix, not(miri)))]
+fn create_file(dir: impl AsFd, file_name: &str) -> io::Result<OwnedFd> {
+    use rustix::fs::{openat, Mode, OFlags};
+    openat(
+        dir,
+        file_name,
+        OFlags::CREATE,
+        Mode::RUSR | Mode::WUSR | Mode::RGRP | Mode::WGRP | Mode::ROTH,
+    )
+    .map_err(io::Error::from)
 }
 
 #[instrument(level = "trace", skip(file, random))]

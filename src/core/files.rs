@@ -1,6 +1,7 @@
 use std::{fs::create_dir_all, io, io::ErrorKind::NotFound};
 
 use error_stack::{IntoReport, Report, Result, ResultExt};
+use rustix::fs::{cwd, openat, Mode, OFlags};
 use tracing::{event, instrument, Level};
 
 use crate::{
@@ -69,42 +70,47 @@ fn create_files(
     file: &mut FastPathBuf,
     contents: &mut impl FileContentsGenerator,
 ) -> Result<u64, io::Error> {
-    let mut bytes_written = 0;
+    let dir = {
+        let cstr = file.to_cstr_mut();
+        match openat(
+            cwd(),
+            &*cstr,
+            OFlags::DIRECTORY | OFlags::PATH,
+            Mode::empty(),
+        )
+        .map_err(io::Error::from)
+        {
+            Err(e) if e.kind() == NotFound => {
+                drop(cstr);
 
-    let mut start_file = 0;
-    if num_files > 0 {
-        with_file_name(offset, |s| file.push(s));
+                event!(Level::TRACE, file = ?file, "Parent directory not created in time");
+                create_dir_all(&file)
+                    .into_report()
+                    .attach_printable_lazy(|| format!("Failed to create directory {file:?}"))?;
 
-        match contents.create_file(file, 0, true) {
-            Ok(bytes) => {
-                bytes_written += bytes;
-                start_file += 1;
-                file.pop();
+                let cstr = file.to_cstr_mut();
+                openat(
+                    cwd(),
+                    &*cstr,
+                    OFlags::DIRECTORY | OFlags::PATH,
+                    Mode::empty(),
+                )
+                .map_err(io::Error::from)
             }
-            Err(e) => {
-                if e.kind() == NotFound {
-                    event!(Level::TRACE, file = ?file, "Parent directory not created in time");
-
-                    file.pop();
-                    create_dir_all(&file)
-                        .into_report()
-                        .attach_printable_lazy(|| format!("Failed to create directory {file:?}"))?;
-                } else {
-                    return Err(Report::new(e))
-                        .attach_printable_lazy(|| format!("Failed to create file {file:?}"));
-                }
-            }
+            r => r,
         }
     }
-    for i in start_file..num_files {
-        with_file_name(i + offset, |s| file.push(s));
+    .into_report()
+    .attach_printable_lazy(|| format!("Failed to open directory {file:?}"))?;
+    let mut bytes_written = 0;
 
-        bytes_written += contents
-            .create_file(file, i.try_into().unwrap_or(usize::MAX), false)
-            .into_report()
-            .attach_printable_lazy(|| format!("Failed to create file {file:?}"))?;
-
-        file.pop();
+    for i in 0..num_files {
+        bytes_written += with_file_name(i + offset, |file_name| {
+            contents
+                .create_file(&dir, file_name, i.try_into().unwrap_or(usize::MAX), false)
+                .into_report()
+                .attach_printable_lazy(|| format!("Failed to create file {file:?}"))
+        })?;
     }
 
     Ok(bytes_written)
