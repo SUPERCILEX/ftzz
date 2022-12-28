@@ -18,17 +18,19 @@ use paste::paste;
 
 /// A random file and directory generator
 #[derive(Parser, Debug)]
-#[clap(version, author = "Alex Saveau (@SUPERCILEX)")]
-#[clap(infer_subcommands = true, infer_long_args = true)]
-#[clap(next_display_order = None)]
-#[clap(max_term_width = 100)]
+#[command(version, author = "Alex Saveau (@SUPERCILEX)")]
+#[command(infer_subcommands = true, infer_long_args = true)]
+#[command(next_display_order = None)]
+#[command(max_term_width = 100)]
 #[command(disable_help_flag = true)]
-#[cfg_attr(test, clap(help_expected = true))]
+#[cfg_attr(test, command(help_expected = true))]
 struct Ftzz {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     cmd: Cmd,
-    #[clap(flatten)]
+
+    #[command(flatten)]
     verbose: Verbosity,
+
     #[arg(short, long, short_alias = '?', global = true)]
     #[arg(action = ArgAction::Help, help = "Print help information (use `--help` for more detail)")]
     #[arg(long_help = "Print help information (use `-h` for a summary)")]
@@ -59,19 +61,19 @@ struct Generate {
     /// The directory in which to generate files
     ///
     /// The directory will be created if it does not exist.
-    #[clap(value_hint = ValueHint::DirPath)]
+    #[arg(value_hint = ValueHint::DirPath)]
     root_dir: PathBuf,
 
     /// The number of files to generate
     ///
     /// Note: this value is probabilistically respected, meaning any number of
     /// files may be generated so long as we attempt to get close to N.
-    #[clap(short = 'n', long = "files", alias = "num-files")]
-    #[clap(value_parser = num_files_parser)]
+    #[arg(short = 'n', long = "files", alias = "num-files")]
+    #[arg(value_parser = num_files_parser)]
     num_files: NonZeroU64,
 
     /// Whether or not to generate exactly N files
-    #[clap(long = "files-exact")]
+    #[arg(long = "files-exact")]
     files_exact: bool,
 
     /// The total amount of random data to be distributed across the generated
@@ -79,39 +81,39 @@ struct Generate {
     ///
     /// Note: this value is probabilistically respected, meaning any amount of
     /// data may be generated so long as we attempt to get close to N.
-    #[clap(short = 'b', long = "total-bytes", aliases = &["num-bytes", "num-total-bytes"])]
-    #[clap(value_parser = num_bytes_parser)]
-    #[clap(default_value = "0")]
+    #[arg(short = 'b', long = "total-bytes", aliases = &["num-bytes", "num-total-bytes"])]
+    #[arg(value_parser = num_bytes_parser)]
+    #[arg(default_value = "0")]
     num_bytes: u64,
 
     /// Whether or not to generate exactly N bytes
-    #[clap(long = "bytes-exact")]
+    #[arg(long = "bytes-exact")]
     bytes_exact: bool,
 
     /// Whether or not to generate exactly N files and bytes
-    #[clap(short = 'e', long = "exact")]
-    #[clap(conflicts_with_all = &["files_exact", "bytes_exact"])]
+    #[arg(short = 'e', long = "exact")]
+    #[arg(conflicts_with_all = &["files_exact", "bytes_exact"])]
     exact: bool,
 
     /// The maximum directory tree depth
-    #[clap(short = 'd', long = "max-depth", alias = "depth")]
-    #[clap(value_parser = max_depth_parser)]
-    #[clap(default_value = "5")]
+    #[arg(short = 'd', long = "max-depth", alias = "depth")]
+    #[arg(value_parser = max_depth_parser)]
+    #[arg(default_value = "5")]
     max_depth: u32,
 
     /// The number of files to generate per directory (default: files / 1000)
     ///
     /// Note: this value is probabilistically respected, meaning not all
     /// directories will have N files).
-    #[clap(short = 'r', long = "ftd-ratio")]
-    #[clap(value_parser = file_to_dir_ratio_parser)]
+    #[arg(short = 'r', long = "ftd-ratio")]
+    #[arg(value_parser = file_to_dir_ratio_parser)]
     file_to_dir_ratio: Option<NonZeroU64>,
 
     /// Change the PRNG's starting seed
     ///
     /// For example, you can use bash's `$RANDOM` function.
-    #[clap(long = "seed", alias = "entropy")]
-    #[clap(default_value = "0")]
+    #[arg(long = "seed", alias = "entropy")]
+    #[arg(default_value = "0")]
     seed: u64,
 }
 
