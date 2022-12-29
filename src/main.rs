@@ -9,7 +9,7 @@ use std::{
     process::{ExitCode, Termination},
 };
 
-use clap::{ArgAction, Args, Parser, Subcommand, ValueHint};
+use clap::{builder::ArgPredicate, ArgAction, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use error_stack::{IntoReport, ResultExt};
@@ -74,6 +74,7 @@ struct Generate {
 
     /// Whether or not to generate exactly N files
     #[arg(long = "files-exact")]
+    #[arg(default_value_if("exact", ArgPredicate::IsPresent, "true"))]
     files_exact: bool,
 
     /// The total amount of random data to be distributed across the generated
@@ -88,6 +89,7 @@ struct Generate {
 
     /// Whether or not to generate exactly N bytes
     #[arg(long = "bytes-exact")]
+    #[arg(default_value_if("exact", ArgPredicate::IsPresent, "true"))]
     bytes_exact: bool,
 
     /// Whether or not to generate exactly N files and bytes
@@ -123,9 +125,9 @@ impl TryFrom<Generate> for Generator {
     fn try_from(options: Generate) -> Result<Self, Self::Error> {
         let builder = Self::builder()
             .root_dir(options.root_dir)
-            .files_exact(options.files_exact || options.exact)
+            .files_exact(options.files_exact)
             .num_bytes(options.num_bytes)
-            .bytes_exact(options.bytes_exact || options.exact)
+            .bytes_exact(options.bytes_exact)
             .max_depth(options.max_depth);
         let builder = if let Some(ratio) = options.file_to_dir_ratio {
             builder.num_files_with_ratio(NumFilesWithRatio::new(options.num_files, ratio)?)
@@ -138,8 +140,6 @@ impl TryFrom<Generate> for Generator {
 
 #[cfg(test)]
 mod generate_tests {
-    use rstest::rstest;
-
     use super::*;
 
     #[test]
@@ -165,54 +165,6 @@ mod generate_tests {
         assert!(hack.contains("max_depth: 43"));
         assert!(hack.contains("file_to_dir_ratio: 37"));
         assert!(hack.contains("seed: 775"));
-    }
-
-    #[rstest]
-    fn files_exact_is_mapped_correctly(
-        #[values(false, true)] files_exact: bool,
-        #[values(false, true)] global_exact: bool,
-    ) {
-        let options = Generate {
-            files_exact,
-            exact: global_exact,
-
-            root_dir: PathBuf::new(),
-            num_files: NonZeroU64::new(1).unwrap(),
-            num_bytes: 0,
-            max_depth: 0,
-            file_to_dir_ratio: None,
-            seed: 0,
-            bytes_exact: false,
-        };
-
-        let generator = Generator::try_from(options).unwrap();
-        let hack = format!("{generator:?}");
-
-        assert!(hack.contains(&format!("files_exact: {}", files_exact || global_exact)));
-    }
-
-    #[rstest]
-    fn bytes_exact_is_mapped_correctly(
-        #[values(false, true)] bytes_exact: bool,
-        #[values(false, true)] global_exact: bool,
-    ) {
-        let options = Generate {
-            bytes_exact,
-            exact: global_exact,
-
-            root_dir: PathBuf::new(),
-            num_files: NonZeroU64::new(1).unwrap(),
-            num_bytes: 0,
-            max_depth: 0,
-            file_to_dir_ratio: None,
-            seed: 0,
-            files_exact: false,
-        };
-
-        let generator = Generator::try_from(options).unwrap();
-        let hack = format!("{generator:?}");
-
-        assert!(hack.contains(&format!("bytes_exact: {}", bytes_exact || global_exact)));
     }
 }
 
