@@ -144,7 +144,7 @@ impl Generator {
     #[allow(clippy::missing_errors_doc)]
     pub fn generate(self, output: &mut impl Write) -> Result<(), Error> {
         let options = validated_options(self)?;
-        print_configuration_info(&options, output);
+        print_configuration_info(&options, output)?;
         print_stats(run_generator(options)?, output);
         Ok(())
     }
@@ -270,7 +270,7 @@ fn print_configuration_info(
             },
     }: &Configuration,
     output: &mut impl Write,
-) {
+) -> Result<(), Error> {
     writeln!(
         output,
         "{file_count_type} {} {files_maybe_plural} will be generated in approximately {} \
@@ -316,11 +316,16 @@ fn print_configuration_info(
             String::new()
         },
     )
-    .unwrap();
+    .into_report()
+    .attach_printable("Failed to write to output stream")
+    .change_context(Error::Io)
+    .attach(ExitCode::from(sysexits::ExitCode::IoErr))
 }
 
 fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &mut impl Write) {
-    writeln!(
+    // Ignore I/O errors since it'd be dumb to fail if we actually succeeded in
+    // creating all the files
+    let _ = writeln!(
         output,
         "Created {} {files_maybe_plural}{bytes_info} across {} {directories_maybe_plural}.",
         files.separate_with_commas(),
@@ -337,8 +342,7 @@ fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &m
         } else {
             String::new()
         }
-    )
-    .unwrap();
+    );
 }
 
 fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {

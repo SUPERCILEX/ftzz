@@ -180,7 +180,12 @@ fn main() -> ExitCode {
     let args = Ftzz::parse();
 
     #[cfg(not(feature = "trace"))]
-    simple_logger::init_with_level(args.verbose.log_level().unwrap()).unwrap();
+    match simple_logger::init_with_level(args.verbose.log_level().unwrap_or(log::Level::max())) {
+        Ok(()) => {}
+        Err(e) => {
+            drop(writeln!(io::stderr(), "Failed to initialize logger: {e:?}"));
+        }
+    }
     #[cfg(feature = "trace")]
     let _guard = {
         use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
