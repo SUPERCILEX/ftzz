@@ -73,7 +73,10 @@ pub async fn run(
 
     {
         let mut stack = Vec::with_capacity(max_depth);
+        #[cfg(unix)]
         let mut target_dir = FastPathBuf::from(root_dir);
+        #[cfg(not(unix))]
+        let mut target_dir = root_dir;
 
         let mut vec_pool = Vec::with_capacity(max_depth);
         let mut path_pool = Vec::with_capacity(tasks.capacity() / 2);

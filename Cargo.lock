@@ -427,15 +427,14 @@ dependencies = [
  "log",
  "more-asserts",
  "paste",
- "public-api",
  "rand",
  "rand_distr",
  "rand_xoshiro",
  "rstest",
- "rustdoc-json",
  "rustix",
  "seahash",
  "simple_logger",
+ "supercilex-tests",
  "sysexits",
  "tempfile",
  "thiserror",
@@ -802,9 +801,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.16.0"
+version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
+checksum = "6f61fba1741ea2b3d6a1e3178721804bb716a68a6aeba1149b5d52e3d464ea66"
 
 [[package]]
 name = "oorandom"
@@ -1275,6 +1274,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
+name = "supercilex-tests"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6914ca9fdc6818522d72c2588dfe2c11ad9cd403dc631f9ec852541a167646e5"
+dependencies = [
+ "clap 4.0.32",
+ "expect-test",
+ "public-api",
+ "rustdoc-json",
+]
+
+[[package]]
 name = "supports-color"
 version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1297,9 +1308,9 @@ dependencies = [
 
 [[package]]
 name = "sysexits"
-version = "0.3.4"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "913b6c9c3fdc55ec78e76e281706cecfe0cfb4ba07545cbce8342ed943dcfa72"
+checksum = "bcd4eff4cf271fec7d946fbe865aac5eb005e0d42d57db4cad420b6f5bcf743d"
 
 [[package]]
 name = "tempfile"

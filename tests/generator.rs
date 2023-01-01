@@ -316,7 +316,7 @@ fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
             writeln!(
                 output,
                 "{}",
-                &entry.path().to_str().unwrap()[dir.as_os_str().len()..].replace("\\", "/")
+                &entry.path().to_str().unwrap()[dir.as_os_str().len()..].replace('\\', "/")
             )
             .unwrap();
         }
