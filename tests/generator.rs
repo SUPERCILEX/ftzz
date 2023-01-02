@@ -237,6 +237,7 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
 #[case(0)]
 #[case(42)]
 #[case(69)]
+#[cfg_attr(miri, ignore)] // Miri is way too slow unfortunately
 fn fill_byte_is_respected(#[case] fill_byte: u8) {
     let dir = InspectableTempDir::new();
     let mut golden = String::new();
