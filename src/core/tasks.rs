@@ -112,6 +112,7 @@ pub struct FilesAndContentsGenerator<DF, DD, DB, R> {
     pub num_dirs_distr: DD,
     pub num_bytes_distr: DB,
     pub random: R,
+    pub fill_byte: Option<u8>,
 }
 
 impl<
@@ -140,6 +141,7 @@ impl<
             file_contents: OnTheFlyGeneratedFileContents {
                 num_bytes_distr: self.num_bytes_distr.clone(),
                 random: self.random.clone(),
+                fill_byte: self.fill_byte,
             },
         };
 
@@ -155,6 +157,7 @@ pub struct OtherFilesAndContentsGenerator<DF, DD, DB, R> {
 
     files_exact: Option<NonZeroU64>,
     bytes_exact: Option<u64>,
+    fill_byte: Option<u8>,
 
     done: bool,
     root_num_files_hack: Option<u64>,
@@ -255,6 +258,7 @@ impl<
         random: R,
         files_exact: Option<NonZeroU64>,
         bytes_exact: Option<u64>,
+        fill_byte: Option<u8>,
     ) -> Self {
         Self {
             num_files_distr,
@@ -263,6 +267,7 @@ impl<
             random,
             files_exact,
             bytes_exact,
+            fill_byte,
             done: false,
             root_num_files_hack: None,
         }
@@ -329,6 +334,7 @@ impl<
                         build_params!(PreDefinedGeneratedFileContents {
                             byte_counts,
                             random: self.random.clone(),
+                            fill_byte: self.fill_byte,
                         }),
                         self.done
                     )
@@ -340,6 +346,7 @@ impl<
                     build_params!(OnTheFlyGeneratedFileContents {
                         num_bytes_distr: bytes_distr.clone(),
                         random: self.random.clone(),
+                        fill_byte: self.fill_byte,
                     }),
                     self.done
                 )

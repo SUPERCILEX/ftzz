@@ -83,13 +83,23 @@ struct Generate {
     /// Note: this value is probabilistically respected, meaning any amount of
     /// data may be generated so long as we attempt to get close to N.
     #[arg(short = 'b', long = "total-bytes", aliases = & ["num-bytes", "num-total-bytes"])]
+    #[arg(group = "num-bytes")]
     #[arg(value_parser = num_bytes_parser)]
     #[arg(default_value = "0")]
     num_bytes: u64,
 
+    /// Specify a specific fill byte to be used instead of deterministically
+    /// random data
+    ///
+    /// This can be used to improve compression ratios of the generated files.
+    #[arg(long = "fill-byte")]
+    #[arg(requires = "num-bytes")]
+    fill_byte: Option<u8>,
+
     /// Whether or not to generate exactly N bytes
     #[arg(long = "bytes-exact")]
     #[arg(default_value_if("exact", ArgPredicate::IsPresent, "true"))]
+    #[arg(requires = "num-bytes")]
     bytes_exact: bool,
 
     /// Whether or not to generate exactly N files and bytes
@@ -123,18 +133,20 @@ impl TryFrom<Generate> for Generator {
     type Error = NumFilesWithRatioError;
 
     fn try_from(options: Generate) -> Result<Self, Self::Error> {
-        let builder = Self::builder()
-            .root_dir(options.root_dir)
-            .files_exact(options.files_exact)
-            .num_bytes(options.num_bytes)
-            .bytes_exact(options.bytes_exact)
-            .max_depth(options.max_depth);
+        let builder = Self::builder();
+        let builder = builder.root_dir(options.root_dir);
+        let builder = builder.files_exact(options.files_exact);
+        let builder = builder.num_bytes(options.num_bytes);
+        let builder = builder.bytes_exact(options.bytes_exact);
+        let builder = builder.max_depth(options.max_depth);
+        let builder = builder.seed(options.seed);
+        let builder = builder.fill_byte(options.fill_byte);
         let builder = if let Some(ratio) = options.file_to_dir_ratio {
             builder.num_files_with_ratio(NumFilesWithRatio::new(options.num_files, ratio)?)
         } else {
             builder.num_files_with_ratio(NumFilesWithRatio::from_num_files(options.num_files))
         };
-        Ok(builder.seed(options.seed).build())
+        Ok(builder.build())
     }
 }
 
@@ -148,6 +160,7 @@ mod generate_tests {
             root_dir: PathBuf::from("abc"),
             num_files: NonZeroU64::new(373).unwrap(),
             num_bytes: 637,
+            fill_byte: None,
             max_depth: 43,
             file_to_dir_ratio: Some(NonZeroU64::new(37).unwrap()),
             seed: 775,

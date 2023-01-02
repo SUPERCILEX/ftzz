@@ -62,6 +62,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
 pub struct OnTheFlyGeneratedFileContents<D: Distribution<f64>, R: RngCore> {
     pub num_bytes_distr: D,
     pub random: R,
+    pub fill_byte: Option<u8>,
 }
 
 impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
@@ -100,7 +101,7 @@ impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
                 } else {
                     num_bytes
                 };
-                write_random_bytes(f, num_bytes, &mut self.random)?;
+                write_bytes(f, num_bytes, (self.fill_byte, &mut self.random))?;
                 Ok(num_bytes)
             })
         } else {
@@ -116,6 +117,7 @@ impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
 pub struct PreDefinedGeneratedFileContents<R: RngCore> {
     pub byte_counts: Vec<u64>,
     pub random: R,
+    pub fill_byte: Option<u8>,
 }
 
 impl<R: RngCore + 'static> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
@@ -129,7 +131,7 @@ impl<R: RngCore + 'static> FileContentsGenerator for PreDefinedGeneratedFileCont
         let num_bytes = self.byte_counts[file_num];
         if num_bytes > 0 {
             File::create(file)
-                .and_then(|f| write_random_bytes(f, num_bytes, &mut self.random))
+                .and_then(|f| write_bytes(f, num_bytes, (self.fill_byte, &mut self.random)))
                 .map(|_| num_bytes)
         } else {
             NoGeneratedFileContents.create_file(file, file_num, retryable)
@@ -141,13 +143,29 @@ impl<R: RngCore + 'static> FileContentsGenerator for PreDefinedGeneratedFileCont
     }
 }
 
-#[instrument(level = "trace", skip(file, random))]
-fn write_random_bytes(
+enum BytesKind<'a, R> {
+    Random(&'a mut R),
+    Fixed(u8),
+}
+
+impl<'a, R> From<(Option<u8>, &'a mut R)> for BytesKind<'a, R> {
+    fn from((fill_byte, random): (Option<u8>, &'a mut R)) -> Self {
+        fill_byte.map_or(BytesKind::Random(random), |byte| BytesKind::Fixed(byte))
+    }
+}
+
+#[instrument(level = "trace", skip(file, kind))]
+fn write_bytes<'a, R: RngCore + 'static>(
     mut file: File,
     num: u64,
-    random: &mut (impl RngCore + 'static),
+    kind: impl Into<BytesKind<'a, R>>,
 ) -> io::Result<()> {
-    let copied = io::copy(&mut (random as &mut dyn RngCore).take(num), &mut file)?;
+    let copied = match kind.into() {
+        BytesKind::Random(random) => {
+            io::copy(&mut (random as &mut dyn RngCore).take(num), &mut file)
+        }
+        BytesKind::Fixed(byte) => io::copy(&mut io::repeat(byte).take(num), &mut file),
+    }?;
     debug_assert_eq!(num, copied);
     Ok(())
 }

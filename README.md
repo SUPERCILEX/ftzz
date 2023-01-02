@@ -104,6 +104,11 @@ Options:
           
           [default: 0]
 
+      --fill-byte <FILL_BYTE>
+          Specify a specific fill byte to be used instead of deterministically random data
+          
+          This can be used to improve compression ratios of the generated files.
+
       --bytes-exact
           Whether or not to generate exactly N bytes
 

@@ -233,6 +233,50 @@ fn max_depth_is_respected(#[case] max_depth: u32) {
     .assert_eq(&golden);
 }
 
+#[rstest]
+#[case(0)]
+#[case(42)]
+#[case(69)]
+fn fill_byte_is_respected(#[case] fill_byte: u8) {
+    let dir = InspectableTempDir::new();
+    let mut golden = String::new();
+
+    Generator::builder()
+        .root_dir(dir.path.clone())
+        .num_files_with_ratio(NumFilesWithRatio::from_num_files(
+            NonZeroU64::new(1_000).unwrap(),
+        ))
+        .num_bytes(100_000)
+        .fill_byte(fill_byte)
+        .build()
+        .generate(&mut golden)
+        .unwrap();
+
+    let assert_fill_byte = || {
+        let mut queue = VecDeque::from([dir.path.clone()]);
+        while let Some(path) = queue.pop_front() {
+            for entry in path.read_dir().unwrap() {
+                let entry = entry.unwrap();
+                if entry.file_type().unwrap().is_dir() {
+                    queue.push_back(entry.path());
+                } else {
+                    for byte in BufReader::new(File::open(entry.path()).unwrap()).bytes() {
+                        assert_eq!(fill_byte, byte.unwrap());
+                    }
+                }
+            }
+        }
+    };
+
+    assert_fill_byte();
+    print_and_hash_dir(&dir.path, &mut golden);
+
+    expect_file![format!(
+        "../testdata/generator/fill_byte_is_respected_{fill_byte}.stdout"
+    )]
+    .assert_eq(&golden);
+}
+
 #[test]
 #[cfg_attr(miri, ignore)] // Miri is way too slow unfortunately
 fn fuzz_test() {

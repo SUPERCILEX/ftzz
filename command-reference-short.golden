@@ -26,6 +26,8 @@ Options:
       --files-exact                    Whether or not to generate exactly N files
   -b, --total-bytes <NUM_BYTES>        The total amount of random data to be distributed across the
                                        generated files [default: 0]
+      --fill-byte <FILL_BYTE>          Specify a specific fill byte to be used instead of
+                                       deterministically random data
       --bytes-exact                    Whether or not to generate exactly N bytes
   -e, --exact                          Whether or not to generate exactly N files and bytes
   -d, --max-depth <MAX_DEPTH>          The maximum directory tree depth [default: 5]

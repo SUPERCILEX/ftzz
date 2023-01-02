@@ -113,7 +113,31 @@ $ ftzz generate -n 1 dir --bytes-exact --exact
 ? 2
 error: The argument '--bytes-exact' cannot be used with '--exact'
 
-Usage: ftzz[EXE] generate --files <NUM_FILES> --bytes-exact <ROOT_DIR>
+Usage: ftzz[EXE] generate --files <NUM_FILES> --bytes-exact <--total-bytes <NUM_BYTES>> <ROOT_DIR>
+
+```
+
+`bytes-exact` cannot be used without `num-bytes`:
+
+```console
+$ ftzz generate -n 1 dir --bytes-exact
+? 2
+error: The following required arguments were not provided:
+  <--total-bytes <NUM_BYTES>>
+
+Usage: ftzz[EXE] generate --files <NUM_FILES> --bytes-exact <--total-bytes <NUM_BYTES>> <ROOT_DIR>
+
+```
+
+`fill-byte` cannot be used without `num-bytes`:
+
+```console
+$ ftzz generate -n 1 dir --fill-byte 42
+? 2
+error: The following required arguments were not provided:
+  <--total-bytes <NUM_BYTES>>
+
+Usage: ftzz[EXE] generate --files <NUM_FILES> --fill-byte <FILL_BYTE> <--total-bytes <NUM_BYTES>> <ROOT_DIR>
 
 ```
 

@@ -101,6 +101,9 @@ pub struct Generator {
     files_exact: bool,
     #[builder(default = 0)]
     num_bytes: u64,
+    #[builder(default = None)]
+    #[builder(setter(into))]
+    fill_byte: Option<u8>,
     #[builder(default = false)]
     bytes_exact: bool,
     #[builder(default = 5)]
@@ -157,6 +160,7 @@ struct Configuration {
     bytes: u64,
     files_exact: bool,
     bytes_exact: bool,
+    fill_byte: Option<u8>,
     files_per_dir: f64,
     dirs_per_dir: f64,
     bytes_per_file: f64,
@@ -178,6 +182,7 @@ fn validated_options(
         num_files_with_ratio,
         files_exact,
         num_bytes,
+        fill_byte,
         bytes_exact,
         max_depth,
         seed,
@@ -212,6 +217,7 @@ fn validated_options(
             bytes: num_bytes,
             files_exact,
             bytes_exact,
+            fill_byte,
             files_per_dir: num_files,
             dirs_per_dir: 0.,
             bytes_per_file,
@@ -237,6 +243,7 @@ fn validated_options(
         bytes: num_bytes,
         files_exact,
         bytes_exact,
+        fill_byte,
         files_per_dir: ratio,
         bytes_per_file,
         dirs_per_dir,
@@ -257,6 +264,7 @@ fn print_configuration_info(
         bytes,
         files_exact,
         bytes_exact,
+        fill_byte: _,
         files_per_dir: _,
         dirs_per_dir: _,
         bytes_per_file: _,
@@ -366,6 +374,7 @@ async fn run_generator_async(
         bytes,
         files_exact,
         bytes_exact,
+        fill_byte,
         files_per_dir,
         dirs_per_dir,
         bytes_per_file,
@@ -406,6 +415,7 @@ async fn run_generator_async(
             random,
             files_exact.then_some(files),
             bytes_exact.then_some(bytes),
+            fill_byte,
         ))
     } else if bytes > 0 {
         run!(FilesAndContentsGenerator {
@@ -413,6 +423,7 @@ async fn run_generator_async(
             num_dirs_distr,
             num_bytes_distr,
             random,
+            fill_byte,
         })
     } else {
         run!(FilesNoContentsGenerator {
