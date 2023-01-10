@@ -51,9 +51,9 @@ checksum = "6c58ec36aac5066d5ca17df51b3e70279f5670a72102f5752cb7e7c856adfc70"
 
 [[package]]
 name = "camino"
-version = "1.1.1"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88ad0e1e3e88dd237a156ab9f571021b8a158caa0ae44b1968a241efb5144c1e"
+checksum = "c77df041dc383319cc661b428b6961a005db4d6808d5e12536931b1ca9556055"
 dependencies = [
  "serde",
 ]
@@ -181,6 +181,16 @@ checksum = "23e2b6c3dcdb73299f48ae05b294da14e2f560b3ed2c09e742269eb1b22af231"
 dependencies = [
  "clap 4.0.32",
  "log",
+]
+
+[[package]]
+name = "clap2"
+version = "4.0.32"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d77f5d98fe06d2365f080d2c9385fb94855ebabeccf6125862363e468799245"
+dependencies = [
+ "bitflags",
+ "clap_lex 0.3.0",
 ]
 
 [[package]]
@@ -555,9 +565,9 @@ dependencies = [
 
 [[package]]
 name = "glob"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
+checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
 name = "half"
@@ -681,9 +691,9 @@ checksum = "fad582f4b9e86b6caa621cabeb0963332d92eea04729ab12892c2533951e6440"
 
 [[package]]
 name = "itoa-const"
-version = "1.0.1"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9e76d92b4cf7e795bcdce277d9f83378b08b1eac9a0b4efe646e1918723eeec"
+checksum = "c6f67f59fa9ccebfeda083c23a62c1733a119272716cdfb55dfce9ae26b58658"
 
 [[package]]
 name = "js-sys"
@@ -929,9 +939,9 @@ dependencies = [
 
 [[package]]
 name = "public-api"
-version = "0.25.0"
+version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88a1f38addffc7d88afde7603b4bd8f741e6854d62b17dea2f31f33c7e68a74a"
+checksum = "edd2f54c2c632d6837b7c2ae793856315da2daa866136682179fe20f2fdd2b03"
 dependencies = [
  "hashbag",
  "rustdoc-types",
@@ -1031,9 +1041,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.7.0"
+version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e076559ef8e241f2ae3479e36f97bd5741c0330689e217ad51ce2c76808b868a"
+checksum = "48aaa5748ba571fb95cd2c85c09f629215d3a6ece942baa100950af03a34f733"
 dependencies = [
  "regex-syntax",
 ]
@@ -1103,9 +1113,9 @@ dependencies = [
 
 [[package]]
 name = "rustdoc-types"
-version = "0.18.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7745b68b43d89a088d2d270be09f54f948e587fc540cb15e3d3b75cb327a01c3"
+checksum = "f5f59b848e09e1631f0f8711fcdcb65d4481597b869372cca5d6755737b21501"
 dependencies = [
  "serde",
 ]
@@ -1241,9 +1251,9 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
 name = "snapbox"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efbd7b250c7243273b5aec4ca366fced84ad716d110bb7baae4814678952ebde"
+checksum = "34eced5a65e76d5a00047986a83c65f80dc666faa27b5138f331659e2ca6bcf5"
 dependencies = [
  "concolor",
  "content_inspector",
@@ -1275,11 +1285,12 @@ checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "supercilex-tests"
-version = "0.1.2"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6914ca9fdc6818522d72c2588dfe2c11ad9cd403dc631f9ec852541a167646e5"
+checksum = "a5157812f3763a98ab944abf57976db1a08f9a39a4e27bd2f7d9160cfa84cdfa"
 dependencies = [
  "clap 4.0.32",
+ "clap2",
  "expect-test",
  "public-api",
  "rustdoc-json",
@@ -1398,9 +1409,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.23.0"
+version = "1.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eab6d665857cc6ca78d6e80303a02cea7a7851e85dfbd77cbdc09bd129f1ef46"
+checksum = "1d9f76183f91ecfb55e1d7d5602bd1d979e38a3a522fe900241cf195624d67ae"
 dependencies = [
  "autocfg",
  "pin-project-lite",
@@ -1428,9 +1439,9 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.16.2"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd30deba9a1cd7153c22aecf93e86df639e7b81c622b0af8d9255e989991a7b7"
+checksum = "a34cc558345efd7e88b9eda9626df2138b80bb46a7606f695e751c892bc7dac6"
 dependencies = [
  "indexmap",
  "itertools",
@@ -1512,9 +1523,9 @@ dependencies = [
 
 [[package]]
 name = "trycmd"
-version = "0.14.6"
+version = "0.14.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd0b37ad14571d245340fb1d56cec65507bd73571005adc63dc968aa38fa9d49"
+checksum = "01662d21325d18cd4acae7e1dc9f29a2a88b7fbb7f9bc427c4a692aaec5773ac"
 dependencies = [
  "glob",
  "humantime",

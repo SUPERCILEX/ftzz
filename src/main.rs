@@ -20,7 +20,6 @@ use paste::paste;
 #[derive(Parser, Debug)]
 #[command(version, author = "Alex Saveau (@SUPERCILEX)")]
 #[command(infer_subcommands = true, infer_long_args = true)]
-#[command(next_display_order = None)]
 #[command(max_term_width = 100)]
 #[command(disable_help_flag = true)]
 #[cfg_attr(test, command(help_expected = true))]
@@ -29,6 +28,7 @@ struct Ftzz {
     cmd: Cmd,
 
     #[command(flatten)]
+    #[command(next_display_order = None)]
     verbose: Verbosity,
 
     #[arg(short, long, short_alias = '?', global = true)]
@@ -132,19 +132,32 @@ struct Generate {
 impl TryFrom<Generate> for Generator {
     type Error = NumFilesWithRatioError;
 
-    fn try_from(options: Generate) -> Result<Self, Self::Error> {
+    fn try_from(
+        Generate {
+            root_dir,
+            num_files,
+            files_exact,
+            num_bytes,
+            fill_byte,
+            bytes_exact,
+            exact: _,
+            max_depth,
+            file_to_dir_ratio,
+            seed,
+        }: Generate,
+    ) -> Result<Self, Self::Error> {
         let builder = Self::builder();
-        let builder = builder.root_dir(options.root_dir);
-        let builder = builder.files_exact(options.files_exact);
-        let builder = builder.num_bytes(options.num_bytes);
-        let builder = builder.bytes_exact(options.bytes_exact);
-        let builder = builder.max_depth(options.max_depth);
-        let builder = builder.seed(options.seed);
-        let builder = builder.fill_byte(options.fill_byte);
-        let builder = if let Some(ratio) = options.file_to_dir_ratio {
-            builder.num_files_with_ratio(NumFilesWithRatio::new(options.num_files, ratio)?)
+        let builder = builder.root_dir(root_dir);
+        let builder = builder.files_exact(files_exact);
+        let builder = builder.num_bytes(num_bytes);
+        let builder = builder.bytes_exact(bytes_exact);
+        let builder = builder.max_depth(max_depth);
+        let builder = builder.seed(seed);
+        let builder = builder.fill_byte(fill_byte);
+        let builder = if let Some(ratio) = file_to_dir_ratio {
+            builder.num_files_with_ratio(NumFilesWithRatio::new(num_files, ratio)?)
         } else {
-            builder.num_files_with_ratio(NumFilesWithRatio::from_num_files(options.num_files))
+            builder.num_files_with_ratio(NumFilesWithRatio::from_num_files(num_files))
         };
         Ok(builder.build())
     }
@@ -219,9 +232,15 @@ fn main() -> ExitCode {
     }
 }
 
-fn ftzz(ftzz: Ftzz) -> error_stack::Result<(), CliError> {
+fn ftzz(
+    Ftzz {
+        cmd,
+        verbose: _,
+        help: _,
+    }: Ftzz,
+) -> error_stack::Result<(), CliError> {
     let mut stdout = stdout();
-    match ftzz.cmd {
+    match cmd {
         Cmd::Generate(options) => Generator::try_from(options)
             .into_report()
             .change_context(CliError::InvalidArgs)?
