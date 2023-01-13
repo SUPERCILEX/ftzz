@@ -10,6 +10,9 @@ use std::{
 };
 
 use clap::{builder::ArgPredicate, ArgAction, Args, Parser, Subcommand, ValueHint};
+use clap2 as clap;
+use clap2_num as clap_num;
+use clap2_verbosity_flag as clap_verbosity_flag;
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use error_stack::{IntoReport, ResultExt};
@@ -20,7 +23,6 @@ use paste::paste;
 #[derive(Parser, Debug)]
 #[command(version, author = "Alex Saveau (@SUPERCILEX)")]
 #[command(infer_subcommands = true, infer_long_args = true)]
-#[command(max_term_width = 100)]
 #[command(disable_help_flag = true)]
 #[cfg_attr(test, command(help_expected = true))]
 struct Ftzz {
@@ -32,8 +34,8 @@ struct Ftzz {
     verbose: Verbosity,
 
     #[arg(short, long, short_alias = '?', global = true)]
-    #[arg(action = ArgAction::Help, help = "Print help information (use `--help` for more detail)")]
-    #[arg(long_help = "Print help information (use `-h` for a summary)")]
+    #[arg(action = ArgAction::Help, help = "Print help (use `--help` for more detail)")]
+    #[arg(long_help = "Print help (use `-h` for a summary)")]
     help: Option<bool>,
 }
 
@@ -57,6 +59,7 @@ enum Cmd {
 }
 
 #[derive(Args, Debug)]
+#[command(arg_required_else_help = true)]
 struct Generate {
     /// The directory in which to generate files
     ///
@@ -368,6 +371,6 @@ mod cli_tests {
 
     #[test]
     fn help_for_review() {
-        supercilex_tests::help_for_review(Ftzz::command());
+        supercilex_tests::help_for_review2(Ftzz::command());
     }
 }

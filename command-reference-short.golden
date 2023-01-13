@@ -7,10 +7,10 @@ Commands:
   help      Print this message or the help of the given subcommand(s)
 
 Options:
-  -h, --help        Print help information (use `--help` for more detail)
+  -h, --help        Print help (use `--help` for more detail)
   -q, --quiet...    Less output per occurrence
   -v, --verbose...  More output per occurrence
-  -V, --version     Print version information
+  -V, --version     Print version
 
 ---
 
@@ -34,7 +34,7 @@ Options:
   -r, --ftd-ratio <FILE_TO_DIR_RATIO>  The number of files to generate per directory (default: files
                                        / 1000)
       --seed <SEED>                    Change the PRNG's starting seed [default: 0]
-  -h, --help                           Print help information (use `--help` for more detail)
+  -h, --help                           Print help (use `--help` for more detail)
   -q, --quiet...                       Less output per occurrence
   -v, --verbose...                     More output per occurrence
 

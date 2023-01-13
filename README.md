@@ -134,7 +134,7 @@ Options:
           [default: 0]
 
   -h, --help
-          Print help information (use `-h` for a summary)
+          Print help (use `-h` for a summary)
 
   -q, --quiet...
           Less output per occurrence
