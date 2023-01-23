@@ -23,10 +23,7 @@ use thousands::Separable;
 use tracing::{event, Level};
 use typed_builder::TypedBuilder;
 
-use crate::core::{
-    run, FilesAndContentsGenerator, FilesNoContentsGenerator, GeneratorStats,
-    OtherFilesAndContentsGenerator,
-};
+use crate::core::{run, DynamicGenerator, GeneratorBytes, GeneratorStats, StaticGenerator};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -407,29 +404,23 @@ async fn run_generator_async(
         }};
     }
 
+    let dynamic = DynamicGenerator {
+        num_files_distr,
+        num_dirs_distr,
+        random,
+
+        bytes: (bytes > 0).then_some(GeneratorBytes {
+            num_bytes_distr,
+            fill_byte,
+        }),
+    };
     if files_exact || bytes_exact {
-        run!(OtherFilesAndContentsGenerator::new(
-            num_files_distr,
-            num_dirs_distr,
-            (bytes > 0).then_some(num_bytes_distr),
-            random,
+        run!(StaticGenerator::new(
+            dynamic,
             files_exact.then_some(files),
             bytes_exact.then_some(bytes),
-            fill_byte,
         ))
-    } else if bytes > 0 {
-        run!(FilesAndContentsGenerator {
-            num_files_distr,
-            num_dirs_distr,
-            num_bytes_distr,
-            random,
-            fill_byte,
-        })
     } else {
-        run!(FilesNoContentsGenerator {
-            num_files_distr,
-            num_dirs_distr,
-            random,
-        })
+        run!(dynamic)
     }
 }
