@@ -106,46 +106,47 @@ impl<
         gen_dirs: bool,
         _: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
-        fn queue_impl(
-            file: FastPathBuf,
-            num_files: u64,
-            num_dirs: usize,
-            file_contents: impl FileContentsGenerator + Send + 'static,
-        ) -> QueueResult {
-            let params = GeneratorTaskParams {
-                target_dir: file,
-                num_files,
-                num_dirs,
-                file_offset: 0,
-                file_contents,
-            };
-            queue(params, false)
-        }
+        let Self {
+            ref num_files_distr,
+            ref num_dirs_distr,
+            ref mut random,
+            ref bytes,
+        } = *self;
 
-        let num_files = self.num_files_distr.sample(&mut self.random).round() as u64;
+        let num_files = num_files_distr.sample(random).round() as u64;
         let num_dirs = if gen_dirs {
-            self.num_dirs_distr.sample(&mut self.random).round() as usize
+            num_dirs_distr.sample(random).round() as usize
         } else {
             0
         };
 
+        macro_rules! build_params {
+            ($file_contents:expr) => {{
+                GeneratorTaskParams {
+                    target_dir: file,
+                    num_files,
+                    num_dirs,
+                    file_offset: 0,
+                    file_contents: $file_contents,
+                }
+            }};
+        }
+
         if let Some(GeneratorBytes {
-            num_bytes_distr,
+            ref num_bytes_distr,
             fill_byte,
-        }) = &self.bytes
+        }) = *bytes
         {
-            queue_impl(
-                file,
-                num_files,
-                num_dirs,
-                OnTheFlyGeneratedFileContents {
+            queue(
+                build_params!(OnTheFlyGeneratedFileContents {
                     num_bytes_distr: num_bytes_distr.clone(),
-                    random: self.random.clone(),
-                    fill_byte: *fill_byte,
-                },
+                    random: random.clone(),
+                    fill_byte,
+                }),
+                false,
             )
         } else {
-            queue_impl(file, num_files, num_dirs, NoGeneratedFileContents)
+            queue(build_params!(NoGeneratedFileContents), false)
         }
     }
 }
@@ -173,30 +174,37 @@ impl<
         gen_dirs: bool,
         byte_counts_pool: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
-        debug_assert!(!self.done);
+        let Self {
+            dynamic:
+                DynamicGenerator {
+                    ref num_files_distr,
+                    ref num_dirs_distr,
+                    ref mut random,
+                    bytes: _,
+                },
+            ref mut files_exact,
+            bytes_exact: _,
+            ref mut done,
+            ref mut root_num_files_hack,
+        } = *self;
 
-        let DynamicGenerator {
-            num_files_distr,
-            num_dirs_distr,
-            random,
-            bytes: _,
-        } = &mut self.dynamic;
+        debug_assert!(!*done);
 
         let mut num_files = num_files_distr.sample(random).round() as u64;
-        if let Some(ref mut files) = self.files_exact {
+        if let Some(files) = files_exact {
             if num_files >= files.get() {
-                self.done = true;
+                *done = true;
                 num_files = files.get();
             } else {
                 *files = unsafe { NonZeroU64::new_unchecked(files.get() - num_files) };
             }
         }
 
-        if self.root_num_files_hack.is_none() {
-            self.root_num_files_hack = Some(num_files);
+        if root_num_files_hack.is_none() {
+            *root_num_files_hack = Some(num_files);
         }
 
-        let num_dirs = if gen_dirs && !self.done {
+        let num_dirs = if gen_dirs && !*done {
             num_dirs_distr.sample(random).round() as usize
         } else {
             0
@@ -210,10 +218,18 @@ impl<
         file: FastPathBuf,
         byte_counts_pool: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
-        if self.done {
+        let Self {
+            dynamic: _,
+            files_exact,
+            bytes_exact,
+            ref mut done,
+            root_num_files_hack,
+        } = *self;
+
+        if *done {
             return Err(QueueErrors::NothingToDo(file));
         }
-        self.done = true;
+        *done = true;
 
         // TODO Dumping all the remaining files or bytes in the root directory is very
         // dumb and wrong  1. If there are a lot of files, we're missing out on
@@ -222,20 +238,20 @@ impl<
         //  Ideally we would continue the while loop above until enough files have been
         // generated,  but I haven't had time to think about how to do so
         // properly.
-        if let Some(files) = self.files_exact {
+        if let Some(files) = files_exact {
             self.queue_gen_internal(
                 file,
                 files.get(),
                 0,
-                self.root_num_files_hack.unwrap_or(0),
+                root_num_files_hack.unwrap_or(0),
                 byte_counts_pool,
             )
-        } else if matches!(self.bytes_exact, Some(b) if b > 0) {
+        } else if matches!(bytes_exact, Some(b) if b > 0) {
             self.queue_gen_internal(
                 file,
                 1,
                 0,
-                self.root_num_files_hack.unwrap_or(0),
+                root_num_files_hack.unwrap_or(0),
                 byte_counts_pool,
             )
         } else {
@@ -244,7 +260,13 @@ impl<
     }
 
     fn uses_byte_counts_pool(&self) -> bool {
-        self.dynamic.bytes.is_some() && matches!(self.bytes_exact, Some(b) if b > 0)
+        let Self {
+            dynamic: DynamicGenerator { ref bytes, .. },
+            bytes_exact,
+            ..
+        } = *self;
+
+        bytes.is_some() && matches!(bytes_exact, Some(b) if b > 0)
     }
 }
 
@@ -290,8 +312,22 @@ impl<
             }};
         }
 
-        if num_files > 0 && let Some(GeneratorBytes { num_bytes_distr, fill_byte }) = &self.dynamic.bytes {
-            if let Some(ref mut bytes) = self.bytes_exact {
+        let Self {
+            dynamic:
+                DynamicGenerator {
+                    num_files_distr: _,
+                    num_dirs_distr: _,
+                    ref mut random,
+                    ref bytes,
+                },
+            files_exact: _,
+            ref mut bytes_exact,
+            done,
+            root_num_files_hack: _,
+        } = *self;
+
+        if num_files > 0 && let Some(GeneratorBytes { ref num_bytes_distr, fill_byte }) = *bytes {
+            if let Some(bytes) = bytes_exact {
                 if *bytes > 0 {
                     let mut byte_counts: Vec<u64> = byte_counts_pool.pop().unwrap_or_default();
                     debug_assert!(byte_counts.is_empty());
@@ -303,8 +339,7 @@ impl<
                         .0;
 
                     for count in raw_byte_counts {
-                        let num_bytes =
-                            min(*bytes, num_bytes_distr.sample(&mut self.dynamic.random).round() as u64);
+                        let num_bytes = min(*bytes, num_bytes_distr.sample(random).round() as u64);
                         *bytes -= num_bytes;
 
                         count.write(num_bytes);
@@ -314,7 +349,7 @@ impl<
                         byte_counts.set_len(num_files_usize);
                     }
 
-                    if self.done {
+                    if done {
                         let base = *bytes / num_files;
                         let mut leftovers = *bytes % num_files;
                         for count in &mut byte_counts {
@@ -330,26 +365,26 @@ impl<
                     queue(
                         build_params!(PreDefinedGeneratedFileContents {
                             byte_counts,
-                            random: self.dynamic.random.clone(),
-                            fill_byte: *fill_byte,
+                            random: random.clone(),
+                            fill_byte,
                         }),
-                        self.done
+                        done,
                     )
                 } else {
-                    queue(build_params!(NoGeneratedFileContents), self.done)
+                    queue(build_params!(NoGeneratedFileContents), done)
                 }
             } else {
                 queue(
                     build_params!(OnTheFlyGeneratedFileContents {
                         num_bytes_distr: num_bytes_distr.clone(),
-                        random: self.dynamic.random.clone(),
-                        fill_byte: *fill_byte,
+                        random: random.clone(),
+                        fill_byte,
                     }),
-                    self.done
+                    done,
                 )
             }
         } else {
-            queue(build_params!(NoGeneratedFileContents), self.done)
+            queue(build_params!(NoGeneratedFileContents), done)
         }
     }
 }

@@ -76,7 +76,13 @@ impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
         file_num: usize,
         retryable: bool,
     ) -> io::Result<u64> {
-        let num_bytes = self.num_bytes_distr.sample(&mut self.random).round() as u64;
+        let Self {
+            ref num_bytes_distr,
+            ref mut random,
+            fill_byte,
+        } = *self;
+
+        let num_bytes = num_bytes_distr.sample(random).round() as u64;
         if num_bytes > 0 || retryable {
             File::create(file).and_then(|f| {
                 // To stay deterministic, we need to ensure `random` is mutated in exactly
@@ -97,11 +103,11 @@ impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
                 //    - Notice that num_to_generate can be 0 which is a bummer b/c we can't use
                 //      mknod even though we'd like to.
                 let num_bytes = if retryable {
-                    self.num_bytes_distr.sample(&mut self.random).round() as u64
+                    num_bytes_distr.sample(random).round() as u64
                 } else {
                     num_bytes
                 };
-                write_bytes(f, num_bytes, (self.fill_byte, &mut self.random))?;
+                write_bytes(f, num_bytes, (fill_byte, random))?;
                 Ok(num_bytes)
             })
         } else {
@@ -128,10 +134,16 @@ impl<R: RngCore + 'static> FileContentsGenerator for PreDefinedGeneratedFileCont
         file_num: usize,
         retryable: bool,
     ) -> io::Result<u64> {
-        let num_bytes = self.byte_counts[file_num];
+        let Self {
+            ref byte_counts,
+            ref mut random,
+            fill_byte,
+        } = *self;
+
+        let num_bytes = byte_counts[file_num];
         if num_bytes > 0 {
             File::create(file)
-                .and_then(|f| write_bytes(f, num_bytes, (self.fill_byte, &mut self.random)))
+                .and_then(|f| write_bytes(f, num_bytes, (fill_byte, random)))
                 .map(|_| num_bytes)
         } else {
             NoGeneratedFileContents.create_file(file, file_num, retryable)

@@ -24,26 +24,41 @@ impl FastPathBuf {
     }
 
     pub fn capacity(&self) -> usize {
-        self.inner.capacity()
+        let Self {
+            ref inner,
+            last_len: _,
+        } = *self;
+
+        inner.capacity()
     }
 
     pub fn push(&mut self, name: &str) {
-        self.last_len = self.inner.len();
+        let Self {
+            ref mut inner,
+            ref mut last_len,
+        } = *self;
 
-        self.inner.reserve(name.len() + 1);
-        self.inner.push(MAIN_SEPARATOR as u8);
-        self.inner.extend_from_slice(name.as_bytes());
+        *last_len = inner.len();
+
+        inner.reserve(name.len() + 1);
+        inner.push(MAIN_SEPARATOR as u8);
+        inner.extend_from_slice(name.as_bytes());
     }
 
     pub fn pop(&mut self) {
-        if self.inner.len() > self.last_len {
-            self.inner.truncate(self.last_len);
+        let Self {
+            ref mut inner,
+            last_len,
+        } = *self;
+
+        if inner.len() > last_len {
+            inner.truncate(last_len);
         } else {
-            self.inner.truncate(
-                unsafe { self.parent().unwrap_unchecked() }
-                    .as_os_str()
-                    .len(),
-            );
+            inner.truncate({
+                let parent = bytes_as_path(inner).parent();
+                let parent = unsafe { parent.unwrap_unchecked() };
+                parent.as_os_str().len()
+            });
         }
     }
 
@@ -68,11 +83,20 @@ impl From<PathBuf> for FastPathBuf {
     }
 }
 
+fn bytes_as_path(bytes: &[u8]) -> &Path {
+    OsStr::from_bytes(bytes).as_ref()
+}
+
 impl Deref for FastPathBuf {
     type Target = Path;
 
     fn deref(&self) -> &Self::Target {
-        OsStr::from_bytes(&self.inner).as_ref()
+        let Self {
+            ref inner,
+            last_len: _,
+        } = *self;
+
+        bytes_as_path(inner)
     }
 }
 
@@ -90,15 +114,25 @@ impl fmt::Debug for FastPathBuf {
 
 impl Clone for FastPathBuf {
     fn clone(&self) -> Self {
+        let Self {
+            ref inner,
+            last_len,
+        } = *self;
+
         Self {
-            inner: self.inner.clone(),
-            last_len: self.last_len,
+            inner: inner.clone(),
+            last_len,
         }
     }
 
     fn clone_from(&mut self, source: &Self) {
-        self.inner.clone_from(&source.inner);
-        self.last_len = source.last_len;
+        let Self {
+            ref mut inner,
+            ref mut last_len,
+        } = *self;
+
+        inner.clone_from(&source.inner);
+        *last_len = source.last_len;
     }
 }
 
@@ -114,7 +148,12 @@ mod unix {
 
     impl<'a> CStrFastPathBufGuard<'a> {
         pub fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard {
-            buf.inner.push(0); // NUL terminator
+            let FastPathBuf {
+                ref mut inner,
+                last_len: _,
+            } = *buf;
+
+            inner.push(0); // NUL terminator
             CStrFastPathBufGuard { buf }
         }
     }
@@ -123,10 +162,18 @@ mod unix {
         type Target = CStr;
 
         fn deref(&self) -> &Self::Target {
+            let Self {
+                buf:
+                    FastPathBuf {
+                        ref inner,
+                        last_len: _,
+                    },
+            } = *self;
+
             if cfg!(debug_assertions) {
-                CStr::from_bytes_with_nul(&self.buf.inner).unwrap()
+                CStr::from_bytes_with_nul(inner).unwrap()
             } else {
-                unsafe { CStr::from_bytes_with_nul_unchecked(&self.buf.inner) }
+                unsafe { CStr::from_bytes_with_nul_unchecked(inner) }
             }
         }
     }
@@ -139,7 +186,15 @@ mod unix {
 
     impl<'a> Drop for CStrFastPathBufGuard<'a> {
         fn drop(&mut self) {
-            self.buf.inner.pop();
+            let Self {
+                buf:
+                    FastPathBuf {
+                        ref mut inner,
+                        last_len: _,
+                    },
+            } = *self;
+
+            inner.pop();
         }
     }
 }
