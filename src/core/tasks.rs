@@ -154,7 +154,7 @@ impl<
 pub struct StaticGenerator<DF, DD, DB, R> {
     dynamic: DynamicGenerator<DF, DD, DB, R>,
 
-    files_exact: Option<NonZeroU64>,
+    files_exact: Option<u64>,
     bytes_exact: Option<u64>,
 
     done: bool,
@@ -192,11 +192,11 @@ impl<
 
         let mut num_files = num_files_distr.sample(random).round() as u64;
         if let Some(files) = files_exact {
-            if num_files >= files.get() {
+            if num_files >= *files {
                 *done = true;
-                num_files = files.get();
+                num_files = *files;
             } else {
-                *files = NonZeroU64::new(files.get() - num_files).unwrap();
+                *files -= num_files;
             }
         }
 
@@ -241,7 +241,7 @@ impl<
         if let Some(files) = files_exact {
             self.queue_gen_internal(
                 file,
-                files.get(),
+                files,
                 0,
                 root_num_files_hack.unwrap_or(0),
                 byte_counts_pool,
@@ -277,16 +277,16 @@ impl<
     R: RngCore + Clone + Send + 'static,
 > StaticGenerator<DF, DD, DB, R>
 {
-    pub const fn new(
+    pub fn new(
         dynamic: DynamicGenerator<DF, DD, DB, R>,
         files_exact: Option<NonZeroU64>,
-        bytes_exact: Option<u64>,
+        bytes_exact: Option<NonZeroU64>,
     ) -> Self {
         debug_assert!(files_exact.is_some() || bytes_exact.is_some());
         Self {
             dynamic,
-            files_exact,
-            bytes_exact,
+            files_exact: files_exact.map(NonZeroU64::get),
+            bytes_exact: bytes_exact.map(NonZeroU64::get),
             done: false,
             root_num_files_hack: None,
         }

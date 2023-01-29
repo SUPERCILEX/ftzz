@@ -78,6 +78,7 @@ impl NumFilesWithRatio {
     }
 
     #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn from_num_files(num_files: NonZeroU64) -> Self {
         Self {
             num_files,
@@ -378,17 +379,6 @@ async fn run_generator_async(
     }: Configuration,
     parallelism: NonZeroUsize,
 ) -> Result<GeneratorStats, Error> {
-    let random = {
-        let seed = ((files.get().wrapping_add(max_depth.into()) as f64
-            * (files_per_dir + dirs_per_dir)) as u64)
-            .wrapping_add(seed);
-        event!(Level::DEBUG, seed = ?seed, "Starting seed");
-        Xoshiro256PlusPlus::seed_from_u64(seed)
-    };
-    let num_files_distr = Normal::new(files_per_dir, files_per_dir * 0.2).unwrap();
-    let num_dirs_distr = Normal::new(dirs_per_dir, dirs_per_dir * 0.2).unwrap();
-    let num_bytes_distr = Normal::new(bytes_per_file, bytes_per_file * 0.2).unwrap();
-
     macro_rules! run {
         ($generator:expr) => {{
             run(
@@ -401,21 +391,29 @@ async fn run_generator_async(
         }};
     }
 
+    let bytes = NonZeroU64::new(bytes);
     let dynamic = DynamicGenerator {
-        num_files_distr,
-        num_dirs_distr,
-        random,
+        num_files_distr: Normal::new(files_per_dir, files_per_dir * 0.2).unwrap(),
+        num_dirs_distr: Normal::new(dirs_per_dir, dirs_per_dir * 0.2).unwrap(),
+        random: {
+            let seed = ((files.get().wrapping_add(max_depth.into()) as f64
+                * (files_per_dir + dirs_per_dir)) as u64)
+                .wrapping_add(seed);
+            event!(Level::DEBUG, seed = ?seed, "Starting seed");
+            Xoshiro256PlusPlus::seed_from_u64(seed)
+        },
 
-        bytes: (bytes > 0).then_some(GeneratorBytes {
-            num_bytes_distr,
+        bytes: bytes.map(|_| GeneratorBytes {
+            num_bytes_distr: Normal::new(bytes_per_file, bytes_per_file * 0.2).unwrap(),
             fill_byte,
         }),
     };
-    if files_exact || bytes_exact {
+
+    if files_exact || (bytes_exact && bytes.is_some()) {
         run!(StaticGenerator::new(
             dynamic,
             files_exact.then_some(files),
-            bytes_exact.then_some(bytes),
+            bytes_exact.then_some(bytes).flatten(),
         ))
     } else {
         run!(dynamic)
