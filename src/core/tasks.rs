@@ -196,7 +196,7 @@ impl<
                 *done = true;
                 num_files = files.get();
             } else {
-                *files = unsafe { NonZeroU64::new_unchecked(files.get() - num_files) };
+                *files = NonZeroU64::new(files.get() - num_files).unwrap();
             }
         }
 

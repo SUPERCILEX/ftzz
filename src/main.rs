@@ -253,12 +253,8 @@ fn ftzz(
 }
 
 fn num_files_parser(s: &str) -> Result<NonZeroU64, String> {
-    let files = lenient_si_number_u64(s)?;
-    if files > 0 {
-        Ok(unsafe { NonZeroU64::new_unchecked(files) })
-    } else {
-        Err(String::from("At least one file must be generated."))
-    }
+    NonZeroU64::new(lenient_si_number_u64(s)?)
+        .ok_or_else(|| String::from("At least one file must be generated."))
 }
 
 fn num_bytes_parser(s: &str) -> Result<u64, String> {
@@ -270,12 +266,8 @@ fn max_depth_parser(s: &str) -> Result<u32, String> {
 }
 
 fn file_to_dir_ratio_parser(s: &str) -> Result<NonZeroU64, String> {
-    let ratio = lenient_si_number_u64(s)?;
-    if ratio > 0 {
-        Ok(unsafe { NonZeroU64::new_unchecked(ratio) })
-    } else {
-        Err(String::from("Cannot have no files per directory."))
-    }
+    NonZeroU64::new(lenient_si_number_u64(s)?)
+        .ok_or_else(|| String::from("Cannot have no files per directory."))
 }
 
 macro_rules! lenient_si_number {

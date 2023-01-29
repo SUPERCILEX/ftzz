@@ -81,10 +81,7 @@ impl NumFilesWithRatio {
     pub fn from_num_files(num_files: NonZeroU64) -> Self {
         Self {
             num_files,
-            file_to_dir_ratio: {
-                let r = max(num_files.get() / 1000, 1);
-                unsafe { NonZeroU64::new_unchecked(r) }
-            },
+            file_to_dir_ratio: NonZeroU64::new(max(num_files.get() / 1000, 1)).unwrap(),
         }
     }
 }
