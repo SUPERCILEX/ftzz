@@ -66,13 +66,16 @@ fn queue(
             #[cfg(not(dry_run))]
             task: task::spawn_blocking(move || create_files_and_dirs(params)),
             #[cfg(dry_run)]
-            task: GeneratorTaskOutcome {
-                files_generated: num_files,
-                dirs_generated: num_dirs,
-                bytes_generated: 0,
+            task: {
+                std::hint::black_box(&params);
+                GeneratorTaskOutcome {
+                    files_generated: num_files,
+                    dirs_generated: num_dirs,
+                    bytes_generated: 0,
 
-                pool_return_file: params.target_dir,
-                pool_return_byte_counts: None,
+                    pool_return_file: params.target_dir,
+                    pool_return_byte_counts: None,
+                }
             },
         })
     } else {
