@@ -19,8 +19,6 @@ use seahash::SeaHasher;
 
 use crate::inspect::InspectableTempDir;
 
-mod api;
-
 mod inspect {
     use std::path::PathBuf;
 
