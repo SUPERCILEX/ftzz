@@ -5,96 +5,102 @@ pub ftzz::generator::Error::InvalidEnvironment
 pub ftzz::generator::Error::Io
 pub ftzz::generator::Error::RuntimeCreation
 pub ftzz::generator::Error::TaskJoin
+impl core::error::Error for ftzz::generator::Error
 impl core::fmt::Display for ftzz::generator::Error
 pub fn ftzz::generator::Error::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::error::Error for ftzz::generator::Error
 impl core::fmt::Debug for ftzz::generator::Error
 pub fn ftzz::generator::Error::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::Error
 impl core::marker::Send for ftzz::generator::Error
 impl core::marker::Sync for ftzz::generator::Error
 impl core::marker::Unpin for ftzz::generator::Error
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::Error
 impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::Error
-impl<T> core::any::Any for ftzz::generator::Error where T: 'static + core::marker::Sized
-pub fn ftzz::generator::Error::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::generator::Error where T: core::marker::Sized
-pub fn ftzz::generator::Error::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::generator::Error where T: core::marker::Sized
-pub fn ftzz::generator::Error::borrow_mut(&mut self) -> &mut T
 impl<C> error_stack::context::Context for ftzz::generator::Error where C: core::error::Error + core::marker::Send + core::marker::Sync + 'static
 pub fn ftzz::generator::Error::provide<'a>(&'a self, demand: &mut core::any::Demand<'a>)
-impl<T> core::convert::From<T> for ftzz::generator::Error
-pub fn ftzz::generator::Error::from(t: T) -> T
-impl<T> tracing::instrument::Instrument for ftzz::generator::Error
-impl<T, U> core::convert::Into<U> for ftzz::generator::Error where U: core::convert::From<T>
-pub fn ftzz::generator::Error::into(self) -> U
-impl<D> owo_colors::OwoColorize for ftzz::generator::Error
 impl<E> core::any::Provider for ftzz::generator::Error where E: core::error::Error + core::marker::Sized
 pub fn ftzz::generator::Error::provide<'a>(&'a self, demand: &mut core::any::Demand<'a>)
-impl<T> thousands::traits::Separable for ftzz::generator::Error where T: core::fmt::Display
-pub fn ftzz::generator::Error::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
-impl<T> alloc::string::ToString for ftzz::generator::Error where T: core::fmt::Display + core::marker::Sized
-pub fn ftzz::generator::Error::to_string(&self) -> alloc::string::String
+impl<T, U> core::convert::Into<U> for ftzz::generator::Error where U: core::convert::From<T>
+pub fn ftzz::generator::Error::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for ftzz::generator::Error where U: core::convert::Into<T>
 pub type ftzz::generator::Error::Error = core::convert::Infallible
 pub fn ftzz::generator::Error::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
 impl<T, U> core::convert::TryInto<U> for ftzz::generator::Error where U: core::convert::TryFrom<T>
 pub type ftzz::generator::Error::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn ftzz::generator::Error::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::string::ToString for ftzz::generator::Error where T: core::fmt::Display + core::marker::Sized
+pub fn ftzz::generator::Error::to_string(&self) -> alloc::string::String
+impl<T> core::any::Any for ftzz::generator::Error where T: 'static + core::marker::Sized
+pub fn ftzz::generator::Error::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for ftzz::generator::Error where T: core::marker::Sized
+pub fn ftzz::generator::Error::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for ftzz::generator::Error where T: core::marker::Sized
+pub fn ftzz::generator::Error::borrow_mut(&mut self) -> &mut T
+impl<T> core::convert::From<T> for ftzz::generator::Error
+pub fn ftzz::generator::Error::from(t: T) -> T
+impl<T> thousands::traits::Separable for ftzz::generator::Error where T: core::fmt::Display
+pub fn ftzz::generator::Error::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
+impl<T> tracing::instrument::Instrument for ftzz::generator::Error
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::Error
 pub enum ftzz::generator::NumFilesWithRatioError
 pub ftzz::generator::NumFilesWithRatioError::InvalidRatio
 pub ftzz::generator::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: core::num::nonzero::NonZeroU64
 pub ftzz::generator::NumFilesWithRatioError::InvalidRatio::num_files: core::num::nonzero::NonZeroU64
+impl core::error::Error for ftzz::generator::NumFilesWithRatioError
 impl core::fmt::Display for ftzz::generator::NumFilesWithRatioError
 pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::error::Error for ftzz::generator::NumFilesWithRatioError
 impl core::fmt::Debug for ftzz::generator::NumFilesWithRatioError
 pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::NumFilesWithRatioError
 impl core::marker::Send for ftzz::generator::NumFilesWithRatioError
 impl core::marker::Sync for ftzz::generator::NumFilesWithRatioError
 impl core::marker::Unpin for ftzz::generator::NumFilesWithRatioError
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::NumFilesWithRatioError
 impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::NumFilesWithRatioError
-impl<T> core::any::Any for ftzz::generator::NumFilesWithRatioError where T: 'static + core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatioError::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::generator::NumFilesWithRatioError where T: core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatioError::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::generator::NumFilesWithRatioError where T: core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatioError::borrow_mut(&mut self) -> &mut T
 impl<C> error_stack::context::Context for ftzz::generator::NumFilesWithRatioError where C: core::error::Error + core::marker::Send + core::marker::Sync + 'static
 pub fn ftzz::generator::NumFilesWithRatioError::provide<'a>(&'a self, demand: &mut core::any::Demand<'a>)
-impl<T> core::convert::From<T> for ftzz::generator::NumFilesWithRatioError
-pub fn ftzz::generator::NumFilesWithRatioError::from(t: T) -> T
-impl<T> tracing::instrument::Instrument for ftzz::generator::NumFilesWithRatioError
-impl<T, U> core::convert::Into<U> for ftzz::generator::NumFilesWithRatioError where U: core::convert::From<T>
-pub fn ftzz::generator::NumFilesWithRatioError::into(self) -> U
-impl<D> owo_colors::OwoColorize for ftzz::generator::NumFilesWithRatioError
 impl<E> core::any::Provider for ftzz::generator::NumFilesWithRatioError where E: core::error::Error + core::marker::Sized
 pub fn ftzz::generator::NumFilesWithRatioError::provide<'a>(&'a self, demand: &mut core::any::Demand<'a>)
-impl<T> thousands::traits::Separable for ftzz::generator::NumFilesWithRatioError where T: core::fmt::Display
-pub fn ftzz::generator::NumFilesWithRatioError::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
-impl<T> alloc::string::ToString for ftzz::generator::NumFilesWithRatioError where T: core::fmt::Display + core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatioError::to_string(&self) -> alloc::string::String
+impl<T, U> core::convert::Into<U> for ftzz::generator::NumFilesWithRatioError where U: core::convert::From<T>
+pub fn ftzz::generator::NumFilesWithRatioError::into(self) -> U
 impl<T, U> core::convert::TryFrom<U> for ftzz::generator::NumFilesWithRatioError where U: core::convert::Into<T>
 pub type ftzz::generator::NumFilesWithRatioError::Error = core::convert::Infallible
 pub fn ftzz::generator::NumFilesWithRatioError::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
 impl<T, U> core::convert::TryInto<U> for ftzz::generator::NumFilesWithRatioError where U: core::convert::TryFrom<T>
 pub type ftzz::generator::NumFilesWithRatioError::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn ftzz::generator::NumFilesWithRatioError::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::string::ToString for ftzz::generator::NumFilesWithRatioError where T: core::fmt::Display + core::marker::Sized
+pub fn ftzz::generator::NumFilesWithRatioError::to_string(&self) -> alloc::string::String
+impl<T> core::any::Any for ftzz::generator::NumFilesWithRatioError where T: 'static + core::marker::Sized
+pub fn ftzz::generator::NumFilesWithRatioError::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for ftzz::generator::NumFilesWithRatioError where T: core::marker::Sized
+pub fn ftzz::generator::NumFilesWithRatioError::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for ftzz::generator::NumFilesWithRatioError where T: core::marker::Sized
+pub fn ftzz::generator::NumFilesWithRatioError::borrow_mut(&mut self) -> &mut T
+impl<T> core::convert::From<T> for ftzz::generator::NumFilesWithRatioError
+pub fn ftzz::generator::NumFilesWithRatioError::from(t: T) -> T
+impl<T> thousands::traits::Separable for ftzz::generator::NumFilesWithRatioError where T: core::fmt::Display
+pub fn ftzz::generator::NumFilesWithRatioError::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
+impl<T> tracing::instrument::Instrument for ftzz::generator::NumFilesWithRatioError
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::NumFilesWithRatioError
 pub struct ftzz::generator::Generator
 impl ftzz::generator::Generator
-impl ftzz::generator::Generator
 pub fn ftzz::generator::Generator::builder() -> ftzz::generator::GeneratorBuilder<((), (), (), (), (), (), (), ())>
+impl ftzz::generator::Generator
 pub fn ftzz::generator::Generator::generate(self, output: &mut impl core::fmt::Write) -> error_stack::result::Result<(), ftzz::generator::Error>
 impl core::fmt::Debug for ftzz::generator::Generator
 pub fn ftzz::generator::Generator::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::Generator
 impl core::marker::Send for ftzz::generator::Generator
 impl core::marker::Sync for ftzz::generator::Generator
 impl core::marker::Unpin for ftzz::generator::Generator
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::Generator
 impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::Generator
+impl<T, U> core::convert::Into<U> for ftzz::generator::Generator where U: core::convert::From<T>
+pub fn ftzz::generator::Generator::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for ftzz::generator::Generator where U: core::convert::Into<T>
+pub type ftzz::generator::Generator::Error = core::convert::Infallible
+pub fn ftzz::generator::Generator::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for ftzz::generator::Generator where U: core::convert::TryFrom<T>
+pub type ftzz::generator::Generator::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn ftzz::generator::Generator::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
 impl<T> core::any::Any for ftzz::generator::Generator where T: 'static + core::marker::Sized
 pub fn ftzz::generator::Generator::type_id(&self) -> core::any::TypeId
 impl<T> core::borrow::Borrow<T> for ftzz::generator::Generator where T: core::marker::Sized
@@ -104,15 +110,6 @@ pub fn ftzz::generator::Generator::borrow_mut(&mut self) -> &mut T
 impl<T> core::convert::From<T> for ftzz::generator::Generator
 pub fn ftzz::generator::Generator::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::generator::Generator
-impl<T, U> core::convert::Into<U> for ftzz::generator::Generator where U: core::convert::From<T>
-pub fn ftzz::generator::Generator::into(self) -> U
-impl<D> owo_colors::OwoColorize for ftzz::generator::Generator
-impl<T, U> core::convert::TryFrom<U> for ftzz::generator::Generator where U: core::convert::Into<T>
-pub type ftzz::generator::Generator::Error = core::convert::Infallible
-pub fn ftzz::generator::Generator::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for ftzz::generator::Generator where U: core::convert::TryFrom<T>
-pub type ftzz::generator::Generator::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn ftzz::generator::Generator::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::Generator
 pub struct ftzz::generator::GeneratorBuilder<TypedBuilderFields>
 impl<__max_depth, __bytes_exact, __fill_byte, __num_bytes, __files_exact, __num_files_with_ratio, __root_dir> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, ())>
@@ -135,11 +132,23 @@ impl<__seed: GeneratorBuilder_Optional<u64>, __max_depth: GeneratorBuilder_Optio
 pub fn ftzz::generator::GeneratorBuilder::build(self) -> ftzz::generator::Generator
 impl<TypedBuilderFields> core::clone::Clone for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::clone::Clone
 pub fn ftzz::generator::GeneratorBuilder::clone(&self) -> Self
-impl<TypedBuilderFields> core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::panic::unwind_safe::RefUnwindSafe
 impl<TypedBuilderFields> core::marker::Send for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Send
 impl<TypedBuilderFields> core::marker::Sync for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Sync
 impl<TypedBuilderFields> core::marker::Unpin for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Unpin
+impl<TypedBuilderFields> core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::panic::unwind_safe::RefUnwindSafe
 impl<TypedBuilderFields> core::panic::unwind_safe::UnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::panic::unwind_safe::UnwindSafe
+impl<T, U> core::convert::Into<U> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where U: core::convert::From<T>
+pub fn ftzz::generator::GeneratorBuilder::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where U: core::convert::Into<T>
+pub type ftzz::generator::GeneratorBuilder::Error = core::convert::Infallible
+pub fn ftzz::generator::GeneratorBuilder::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where U: core::convert::TryFrom<T>
+pub type ftzz::generator::GeneratorBuilder::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn ftzz::generator::GeneratorBuilder::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where T: core::clone::Clone
+pub type ftzz::generator::GeneratorBuilder::Owned = T
+pub fn ftzz::generator::GeneratorBuilder::clone_into(&self, target: &mut T)
+pub fn ftzz::generator::GeneratorBuilder::to_owned(&self) -> T
 impl<T> core::any::Any for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where T: 'static + core::marker::Sized
 pub fn ftzz::generator::GeneratorBuilder::type_id(&self) -> core::any::TypeId
 impl<T> core::borrow::Borrow<T> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where T: core::marker::Sized
@@ -149,19 +158,6 @@ pub fn ftzz::generator::GeneratorBuilder::borrow_mut(&mut self) -> &mut T
 impl<T> core::convert::From<T> for ftzz::generator::GeneratorBuilder<TypedBuilderFields>
 pub fn ftzz::generator::GeneratorBuilder::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::generator::GeneratorBuilder<TypedBuilderFields>
-impl<T, U> core::convert::Into<U> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where U: core::convert::From<T>
-pub fn ftzz::generator::GeneratorBuilder::into(self) -> U
-impl<D> owo_colors::OwoColorize for ftzz::generator::GeneratorBuilder<TypedBuilderFields>
-impl<T> alloc::borrow::ToOwned for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where T: core::clone::Clone
-pub type ftzz::generator::GeneratorBuilder::Owned = T
-pub fn ftzz::generator::GeneratorBuilder::clone_into(&self, target: &mut T)
-pub fn ftzz::generator::GeneratorBuilder::to_owned(&self) -> T
-impl<T, U> core::convert::TryFrom<U> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where U: core::convert::Into<T>
-pub type ftzz::generator::GeneratorBuilder::Error = core::convert::Infallible
-pub fn ftzz::generator::GeneratorBuilder::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where U: core::convert::TryFrom<T>
-pub type ftzz::generator::GeneratorBuilder::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn ftzz::generator::GeneratorBuilder::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::GeneratorBuilder<TypedBuilderFields>
 pub struct ftzz::generator::NumFilesWithRatio
 impl ftzz::generator::NumFilesWithRatio
@@ -169,11 +165,19 @@ pub fn ftzz::generator::NumFilesWithRatio::from_num_files(num_files: core::num::
 pub fn ftzz::generator::NumFilesWithRatio::new(num_files: core::num::nonzero::NonZeroU64, file_to_dir_ratio: core::num::nonzero::NonZeroU64) -> core::result::Result<Self, ftzz::generator::NumFilesWithRatioError>
 impl core::fmt::Debug for ftzz::generator::NumFilesWithRatio
 pub fn ftzz::generator::NumFilesWithRatio::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::NumFilesWithRatio
 impl core::marker::Send for ftzz::generator::NumFilesWithRatio
 impl core::marker::Sync for ftzz::generator::NumFilesWithRatio
 impl core::marker::Unpin for ftzz::generator::NumFilesWithRatio
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::NumFilesWithRatio
 impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::NumFilesWithRatio
+impl<T, U> core::convert::Into<U> for ftzz::generator::NumFilesWithRatio where U: core::convert::From<T>
+pub fn ftzz::generator::NumFilesWithRatio::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for ftzz::generator::NumFilesWithRatio where U: core::convert::Into<T>
+pub type ftzz::generator::NumFilesWithRatio::Error = core::convert::Infallible
+pub fn ftzz::generator::NumFilesWithRatio::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for ftzz::generator::NumFilesWithRatio where U: core::convert::TryFrom<T>
+pub type ftzz::generator::NumFilesWithRatio::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn ftzz::generator::NumFilesWithRatio::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
 impl<T> core::any::Any for ftzz::generator::NumFilesWithRatio where T: 'static + core::marker::Sized
 pub fn ftzz::generator::NumFilesWithRatio::type_id(&self) -> core::any::TypeId
 impl<T> core::borrow::Borrow<T> for ftzz::generator::NumFilesWithRatio where T: core::marker::Sized
@@ -183,13 +187,4 @@ pub fn ftzz::generator::NumFilesWithRatio::borrow_mut(&mut self) -> &mut T
 impl<T> core::convert::From<T> for ftzz::generator::NumFilesWithRatio
 pub fn ftzz::generator::NumFilesWithRatio::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::generator::NumFilesWithRatio
-impl<T, U> core::convert::Into<U> for ftzz::generator::NumFilesWithRatio where U: core::convert::From<T>
-pub fn ftzz::generator::NumFilesWithRatio::into(self) -> U
-impl<D> owo_colors::OwoColorize for ftzz::generator::NumFilesWithRatio
-impl<T, U> core::convert::TryFrom<U> for ftzz::generator::NumFilesWithRatio where U: core::convert::Into<T>
-pub type ftzz::generator::NumFilesWithRatio::Error = core::convert::Infallible
-pub fn ftzz::generator::NumFilesWithRatio::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for ftzz::generator::NumFilesWithRatio where U: core::convert::TryFrom<T>
-pub type ftzz::generator::NumFilesWithRatio::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn ftzz::generator::NumFilesWithRatio::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::NumFilesWithRatio

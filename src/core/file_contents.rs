@@ -174,6 +174,7 @@ fn write_bytes<'a, R: RngCore + 'static>(
 ) -> io::Result<()> {
     let copied = match kind.into() {
         BytesKind::Random(random) => {
+            // TODO use adapter when it's available
             io::copy(&mut (random as &mut dyn RngCore).take(num), &mut file)
         }
         BytesKind::Fixed(byte) => io::copy(&mut io::repeat(byte).take(num), &mut file),
