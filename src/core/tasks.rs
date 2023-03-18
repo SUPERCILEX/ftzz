@@ -19,9 +19,9 @@ use crate::{
 pub type QueueResult = Result<QueueOutcome, QueueErrors>;
 
 pub struct QueueOutcome {
-    #[cfg(not(dry_run))]
+    #[cfg(not(feature = "dry_run"))]
     pub task: JoinHandle<error_stack::Result<GeneratorTaskOutcome, io::Error>>,
-    #[cfg(dry_run)]
+    #[cfg(feature = "dry_run")]
     pub task: GeneratorTaskOutcome,
 
     pub num_dirs: usize,
@@ -63,9 +63,9 @@ fn queue(
             num_dirs,
             done,
 
-            #[cfg(not(dry_run))]
+            #[cfg(not(feature = "dry_run"))]
             task: task::spawn_blocking(move || create_files_and_dirs(params)),
-            #[cfg(dry_run)]
+            #[cfg(feature = "dry_run")]
             task: {
                 std::hint::black_box(&params);
                 GeneratorTaskOutcome {

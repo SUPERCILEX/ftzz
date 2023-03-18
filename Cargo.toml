@@ -49,6 +49,7 @@ trycmd = "0.14.15"
 
 [features]
 trace = ["tracing-chrome", "tracing-subscriber"]
+dry_run = []
 
 [[bench]]
 name = "generator"

@@ -40,9 +40,9 @@ impl AddAssign<&GeneratorTaskOutcome> for GeneratorStats {
 }
 
 struct Scheduler<'a> {
-    #[cfg(not(dry_run))]
+    #[cfg(not(feature = "dry_run"))]
     tasks: &'a mut VecDeque<JoinHandle<Result<GeneratorTaskOutcome, io::Error>>>,
-    #[cfg(dry_run)]
+    #[cfg(feature = "dry_run")]
     tasks: &'a mut VecDeque<GeneratorTaskOutcome>,
     stats: &'a mut GeneratorStats,
 
@@ -159,9 +159,9 @@ pub async fn run(
     schedule_last_task(generator, scheduler);
 
     for task in tasks {
-        #[cfg(not(dry_run))]
+        #[cfg(not(feature = "dry_run"))]
         handle_task_result(task.await, &mut stats)?;
-        #[cfg(dry_run)]
+        #[cfg(feature = "dry_run")]
         handle_task_result(task, &mut stats)?;
     }
 
@@ -183,9 +183,9 @@ async fn flush_tasks(scheduler: &mut Scheduler<'_>) -> Result<(), Error> {
 
     event!(Level::TRACE, "Flushing pending task queue");
     for task in tasks.drain(..tasks.len() / 2) {
-        #[cfg(not(dry_run))]
+        #[cfg(not(feature = "dry_run"))]
         let outcome = handle_task_result(task.await, stats)?;
-        #[cfg(dry_run)]
+        #[cfg(feature = "dry_run")]
         let outcome = handle_task_result(task, stats)?;
 
         path_pool.push(outcome.pool_return_file);
@@ -198,14 +198,14 @@ async fn flush_tasks(scheduler: &mut Scheduler<'_>) -> Result<(), Error> {
 }
 
 fn handle_task_result(
-    #[cfg(not(dry_run))] task_result: result::Result<
+    #[cfg(not(feature = "dry_run"))] task_result: result::Result<
         Result<GeneratorTaskOutcome, io::Error>,
         JoinError,
     >,
-    #[cfg(dry_run)] outcome: GeneratorTaskOutcome,
+    #[cfg(feature = "dry_run")] outcome: GeneratorTaskOutcome,
     stats: &mut GeneratorStats,
 ) -> Result<GeneratorTaskOutcome, Error> {
-    #[cfg(not(dry_run))]
+    #[cfg(not(feature = "dry_run"))]
     let outcome = task_result
         .into_report()
         .change_context(Error::TaskJoin)
