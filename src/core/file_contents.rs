@@ -1,10 +1,11 @@
 use std::{fs::File, io, io::Read};
 
 use cfg_if::cfg_if;
-use rand::{distributions::Distribution, RngCore};
+use rand::RngCore;
+use rand_distr::Normal;
 use tracing::instrument;
 
-use crate::utils::FastPathBuf;
+use crate::{core::sample_truncated, utils::FastPathBuf};
 
 pub trait FileContentsGenerator {
     fn create_file(
@@ -59,15 +60,13 @@ impl FileContentsGenerator for NoGeneratedFileContents {
     }
 }
 
-pub struct OnTheFlyGeneratedFileContents<D: Distribution<f64>, R: RngCore> {
-    pub num_bytes_distr: D,
+pub struct OnTheFlyGeneratedFileContents<R: RngCore> {
+    pub num_bytes_distr: Normal<f64>,
     pub random: R,
     pub fill_byte: Option<u8>,
 }
 
-impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
-    for OnTheFlyGeneratedFileContents<D, R>
-{
+impl<R: RngCore + 'static> FileContentsGenerator for OnTheFlyGeneratedFileContents<R> {
     #[inline]
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn create_file(
@@ -82,7 +81,7 @@ impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
             fill_byte,
         } = *self;
 
-        let num_bytes = num_bytes_distr.sample(random).round() as u64;
+        let num_bytes = sample_truncated(num_bytes_distr, random);
         if num_bytes > 0 || retryable {
             File::create(file).and_then(|f| {
                 // To stay deterministic, we need to ensure `random` is mutated in exactly
@@ -103,7 +102,7 @@ impl<D: Distribution<f64>, R: RngCore + 'static> FileContentsGenerator
                 //    - Notice that num_to_generate can be 0 which is a bummer b/c we can't use
                 //      mknod even though we'd like to.
                 let num_bytes = if retryable {
-                    num_bytes_distr.sample(random).round() as u64
+                    sample_truncated(num_bytes_distr, random)
                 } else {
                     num_bytes
                 };

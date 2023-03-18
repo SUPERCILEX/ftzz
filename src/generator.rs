@@ -16,14 +16,15 @@ use std::{
 
 use error_stack::{IntoReport, Report, Result, ResultExt};
 use rand::SeedableRng;
-use rand_distr::Normal;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use thiserror::Error;
 use thousands::Separable;
 use tracing::{event, Level};
 use typed_builder::TypedBuilder;
 
-use crate::core::{run, DynamicGenerator, GeneratorBytes, GeneratorStats, StaticGenerator};
+use crate::core::{
+    run, truncatable_normal, DynamicGenerator, GeneratorBytes, GeneratorStats, StaticGenerator,
+};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -156,7 +157,6 @@ struct Configuration {
     files_exact: bool,
     bytes_exact: bool,
     fill_byte: Option<u8>,
-    files_per_dir: f64,
     dirs_per_dir: f64,
     bytes_per_file: f64,
     max_depth: u32,
@@ -213,7 +213,6 @@ fn validated_options(
             files_exact,
             bytes_exact,
             fill_byte,
-            files_per_dir: num_files,
             dirs_per_dir: 0.,
             bytes_per_file,
             max_depth: 0,
@@ -226,8 +225,7 @@ fn validated_options(
         });
     }
 
-    let ratio = num_files_with_ratio.file_to_dir_ratio.get() as f64;
-    let num_dirs = num_files / ratio;
+    let num_dirs = num_files / (num_files_with_ratio.file_to_dir_ratio.get() as f64);
     // This formula was derived from the following equation:
     // num_dirs = unknown_num_dirs_per_dir^max_depth
     let dirs_per_dir = num_dirs.powf(1f64 / f64::from(max_depth));
@@ -239,7 +237,6 @@ fn validated_options(
         files_exact,
         bytes_exact,
         fill_byte,
-        files_per_dir: ratio,
         bytes_per_file,
         dirs_per_dir,
         max_depth,
@@ -260,7 +257,6 @@ fn print_configuration_info(
         files_exact,
         bytes_exact,
         fill_byte: _,
-        files_per_dir: _,
         dirs_per_dir: _,
         bytes_per_file: _,
         max_depth,
@@ -370,7 +366,6 @@ async fn run_generator_async(
         files_exact,
         bytes_exact,
         fill_byte,
-        files_per_dir,
         dirs_per_dir,
         bytes_per_file,
         max_depth,
@@ -383,6 +378,8 @@ async fn run_generator_async(
         ($generator:expr) => {{
             run(
                 root_dir,
+                files,
+                dirs_per_dir,
                 max_depth.try_into().unwrap_or(usize::MAX),
                 parallelism,
                 $generator,
@@ -393,18 +390,16 @@ async fn run_generator_async(
 
     let bytes = NonZeroU64::new(bytes);
     let dynamic = DynamicGenerator {
-        num_files_distr: Normal::new(files_per_dir, files_per_dir * 0.2).unwrap(),
-        num_dirs_distr: Normal::new(dirs_per_dir, dirs_per_dir * 0.2).unwrap(),
+        num_dirs_distr: truncatable_normal(dirs_per_dir),
         random: {
-            let seed = ((files.get().wrapping_add(max_depth.into()) as f64
-                * (files_per_dir + dirs_per_dir)) as u64)
+            let seed = ((files.get().wrapping_add(max_depth.into()) as f64 * dirs_per_dir) as u64)
                 .wrapping_add(seed);
             event!(Level::DEBUG, seed = ?seed, "Starting seed");
             Xoshiro256PlusPlus::seed_from_u64(seed)
         },
 
         bytes: bytes.map(|_| GeneratorBytes {
-            num_bytes_distr: Normal::new(bytes_per_file, bytes_per_file * 0.2).unwrap(),
+            num_bytes_distr: truncatable_normal(bytes_per_file),
             fill_byte,
         }),
     };

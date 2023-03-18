@@ -1,9 +1,15 @@
 use std::{
-    collections::VecDeque, io, num::NonZeroUsize, ops::AddAssign, path::PathBuf, process::ExitCode,
+    collections::VecDeque,
+    io,
+    num::{NonZeroU64, NonZeroUsize},
+    ops::AddAssign,
+    path::PathBuf,
+    process::ExitCode,
     result,
 };
 
 use error_stack::{IntoReport, Result, ResultExt};
+use rand_distr::Normal;
 use tokio::task::{JoinError, JoinHandle};
 use tracing::{event, span, Level, Span};
 
@@ -11,6 +17,7 @@ use crate::{
     core::{
         files::GeneratorTaskOutcome,
         tasks::{QueueErrors, QueueOutcome, TaskGenerator},
+        truncatable_normal,
     },
     generator::Error,
     utils::{with_dir_name, FastPathBuf},
@@ -62,17 +69,24 @@ struct Scheduler<'a> {
 /// `c` respectively.
 struct Directory {
     total_dirs: usize,
-    child_dir_counts: Vec<usize>,
+    child_dir_counts: Vec<DirChild>,
+}
+
+struct DirChild {
+    files: u64,
+    dirs: usize,
 }
 
 struct ObjectPool {
-    directories: Vec<Vec<usize>>,
+    directories: Vec<Vec<DirChild>>,
     paths: Vec<FastPathBuf>,
     byte_counts: Vec<Vec<u64>>,
 }
 
 pub async fn run(
     root_dir: PathBuf,
+    target_file_count: NonZeroU64,
+    dirs_per_dir: f64,
     max_depth: usize,
     parallelism: NonZeroUsize,
     mut generator: impl TaskGenerator + Send,
@@ -117,20 +131,29 @@ pub async fn run(
         "Entry allocations"
     );
 
-    schedule_root_dir(&mut generator, max_depth, &mut scheduler);
+    schedule_root_dir(
+        &mut generator,
+        target_file_count,
+        dirs_per_dir,
+        max_depth,
+        &mut scheduler,
+    );
 
     let gen_span = span!(Level::TRACE, "dir_gen");
-    while let Some(Directory {
-        total_dirs,
-        child_dir_counts,
-    }) = scheduler.stack.last_mut()
-    {
-        let Some(num_dirs_to_generate) = child_dir_counts.pop() else {
+    while let Some(dir) = scheduler.stack.last_mut() {
+        let Directory {
+            total_dirs,
+            ref mut child_dir_counts,
+        } = *dir;
+        let Some(DirChild {
+                     files: target_file_count,
+                     dirs: num_dirs_to_generate,
+                 }) = child_dir_counts.pop() else {
             handle_directory_completion(&mut scheduler);
             continue;
         };
 
-        let next_stack_dir = *total_dirs - child_dir_counts.len();
+        let next_stack_dir = total_dirs - child_dir_counts.len();
         let is_completing = child_dir_counts.is_empty();
 
         if scheduler.tasks.len() + num_dirs_to_generate >= scheduler.tasks.capacity() {
@@ -138,8 +161,10 @@ pub async fn run(
         }
 
         let Ok(directory) = schedule_task(
+            target_file_count,
             num_dirs_to_generate,
-            scheduler.stack.len() < max_depth,
+            dirs_per_dir,
+            max_depth,
             &mut generator,
             &mut scheduler,
             &gen_span,
@@ -218,6 +243,8 @@ fn handle_task_result(
 
 fn schedule_root_dir(
     generator: &mut impl TaskGenerator,
+    target_file_count: NonZeroU64,
+    dirs_per_dir: f64,
     max_depth: usize,
     scheduler: &mut Scheduler<'_>,
 ) {
@@ -234,9 +261,15 @@ fn schedule_root_dir(
             },
     } = *scheduler;
 
-    match generator.queue_gen(target_dir.clone(), max_depth > 0, byte_counts_pool) {
+    match generator.queue_gen(
+        &num_files_distr(target_file_count.get(), dirs_per_dir, max_depth),
+        target_dir.clone(),
+        max_depth > 0,
+        byte_counts_pool,
+    ) {
         Ok(QueueOutcome {
             task,
+            num_files,
             num_dirs,
             done: _,
         }) => {
@@ -244,7 +277,10 @@ fn schedule_root_dir(
             if num_dirs > 0 {
                 stack.push(Directory {
                     total_dirs: 1,
-                    child_dir_counts: vec![num_dirs],
+                    child_dir_counts: vec![DirChild {
+                        files: next_target_file_count(target_file_count.get(), num_dirs, num_files),
+                        dirs: num_dirs,
+                    }],
                 });
             }
         }
@@ -253,8 +289,10 @@ fn schedule_root_dir(
 }
 
 fn schedule_task(
+    target_file_count: u64,
     num_dirs_to_generate: usize,
-    gen_next_dirs: bool,
+    dirs_per_dir: f64,
+    max_depth: usize,
     generator: &mut impl TaskGenerator,
     scheduler: &mut Scheduler<'_>,
     gen_span: &Span,
@@ -262,7 +300,7 @@ fn schedule_task(
     let Scheduler {
         ref mut tasks,
         stats: _,
-        stack: _,
+        ref stack,
         ref target_dir,
         cache:
             ObjectPool {
@@ -271,6 +309,9 @@ fn schedule_task(
                 byte_counts: ref mut byte_counts_pool,
             },
     } = *scheduler;
+
+    let depth = stack.len();
+    let gen_next_dirs = depth < max_depth;
 
     let mut next_dirs = dir_pool.pop().unwrap_or_default();
     debug_assert!(next_dirs.is_empty());
@@ -284,6 +325,8 @@ fn schedule_task(
     // have finished creating its directories (and thus minimize lock
     // contention).
     let raw_next_dirs = next_dirs.spare_capacity_mut();
+
+    let num_files_distr = num_files_distr(target_file_count, dirs_per_dir, max_depth - depth);
 
     let span_guard = gen_span.enter();
     for i in 0..num_dirs_to_generate {
@@ -299,26 +342,31 @@ fn schedule_task(
             buf
         });
 
-        let num_dirs = match generator.queue_gen(path, gen_next_dirs, byte_counts_pool) {
-            Ok(QueueOutcome {
-                task,
-                num_dirs,
-                done,
-            }) => {
-                tasks.push_back(task);
-                if done {
-                    return Err(());
+        let child =
+            match generator.queue_gen(&num_files_distr, path, gen_next_dirs, byte_counts_pool) {
+                Ok(QueueOutcome {
+                    task,
+                    num_files,
+                    num_dirs,
+                    done,
+                }) => {
+                    tasks.push_back(task);
+                    if done {
+                        return Err(());
+                    }
+                    DirChild {
+                        files: next_target_file_count(target_file_count, num_dirs, num_files),
+                        dirs: num_dirs,
+                    }
                 }
-                num_dirs
-            }
-            Err(QueueErrors::NothingToDo(path)) => {
-                path_pool.push(path);
-                0
-            }
-        };
+                Err(QueueErrors::NothingToDo(path)) => {
+                    path_pool.push(path);
+                    DirChild { files: 0, dirs: 0 }
+                }
+            };
 
         if gen_next_dirs {
-            raw_next_dirs[num_dirs_to_generate - i - 1].write(num_dirs);
+            raw_next_dirs[num_dirs_to_generate - i - 1].write(child);
         }
     }
     drop(span_guard);
@@ -352,6 +400,7 @@ fn schedule_last_task(mut generator: impl TaskGenerator, mut scheduler: Schedule
 
     if let Ok(QueueOutcome {
         task,
+        num_files: _,
         num_dirs: _,
         done: _,
     }) = generator.maybe_queue_final_gen(target_dir, byte_counts_pool)
@@ -394,4 +443,28 @@ fn handle_directory_completion(scheduler: &mut Scheduler<'_>) {
             });
         }
     }
+}
+
+fn next_target_file_count(target_file_count: u64, dirs_created: usize, files_created: u64) -> u64 {
+    let files = target_file_count.saturating_sub(files_created);
+    files
+        .checked_div(u64::try_from(dirs_created).unwrap_or(u64::MAX))
+        .unwrap_or(files_created)
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn num_files_distr(
+    target_file_count: u64,
+    dirs_per_dir: f64,
+    remaining_depth: usize,
+) -> Normal<f64> {
+    fn files_per_dir(total_files: u64, dirs_per_dir: f64, remaining_depth: usize) -> f64 {
+        (total_files as f64) * dirs_per_dir.powf(-(remaining_depth as f64))
+    }
+
+    truncatable_normal(files_per_dir(
+        target_file_count,
+        dirs_per_dir,
+        remaining_depth,
+    ))
 }

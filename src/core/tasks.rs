@@ -2,7 +2,8 @@
 
 use std::{cmp::min, io, num::NonZeroU64};
 
-use rand::{distributions::Distribution, RngCore};
+use rand::RngCore;
+use rand_distr::Normal;
 use tokio::{task, task::JoinHandle};
 
 use crate::{
@@ -12,6 +13,7 @@ use crate::{
             PreDefinedGeneratedFileContents,
         },
         files::{create_files_and_dirs, GeneratorTaskOutcome, GeneratorTaskParams},
+        sample_truncated,
     },
     utils::FastPathBuf,
 };
@@ -24,6 +26,7 @@ pub struct QueueOutcome {
     #[cfg(feature = "dry_run")]
     pub task: GeneratorTaskOutcome,
 
+    pub num_files: u64,
     pub num_dirs: usize,
     pub done: bool,
 }
@@ -36,6 +39,7 @@ pub enum QueueErrors {
 pub trait TaskGenerator {
     fn queue_gen(
         &mut self,
+        num_files_distr: &Normal<f64>,
         file: FastPathBuf,
         gen_dirs: bool,
         byte_counts_pool: &mut Vec<Vec<u64>>,
@@ -60,6 +64,7 @@ fn queue(
 ) -> QueueResult {
     if num_files > 0 || num_dirs > 0 {
         Ok(QueueOutcome {
+            num_files,
             num_dirs,
             done,
 
@@ -83,45 +88,52 @@ fn queue(
     }
 }
 
-pub struct GeneratorBytes<DB> {
-    pub num_bytes_distr: DB,
+fn dirs_to_gen<R: RngCore + ?Sized>(
+    files_created: u64,
+    gen_dirs: bool,
+    num_dirs_distr: &Normal<f64>,
+    random: &mut R,
+) -> usize {
+    if gen_dirs {
+        let dirs = usize::try_from(sample_truncated(num_dirs_distr, random)).unwrap_or(usize::MAX);
+        if files_created > 0 && dirs == 0 {
+            1
+        } else {
+            dirs
+        }
+    } else {
+        0
+    }
+}
+
+pub struct GeneratorBytes {
+    pub num_bytes_distr: Normal<f64>,
     pub fill_byte: Option<u8>,
 }
 
-pub struct DynamicGenerator<DF, DD, DB, R> {
-    pub num_files_distr: DF,
-    pub num_dirs_distr: DD,
+pub struct DynamicGenerator<R> {
+    pub num_dirs_distr: Normal<f64>,
     pub random: R,
 
-    pub bytes: Option<GeneratorBytes<DB>>,
+    pub bytes: Option<GeneratorBytes>,
 }
 
-impl<
-    DF: Distribution<f64>,
-    DD: Distribution<f64>,
-    DB: Distribution<f64> + Clone + Send + 'static,
-    R: RngCore + Clone + Send + 'static,
-> TaskGenerator for DynamicGenerator<DF, DD, DB, R>
-{
+impl<R: RngCore + Clone + Send + 'static> TaskGenerator for DynamicGenerator<R> {
     fn queue_gen(
         &mut self,
+        num_files_distr: &Normal<f64>,
         file: FastPathBuf,
         gen_dirs: bool,
         _: &mut Vec<Vec<u64>>,
     ) -> QueueResult {
         let Self {
-            ref num_files_distr,
             ref num_dirs_distr,
             ref mut random,
             ref bytes,
         } = *self;
 
-        let num_files = num_files_distr.sample(random).round() as u64;
-        let num_dirs = if gen_dirs {
-            num_dirs_distr.sample(random).round() as usize
-        } else {
-            0
-        };
+        let num_files = sample_truncated(num_files_distr, random);
+        let num_dirs = dirs_to_gen(num_files, gen_dirs, num_dirs_distr, random);
 
         macro_rules! build_params {
             ($file_contents:expr) => {{
@@ -142,7 +154,7 @@ impl<
         {
             queue(
                 build_params!(OnTheFlyGeneratedFileContents {
-                    num_bytes_distr: num_bytes_distr.clone(),
+                    num_bytes_distr: *num_bytes_distr,
                     random: random.clone(),
                     fill_byte,
                 }),
@@ -154,8 +166,8 @@ impl<
     }
 }
 
-pub struct StaticGenerator<DF, DD, DB, R> {
-    dynamic: DynamicGenerator<DF, DD, DB, R>,
+pub struct StaticGenerator<R> {
+    dynamic: DynamicGenerator<R>,
 
     files_exact: Option<u64>,
     bytes_exact: Option<u64>,
@@ -164,15 +176,10 @@ pub struct StaticGenerator<DF, DD, DB, R> {
     root_num_files_hack: Option<u64>,
 }
 
-impl<
-    DF: Distribution<f64>,
-    DD: Distribution<f64>,
-    DB: Distribution<f64> + Clone + Send + 'static,
-    R: RngCore + Clone + Send + 'static,
-> TaskGenerator for StaticGenerator<DF, DD, DB, R>
-{
+impl<R: RngCore + Clone + Send + 'static> TaskGenerator for StaticGenerator<R> {
     fn queue_gen(
         &mut self,
+        num_files_distr: &Normal<f64>,
         file: FastPathBuf,
         gen_dirs: bool,
         byte_counts_pool: &mut Vec<Vec<u64>>,
@@ -180,7 +187,6 @@ impl<
         let Self {
             dynamic:
                 DynamicGenerator {
-                    ref num_files_distr,
                     ref num_dirs_distr,
                     ref mut random,
                     bytes: _,
@@ -193,7 +199,7 @@ impl<
 
         debug_assert!(!*done);
 
-        let mut num_files = num_files_distr.sample(random).round() as u64;
+        let mut num_files = sample_truncated(num_files_distr, random);
         if let Some(files) = files_exact {
             if num_files >= *files {
                 *done = true;
@@ -207,12 +213,11 @@ impl<
             *root_num_files_hack = Some(num_files);
         }
 
-        let num_dirs = if gen_dirs && !*done {
-            num_dirs_distr.sample(random).round() as usize
-        } else {
+        let num_dirs = if *done {
             0
+        } else {
+            dirs_to_gen(num_files, gen_dirs, num_dirs_distr, random)
         };
-
         self.queue_gen_internal(file, num_files, num_dirs, 0, byte_counts_pool)
     }
 
@@ -273,15 +278,9 @@ impl<
     }
 }
 
-impl<
-    DF: Distribution<f64>,
-    DD: Distribution<f64>,
-    DB: Distribution<f64> + Clone + Send + 'static,
-    R: RngCore + Clone + Send + 'static,
-> StaticGenerator<DF, DD, DB, R>
-{
+impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
     pub fn new(
-        dynamic: DynamicGenerator<DF, DD, DB, R>,
+        dynamic: DynamicGenerator<R>,
         files_exact: Option<NonZeroU64>,
         bytes_exact: Option<NonZeroU64>,
     ) -> Self {
@@ -318,7 +317,6 @@ impl<
         let Self {
             dynamic:
                 DynamicGenerator {
-                    num_files_distr: _,
                     num_dirs_distr: _,
                     ref mut random,
                     ref bytes,
@@ -342,7 +340,7 @@ impl<
                         .0;
 
                     for count in raw_byte_counts {
-                        let num_bytes = min(*bytes, num_bytes_distr.sample(random).round() as u64);
+                        let num_bytes = min(*bytes, sample_truncated(num_bytes_distr, random));
                         *bytes -= num_bytes;
 
                         count.write(num_bytes);
@@ -379,7 +377,7 @@ impl<
             } else {
                 queue(
                     build_params!(OnTheFlyGeneratedFileContents {
-                        num_bytes_distr: num_bytes_distr.clone(),
+                        num_bytes_distr: *num_bytes_distr,
                         random: random.clone(),
                         fill_byte,
                     }),
