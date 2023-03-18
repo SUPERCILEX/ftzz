@@ -206,7 +206,7 @@ fn advanced_create_files(
 #[case(1)]
 #[case(2)]
 #[case(10)]
-#[case(100)]
+#[case(50)]
 #[cfg_attr(miri, ignore)] // Miri is way too slow unfortunately
 fn max_depth_is_respected(#[case] max_depth: u32) {
     let dir = InspectableTempDir::new();

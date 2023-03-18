@@ -34,7 +34,7 @@ Negative num files:
 ```console
 $ ftzz generate -n -1 dir
 ? 2
-error: found argument '-1' which wasn't expected, or isn't valid in this context
+error: unexpected argument '-1' found
 
   note: to pass '-1' as a value, use '-- -1'
 
@@ -42,7 +42,7 @@ Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 $ ftzz generate -n "-1" dir
 ? 2
-error: found argument '-1' which wasn't expected, or isn't valid in this context
+error: unexpected argument '-1' found
 
   note: to pass '-1' as a value, use '-- -1'
 
@@ -55,7 +55,7 @@ Negative max depth:
 ```console
 $ ftzz generate -n 1 dir --depth -1
 ? 2
-error: found argument '-1' which wasn't expected, or isn't valid in this context
+error: unexpected argument '-1' found
 
   note: to pass '-1' as a value, use '-- -1'
 
@@ -63,7 +63,7 @@ Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 $ ftzz generate -n 1 dir --depth "-1"
 ? 2
-error: found argument '-1' which wasn't expected, or isn't valid in this context
+error: unexpected argument '-1' found
 
   note: to pass '-1' as a value, use '-- -1'
 
@@ -76,7 +76,7 @@ Negative ratio:
 ```console
 $ ftzz generate -n 1 dir --ftd-ratio -1
 ? 2
-error: found argument '-1' which wasn't expected, or isn't valid in this context
+error: unexpected argument '-1' found
 
   note: to pass '-1' as a value, use '-- -1'
 
@@ -84,7 +84,7 @@ Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 $ ftzz generate -n 1 dir --ftd-ratio "-1"
 ? 2
-error: found argument '-1' which wasn't expected, or isn't valid in this context
+error: unexpected argument '-1' found
 
   note: to pass '-1' as a value, use '-- -1'
 
@@ -97,7 +97,7 @@ Negative seed:
 ```console
 $ ftzz generate -n 1 dir --seed -1
 ? 2
-error: found argument '-1' which wasn't expected, or isn't valid in this context
+error: unexpected argument '-1' found
 
   note: to pass '-1' as a value, use '-- -1'
 
@@ -105,7 +105,7 @@ Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 $ ftzz generate -n 1 dir --seed "-1"
 ? 2
-error: found argument '-1' which wasn't expected, or isn't valid in this context
+error: unexpected argument '-1' found
 
   note: to pass '-1' as a value, use '-- -1'
 
