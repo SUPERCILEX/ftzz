@@ -23,9 +23,7 @@ impl FileNameCache {
         let mut num_buf = itoa::Buffer::new();
 
         let buf_ptr = buf.as_mut_ptr().cast::<u8>();
-        // TODO use for loop once possible
-        let mut i = 0;
-        while i < Self::max_cache_size() {
+        for i in 0..Self::max_cache_size() {
             let bytes = num_buf.format(i).as_bytes();
             unsafe {
                 ptr::copy_nonoverlapping(
@@ -34,7 +32,6 @@ impl FileNameCache {
                     bytes.len(),
                 );
             }
-            i += 1;
         }
 
         Self { cache: buf }
