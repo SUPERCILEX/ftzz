@@ -24,14 +24,14 @@ fn simple_generate(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::from_parameter(num_files),
             &num_files,
-            |b, num_files| {
+            |b, &num_files| {
                 b.iter_with_large_drop(|| {
                     let dir = tempdir().unwrap();
 
                     Generator::builder()
                         .root_dir(dir.path().to_path_buf())
                         .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                            NonZeroU64::new(*num_files).unwrap(),
+                            NonZeroU64::new(num_files).unwrap(),
                         ))
                         .max_depth(5)
                         .build()
@@ -55,14 +55,14 @@ fn huge_generate(c: &mut Criterion) {
     group.bench_with_input(
         BenchmarkId::from_parameter(num_files),
         &num_files,
-        |b, num_files| {
+        |b, &num_files| {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
                 Generator::builder()
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                        NonZeroU64::new(*num_files).unwrap(),
+                        NonZeroU64::new(num_files).unwrap(),
                     ))
                     .max_depth(5)
                     .build()
@@ -83,14 +83,14 @@ fn deep_generate(c: &mut Criterion) {
     group.bench_with_input(
         BenchmarkId::from_parameter(num_files),
         &num_files,
-        |b, num_files| {
+        |b, &num_files| {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
                 Generator::builder()
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                        NonZeroU64::new(*num_files).unwrap(),
+                        NonZeroU64::new(num_files).unwrap(),
                     ))
                     .max_depth(100)
                     .build()
@@ -111,14 +111,14 @@ fn shallow_generate(c: &mut Criterion) {
     group.bench_with_input(
         BenchmarkId::from_parameter(num_files),
         &num_files,
-        |b, num_files| {
+        |b, &num_files| {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
                 Generator::builder()
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(NumFilesWithRatio::from_num_files(
-                        NonZeroU64::new(*num_files).unwrap(),
+                        NonZeroU64::new(num_files).unwrap(),
                     ))
                     .max_depth(0)
                     .build()
@@ -139,7 +139,7 @@ fn sparse_generate(c: &mut Criterion) {
     group.bench_with_input(
         BenchmarkId::from_parameter(num_files),
         &num_files,
-        |b, num_files| {
+        |b, &num_files| {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
@@ -147,7 +147,7 @@ fn sparse_generate(c: &mut Criterion) {
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(
                         NumFilesWithRatio::new(
-                            NonZeroU64::new(*num_files).unwrap(),
+                            NonZeroU64::new(num_files).unwrap(),
                             NonZeroU64::new(1).unwrap(),
                         )
                         .unwrap(),
@@ -171,11 +171,11 @@ fn dense_generate(c: &mut Criterion) {
     group.bench_with_input(
         BenchmarkId::from_parameter(num_files),
         &num_files,
-        |b, num_files| {
+        |b, &num_files| {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
-                let num_files = *num_files;
+                let num_files = num_files;
                 Generator::builder()
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(
@@ -204,7 +204,7 @@ fn bytes_generate(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::from_parameter(num_bytes),
             &num_bytes,
-            |b, num_bytes| {
+            |b, &num_bytes| {
                 b.iter_with_large_drop(|| {
                     let dir = tempdir().unwrap();
 
@@ -214,7 +214,7 @@ fn bytes_generate(c: &mut Criterion) {
                             NonZeroU64::new(10000).unwrap(),
                         ))
                         .max_depth(5)
-                        .num_bytes(*num_bytes)
+                        .num_bytes(num_bytes)
                         .build()
                         .generate(&mut Sink)
                         .unwrap();

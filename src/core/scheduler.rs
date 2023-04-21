@@ -140,11 +140,11 @@ pub async fn run(
     );
 
     let gen_span = span!(Level::TRACE, "dir_gen");
-    while let Some(dir) = scheduler.stack.last_mut() {
-        let Directory {
-            total_dirs,
-            ref mut child_dir_counts,
-        } = *dir;
+    while let Some(&mut Directory {
+        total_dirs,
+        ref mut child_dir_counts,
+    }) = scheduler.stack.last_mut()
+    {
         let Some(DirChild {
                      files: target_file_count,
                      dirs: num_dirs_to_generate,
@@ -193,8 +193,8 @@ pub async fn run(
     Ok(stats)
 }
 
-async fn flush_tasks(scheduler: &mut Scheduler<'_>) -> Result<(), Error> {
-    let Scheduler {
+async fn flush_tasks(
+    &mut Scheduler {
         ref mut tasks,
         ref mut stats,
         cache:
@@ -204,8 +204,8 @@ async fn flush_tasks(scheduler: &mut Scheduler<'_>) -> Result<(), Error> {
                 byte_counts: ref mut byte_counts_pool,
             },
         ..
-    } = *scheduler;
-
+    }: &mut Scheduler<'_>,
+) -> Result<(), Error> {
     event!(Level::TRACE, "Flushing pending task queue");
     for task in tasks.drain(..tasks.len() / 2) {
         #[cfg(not(feature = "dry_run"))]
@@ -246,9 +246,7 @@ fn schedule_root_dir(
     target_file_count: NonZeroU64,
     dirs_per_dir: f64,
     max_depth: usize,
-    scheduler: &mut Scheduler<'_>,
-) {
-    let Scheduler {
+    &mut Scheduler {
         ref mut tasks,
         stats: _,
         ref mut stack,
@@ -259,8 +257,8 @@ fn schedule_root_dir(
                 paths: ref mut path_pool,
                 byte_counts: ref mut byte_counts_pool,
             },
-    } = *scheduler;
-
+    }: &mut Scheduler<'_>,
+) {
     match generator.queue_gen(
         &num_files_distr(target_file_count.get(), dirs_per_dir, max_depth),
         target_dir.clone(),
@@ -294,10 +292,7 @@ fn schedule_task(
     dirs_per_dir: f64,
     max_depth: usize,
     generator: &mut impl TaskGenerator,
-    scheduler: &mut Scheduler<'_>,
-    gen_span: &Span,
-) -> result::Result<Option<Directory>, ()> {
-    let Scheduler {
+    &mut Scheduler {
         ref mut tasks,
         stats: _,
         ref stack,
@@ -308,8 +303,9 @@ fn schedule_task(
                 paths: ref mut path_pool,
                 byte_counts: ref mut byte_counts_pool,
             },
-    } = *scheduler;
-
+    }: &mut Scheduler<'_>,
+    gen_span: &Span,
+) -> result::Result<Option<Directory>, ()> {
     let depth = stack.len();
     let gen_next_dirs = depth < max_depth;
 
@@ -409,8 +405,8 @@ fn schedule_last_task(mut generator: impl TaskGenerator, mut scheduler: Schedule
     }
 }
 
-fn handle_directory_completion(scheduler: &mut Scheduler<'_>) {
-    let Scheduler {
+fn handle_directory_completion(
+    &mut Scheduler {
         tasks: _,
         stats: _,
         ref mut stack,
@@ -420,8 +416,8 @@ fn handle_directory_completion(scheduler: &mut Scheduler<'_>) {
                 directories: ref mut directory_pool,
                 ..
             },
-    } = *scheduler;
-
+    }: &mut Scheduler<'_>,
+) {
     if let Some(Directory {
         total_dirs: _,
         child_dir_counts,
@@ -430,15 +426,15 @@ fn handle_directory_completion(scheduler: &mut Scheduler<'_>) {
         directory_pool.push(child_dir_counts);
     }
 
-    if let Some(Directory {
+    if let Some(&Directory {
         total_dirs,
-        child_dir_counts,
+        ref child_dir_counts,
     }) = stack.last()
     {
         target_dir.pop();
 
         if !child_dir_counts.is_empty() {
-            with_dir_name(*total_dirs - child_dir_counts.len(), |s| {
+            with_dir_name(total_dirs - child_dir_counts.len(), |s| {
                 target_dir.set_file_name(s);
             });
         }

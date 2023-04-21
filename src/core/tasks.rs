@@ -148,13 +148,13 @@ impl<R: RngCore + Clone + Send + 'static> TaskGenerator for DynamicGenerator<R> 
         }
 
         if let Some(GeneratorBytes {
-            ref num_bytes_distr,
+            num_bytes_distr,
             fill_byte,
         }) = *bytes
         {
             queue(
                 build_params!(OnTheFlyGeneratedFileContents {
-                    num_bytes_distr: *num_bytes_distr,
+                    num_bytes_distr,
                     random: random.clone(),
                     fill_byte,
                 }),
@@ -327,7 +327,7 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
             root_num_files_hack: _,
         } = *self;
 
-        if num_files > 0 && let Some(GeneratorBytes { ref num_bytes_distr, fill_byte }) = *bytes {
+        if num_files > 0 && let Some(GeneratorBytes { num_bytes_distr, fill_byte }) = *bytes {
             if let Some(bytes) = bytes_exact {
                 if *bytes > 0 {
                     let mut byte_counts: Vec<u64> = byte_counts_pool.pop().unwrap_or_default();
@@ -340,7 +340,7 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
                         .0;
 
                     for count in raw_byte_counts {
-                        let num_bytes = min(*bytes, sample_truncated(num_bytes_distr, random));
+                        let num_bytes = min(*bytes, sample_truncated(&num_bytes_distr, random));
                         *bytes -= num_bytes;
 
                         count.write(num_bytes);
@@ -377,7 +377,7 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
             } else {
                 queue(
                     build_params!(OnTheFlyGeneratedFileContents {
-                        num_bytes_distr: *num_bytes_distr,
+                        num_bytes_distr,
                         random: random.clone(),
                         fill_byte,
                     }),

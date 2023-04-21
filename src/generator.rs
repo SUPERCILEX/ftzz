@@ -250,7 +250,7 @@ fn validated_options(
 }
 
 fn print_configuration_info(
-    Configuration {
+    &Configuration {
         root_dir: _,
         files,
         bytes,
@@ -279,33 +279,33 @@ fn print_configuration_info(
         total_dirs.separate_with_commas(),
         max_depth.separate_with_commas(),
         dirs_per_dir.separate_with_commas(),
-        file_count_type = if *files_exact { "Exactly" } else { "About" },
+        file_count_type = if files_exact { "Exactly" } else { "About" },
         files_maybe_plural = if files.get() == 1 { "file" } else { "files" },
-        directories_maybe_plural = if *total_dirs == 1 {
+        directories_maybe_plural = if total_dirs == 1 {
             "directory"
         } else {
             "directories"
         },
-        dpd_directories_maybe_plural = if *dirs_per_dir == 1 {
+        dpd_directories_maybe_plural = if dirs_per_dir == 1 {
             "directory"
         } else {
             "directories"
         },
-        bytes_info = if *bytes > 0 {
+        bytes_info = if bytes > 0 {
             format!(
                 " Each file will contain approximately {} {bytes_maybe_plural} of random \
                  data{exact_bytes_total}.",
                 bytes_per_files.separate_with_commas(),
-                bytes_maybe_plural = if *bytes_per_files == 1 {
+                bytes_maybe_plural = if bytes_per_files == 1 {
                     "byte"
                 } else {
                     "bytes"
                 },
-                exact_bytes_total = if *bytes_exact {
+                exact_bytes_total = if bytes_exact {
                     format!(
                         " totaling exactly {} {bytes_maybe_plural}",
                         bytes,
-                        bytes_maybe_plural = if *bytes == 1 { "byte" } else { "bytes" }
+                        bytes_maybe_plural = if bytes == 1 { "byte" } else { "bytes" }
                     )
                 } else {
                     String::new()
