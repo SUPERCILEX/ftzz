@@ -15,11 +15,11 @@ use std::{
 };
 
 use error_stack::{IntoReport, Report, Result, ResultExt};
+use log::{log, Level};
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use thiserror::Error;
 use thousands::Separable;
-use tracing::{event, Level};
 use typed_builder::TypedBuilder;
 
 use crate::core::{
@@ -336,7 +336,7 @@ fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &m
             "directories"
         },
         bytes_info = if bytes > 0 {
-            event!(Level::INFO, bytes, "Exact bytes written");
+            log!(Level::Info, "{bytes} bytes written");
             format!(" ({})", bytesize::to_string(bytes, false))
         } else {
             String::new()
@@ -354,7 +354,7 @@ fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
         .change_context(Error::RuntimeCreation)
         .attach(ExitCode::from(sysexits::ExitCode::OsErr))?;
 
-    event!(Level::INFO, config = ?config, "Starting config");
+    log!(Level::Info, "Starting config: {config:?}");
     runtime.block_on(run_generator_async(config, parallelism))
 }
 
@@ -394,7 +394,7 @@ async fn run_generator_async(
         random: {
             let seed = ((files.get().wrapping_add(max_depth.into()) as f64 * dirs_per_dir) as u64)
                 .wrapping_add(seed);
-            event!(Level::DEBUG, seed = ?seed, "Starting seed");
+            log!(Level::Debug, "Starting seed: {seed}");
             Xoshiro256PlusPlus::seed_from_u64(seed)
         },
 

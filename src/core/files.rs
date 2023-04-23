@@ -1,7 +1,6 @@
 use std::{fs::create_dir_all, io, io::ErrorKind::NotFound};
 
 use error_stack::{IntoReport, Report, Result, ResultExt};
-use tracing::{event, instrument, Level};
 
 use crate::{
     core::file_contents::FileContentsGenerator,
@@ -25,7 +24,10 @@ pub struct GeneratorTaskOutcome {
     pub pool_return_byte_counts: Option<Vec<u64>>,
 }
 
-#[instrument(level = "trace", skip(file_contents))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(file_contents))
+)]
 pub fn create_files_and_dirs(
     GeneratorTaskParams {
         mut target_dir,
@@ -48,7 +50,7 @@ pub fn create_files_and_dirs(
     })
 }
 
-#[instrument(level = "trace")]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
 fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> Result<(), io::Error> {
     for i in 0..num_dirs {
         with_dir_name(i, |s| dir.push(s));
@@ -62,7 +64,10 @@ fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> Result<(), io::Error> 
     Ok(())
 }
 
-#[instrument(level = "trace", skip(contents))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(contents))
+)]
 fn create_files(
     num_files: u64,
     offset: u64,
@@ -83,7 +88,8 @@ fn create_files(
             }
             Err(e) => {
                 if e.kind() == NotFound {
-                    event!(Level::TRACE, file = ?file, "Parent directory not created in time");
+                    #[cfg(feature = "tracing")]
+                    tracing::event!(tracing::Level::TRACE, file = ?file, "Parent directory not created in time");
 
                     file.pop();
                     create_dir_all(&file)

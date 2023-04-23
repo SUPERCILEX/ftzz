@@ -11,7 +11,6 @@ use std::{
 use error_stack::{IntoReport, Result, ResultExt};
 use rand_distr::Normal;
 use tokio::task::{JoinError, JoinHandle};
-use tracing::{event, span, Level, Span};
 
 use crate::{
     core::{
@@ -122,8 +121,9 @@ pub async fn run(
         stats: &mut stats,
     };
 
-    event!(
-        Level::DEBUG,
+    #[cfg(feature = "tracing")]
+    tracing::event!(
+        tracing::Level::DEBUG,
         task_queue = scheduler.tasks.capacity(),
         object_pool.dirs = scheduler.cache.directories.capacity(),
         object_pool.paths = scheduler.cache.paths.capacity(),
@@ -139,7 +139,8 @@ pub async fn run(
         &mut scheduler,
     );
 
-    let gen_span = span!(Level::TRACE, "dir_gen");
+    #[cfg(feature = "tracing")]
+    let gen_span = tracing::span!(tracing::Level::TRACE, "dir_gen");
     while let Some(&mut Directory {
         total_dirs,
         ref mut child_dir_counts,
@@ -167,6 +168,7 @@ pub async fn run(
             max_depth,
             &mut generator,
             &mut scheduler,
+            #[cfg(feature = "tracing")]
             &gen_span,
         ) else {
             break;
@@ -179,6 +181,7 @@ pub async fn run(
             with_dir_name(next_stack_dir, |s| scheduler.target_dir.set_file_name(s));
         }
     }
+    #[cfg(feature = "tracing")]
     drop(gen_span);
 
     schedule_last_task(generator, scheduler);
@@ -206,7 +209,8 @@ async fn flush_tasks(
         ..
     }: &mut Scheduler<'_>,
 ) -> Result<(), Error> {
-    event!(Level::TRACE, "Flushing pending task queue");
+    #[cfg(feature = "tracing")]
+    tracing::event!(tracing::Level::TRACE, "Flushing pending task queue");
     for task in tasks.drain(..tasks.len() / 2) {
         #[cfg(not(feature = "dry_run"))]
         let outcome = handle_task_result(task.await, stats)?;
@@ -304,7 +308,7 @@ fn schedule_task(
                 byte_counts: ref mut byte_counts_pool,
             },
     }: &mut Scheduler<'_>,
-    gen_span: &Span,
+    #[cfg(feature = "tracing")] gen_span: &tracing::Span,
 ) -> result::Result<Option<Directory>, ()> {
     let depth = stack.len();
     let gen_next_dirs = depth < max_depth;
@@ -324,6 +328,7 @@ fn schedule_task(
 
     let num_files_distr = num_files_distr(target_file_count, dirs_per_dir, max_depth - depth);
 
+    #[cfg(feature = "tracing")]
     let span_guard = gen_span.enter();
     for i in 0..num_dirs_to_generate {
         let path = with_dir_name(i, |s| {
@@ -365,6 +370,7 @@ fn schedule_task(
             raw_next_dirs[num_dirs_to_generate - i - 1].write(child);
         }
     }
+    #[cfg(feature = "tracing")]
     drop(span_guard);
 
     if gen_next_dirs {

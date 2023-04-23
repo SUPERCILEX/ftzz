@@ -3,7 +3,6 @@ use std::{fs::File, io, io::Read};
 use cfg_if::cfg_if;
 use rand::RngCore;
 use rand_distr::Normal;
-use tracing::instrument;
 
 use crate::{core::sample_truncated, utils::FastPathBuf};
 
@@ -165,7 +164,10 @@ impl<'a, R> From<(Option<u8>, &'a mut R)> for BytesKind<'a, R> {
     }
 }
 
-#[instrument(level = "trace", skip(file, kind))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(file, kind))
+)]
 fn write_bytes<'a, R: RngCore + 'static>(
     mut file: File,
     num: u64,
