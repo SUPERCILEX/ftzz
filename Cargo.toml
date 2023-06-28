@@ -1,6 +1,6 @@
 [package]
 name = "ftzz"
-version = "2.0.0"
+version = "2.0.1"
 authors = ["Alex Saveau <saveau.alexandre@gmail.com>"]
 edition = "2021"
 description = "File Tree Fuzzer creates a pseudo-random directory hierarchy filled with some number of files."
