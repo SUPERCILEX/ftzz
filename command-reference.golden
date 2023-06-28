@@ -3,10 +3,8 @@ A random file and directory generator
 Usage: ftzz [OPTIONS] <COMMAND>
 
 Commands:
-  generate
-          Generate a random directory hierarchy with some number of files
-  help
-          Print this message or the help of the given subcommand(s)
+  generate  Generate a random directory hierarchy with some number of files
+  help      Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help
@@ -107,10 +105,8 @@ Print this message or the help of the given subcommand(s)
 Usage: ftzz help [COMMAND]
 
 Commands:
-  generate
-          Generate a random directory hierarchy with some number of files
-  help
-          Print this message or the help of the given subcommand(s)
+  generate  Generate a random directory hierarchy with some number of files
+  help      Print this message or the help of the given subcommand(s)
 
 ---
 

@@ -10,9 +10,6 @@ use std::{
 };
 
 use clap::{builder::ArgPredicate, ArgAction, Args, Parser, Subcommand, ValueHint};
-use clap2 as clap;
-use clap2_num as clap_num;
-use clap2_verbosity_flag as clap_verbosity_flag;
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use error_stack::{IntoReport, ResultExt};
@@ -24,6 +21,7 @@ use paste::paste;
 #[command(version, author = "Alex Saveau (@SUPERCILEX)")]
 #[command(infer_subcommands = true, infer_long_args = true)]
 #[command(disable_help_flag = true)]
+#[command(max_term_width = 100)]
 #[cfg_attr(test, command(help_expected = true))]
 struct Ftzz {
     #[command(subcommand)]

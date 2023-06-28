@@ -30,7 +30,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
 
                 let cstr = file.to_cstr_mut();
                 mknodat(
-                    rustix::fs::cwd(),
+                    rustix::fs::CWD,
                     &*cstr,
                     FileType::RegularFile,
                     Mode::RUSR | Mode::WUSR | Mode::RGRP | Mode::WGRP | Mode::ROTH,
@@ -43,7 +43,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
 
                 let cstr = file.to_cstr_mut();
                 openat(
-                    rustix::fs::cwd(),
+                    rustix::fs::CWD,
                     &*cstr,
                     OFlags::CREATE,
                     Mode::RUSR | Mode::WUSR | Mode::RGRP | Mode::WGRP | Mode::ROTH,

@@ -36,7 +36,7 @@ $ ftzz generate -n -1 dir
 ? 2
 error: unexpected argument '-1' found
 
-  note: to pass '-1' as a value, use '-- -1'
+  tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
@@ -44,7 +44,7 @@ $ ftzz generate -n "-1" dir
 ? 2
 error: unexpected argument '-1' found
 
-  note: to pass '-1' as a value, use '-- -1'
+  tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
@@ -57,7 +57,7 @@ $ ftzz generate -n 1 dir --depth -1
 ? 2
 error: unexpected argument '-1' found
 
-  note: to pass '-1' as a value, use '-- -1'
+  tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
@@ -65,7 +65,7 @@ $ ftzz generate -n 1 dir --depth "-1"
 ? 2
 error: unexpected argument '-1' found
 
-  note: to pass '-1' as a value, use '-- -1'
+  tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
@@ -78,7 +78,7 @@ $ ftzz generate -n 1 dir --ftd-ratio -1
 ? 2
 error: unexpected argument '-1' found
 
-  note: to pass '-1' as a value, use '-- -1'
+  tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
@@ -86,7 +86,7 @@ $ ftzz generate -n 1 dir --ftd-ratio "-1"
 ? 2
 error: unexpected argument '-1' found
 
-  note: to pass '-1' as a value, use '-- -1'
+  tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
@@ -99,7 +99,7 @@ $ ftzz generate -n 1 dir --seed -1
 ? 2
 error: unexpected argument '-1' found
 
-  note: to pass '-1' as a value, use '-- -1'
+  tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
@@ -107,7 +107,7 @@ $ ftzz generate -n 1 dir --seed "-1"
 ? 2
 error: unexpected argument '-1' found
 
-  note: to pass '-1' as a value, use '-- -1'
+  tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
