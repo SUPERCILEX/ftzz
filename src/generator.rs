@@ -14,7 +14,7 @@ use std::{
     thread,
 };
 
-use error_stack::{IntoReport, Report, Result, ResultExt};
+use error_stack::{Report, Result, ResultExt};
 use log::{log, Level};
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -184,13 +184,11 @@ fn validated_options(
     }: Generator,
 ) -> Result<Configuration, Error> {
     create_dir_all(&root_dir)
-        .into_report()
         .attach_printable_lazy(|| format!("Failed to create directory {root_dir:?}"))
         .change_context(Error::InvalidEnvironment)
         .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
     if root_dir
         .read_dir()
-        .into_report()
         .attach_printable_lazy(|| format!("Failed to read directory {root_dir:?}"))
         .change_context(Error::InvalidEnvironment)
         .attach(ExitCode::from(sysexits::ExitCode::IoErr))?
@@ -315,7 +313,6 @@ fn print_configuration_info(
             String::new()
         },
     )
-    .into_report()
     .attach_printable("Failed to write to output stream")
     .change_context(Error::Io)
     .attach(ExitCode::from(sysexits::ExitCode::IoErr))
@@ -350,7 +347,6 @@ fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .max_blocking_threads(parallelism.get())
         .build()
-        .into_report()
         .change_context(Error::RuntimeCreation)
         .attach(ExitCode::from(sysexits::ExitCode::OsErr))?;
 

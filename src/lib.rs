@@ -1,5 +1,3 @@
-#![feature(const_trait_impl)]
-#![feature(const_mut_refs)]
 #![feature(let_chains)]
 #![feature(const_option)]
 #![feature(inline_const)]

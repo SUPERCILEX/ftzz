@@ -1,6 +1,6 @@
 use std::{fs::create_dir_all, io, io::ErrorKind::NotFound};
 
-use error_stack::{IntoReport, Report, Result, ResultExt};
+use error_stack::{Report, Result, ResultExt};
 
 use crate::{
     core::file_contents::FileContentsGenerator,
@@ -56,7 +56,6 @@ fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> Result<(), io::Error> 
         with_dir_name(i, |s| dir.push(s));
 
         create_dir_all(&dir)
-            .into_report()
             .attach_printable_lazy(|| format!("Failed to create directory {dir:?}"))?;
 
         dir.pop();
@@ -93,7 +92,6 @@ fn create_files(
 
                     file.pop();
                     create_dir_all(&file)
-                        .into_report()
                         .attach_printable_lazy(|| format!("Failed to create directory {file:?}"))?;
                 } else {
                     return Err(Report::new(e))
@@ -107,7 +105,6 @@ fn create_files(
 
         bytes_written += contents
             .create_file(file, i.try_into().unwrap_or(usize::MAX), false)
-            .into_report()
             .attach_printable_lazy(|| format!("Failed to create file {file:?}"))?;
 
         file.pop();

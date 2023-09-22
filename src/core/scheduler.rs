@@ -8,7 +8,7 @@ use std::{
     result,
 };
 
-use error_stack::{IntoReport, Result, ResultExt};
+use error_stack::{Result, ResultExt};
 use rand_distr::Normal;
 use tokio::task::{JoinError, JoinHandle};
 
@@ -147,9 +147,10 @@ pub async fn run(
     }) = scheduler.stack.last_mut()
     {
         let Some(DirChild {
-                     files: target_file_count,
-                     dirs: num_dirs_to_generate,
-                 }) = child_dir_counts.pop() else {
+            files: target_file_count,
+            dirs: num_dirs_to_generate,
+        }) = child_dir_counts.pop()
+        else {
             handle_directory_completion(&mut scheduler);
             continue;
         };
@@ -236,7 +237,6 @@ fn handle_task_result(
 ) -> Result<GeneratorTaskOutcome, Error> {
     #[cfg(not(feature = "dry_run"))]
     let outcome = task_result
-        .into_report()
         .change_context(Error::TaskJoin)
         .attach(ExitCode::from(sysexits::ExitCode::Software))?
         .change_context(Error::Io)

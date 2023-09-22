@@ -175,7 +175,6 @@ fn dense_generate(c: &mut Criterion) {
             b.iter_with_large_drop(|| {
                 let dir = tempdir().unwrap();
 
-                let num_files = num_files;
                 Generator::builder()
                     .root_dir(dir.path().to_path_buf())
                     .num_files_with_ratio(

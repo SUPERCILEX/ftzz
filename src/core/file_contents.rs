@@ -37,7 +37,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
                     0,
                 )
                 .map_err(io::Error::from)
-                .map(|_| 0)
+                .map(|()| 0)
             } else {
                 use rustix::fs::{openat, OFlags, Mode};
 
@@ -142,7 +142,7 @@ impl<R: RngCore + 'static> FileContentsGenerator for PreDefinedGeneratedFileCont
         if num_bytes > 0 {
             File::create(file)
                 .and_then(|f| write_bytes(f, num_bytes, (fill_byte, random)))
-                .map(|_| num_bytes)
+                .map(|()| num_bytes)
         } else {
             NoGeneratedFileContents.create_file(file, file_num, retryable)
         }

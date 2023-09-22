@@ -1,9 +1,7 @@
 use std::{mem::MaybeUninit, ptr, slice};
 
-use itoa_const as itoa;
-
 struct FileNameCache {
-    cache: [MaybeUninit<u8>; 3000],
+    cache: &'static [u8],
 }
 
 /// Specialized cache for file names that takes advantage of our monotonically
@@ -19,28 +17,12 @@ struct FileNameCache {
 /// with the binary.
 impl FileNameCache {
     const fn new() -> Self {
-        let mut buf = [MaybeUninit::<u8>::uninit(); 3000];
-        let mut num_buf = itoa::Buffer::new();
-
-        let buf_ptr = buf.as_mut_ptr().cast::<u8>();
-        // TODO use for loop once possible
-        let mut i = 0;
-        while i < Self::max_cache_size() {
-            let bytes = num_buf.format(i).as_bytes();
-            unsafe {
-                ptr::copy_nonoverlapping(
-                    bytes.as_ptr(),
-                    buf_ptr.add((i * 3) as usize),
-                    bytes.len(),
-                );
-            }
-            i += 1;
+        Self {
+            cache: include_bytes!(concat!(env!("OUT_DIR"), "/file_name_cache.bin")),
         }
-
-        Self { cache: buf }
     }
 
-    const fn with_file_name<T, F: ~const FnOnce(&str) -> T>(&self, i: u16, f: F) -> T {
+    fn with_file_name<T, F: FnOnce(&str) -> T>(&self, i: u16, f: F) -> T {
         debug_assert!(i < Self::max_cache_size());
         f(unsafe {
             std::str::from_utf8_unchecked(slice::from_raw_parts(

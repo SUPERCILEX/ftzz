@@ -12,7 +12,7 @@ use std::{
 use clap::{builder::ArgPredicate, ArgAction, Args, Parser, Subcommand, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
-use error_stack::{IntoReport, ResultExt};
+use error_stack::ResultExt;
 use ftzz::generator::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
 use paste::paste;
 
@@ -243,7 +243,6 @@ fn ftzz(
     let mut stdout = stdout();
     match cmd {
         Cmd::Generate(options) => Generator::try_from(options)
-            .into_report()
             .change_context(CliError::InvalidArgs)?
             .generate(&mut fmt_adapter::FmtWriteAdapter::from(&mut stdout))
             .change_context(CliError::Generator),
