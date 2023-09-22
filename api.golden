@@ -39,8 +39,6 @@ impl<T> thousands::traits::Separable for ftzz::generator::Error where T: core::f
 pub fn ftzz::generator::Error::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
 impl<T> tracing::instrument::Instrument for ftzz::generator::Error
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::Error
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::Error where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::Error::vzip(self) -> V
 pub enum ftzz::generator::NumFilesWithRatioError
 pub ftzz::generator::NumFilesWithRatioError::InvalidRatio
 pub ftzz::generator::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: core::num::nonzero::NonZeroU64
@@ -79,8 +77,6 @@ impl<T> thousands::traits::Separable for ftzz::generator::NumFilesWithRatioError
 pub fn ftzz::generator::NumFilesWithRatioError::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
 impl<T> tracing::instrument::Instrument for ftzz::generator::NumFilesWithRatioError
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::NumFilesWithRatioError
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::NumFilesWithRatioError where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::NumFilesWithRatioError::vzip(self) -> V
 pub struct ftzz::generator::Generator
 impl ftzz::generator::Generator
 pub fn ftzz::generator::Generator::generate(self, output: &mut impl core::fmt::Write) -> error_stack::result::Result<(), ftzz::generator::Error>
@@ -111,8 +107,6 @@ impl<T> core::convert::From<T> for ftzz::generator::Generator
 pub fn ftzz::generator::Generator::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::generator::Generator
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::Generator
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::Generator where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::Generator::vzip(self) -> V
 pub struct ftzz::generator::GeneratorBuilder<TypedBuilderFields>
 impl<TypedBuilderFields> core::clone::Clone for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::clone::Clone
 pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::clone(&self) -> Self
@@ -161,8 +155,6 @@ impl<T> core::convert::From<T> for ftzz::generator::GeneratorBuilder<TypedBuilde
 pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::generator::GeneratorBuilder<TypedBuilderFields>
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::GeneratorBuilder<TypedBuilderFields>
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::vzip(self) -> V
 pub struct ftzz::generator::NumFilesWithRatio
 impl ftzz::generator::NumFilesWithRatio
 pub fn ftzz::generator::NumFilesWithRatio::from_num_files(num_files: core::num::nonzero::NonZeroU64) -> Self
@@ -192,5 +184,3 @@ impl<T> core::convert::From<T> for ftzz::generator::NumFilesWithRatio
 pub fn ftzz::generator::NumFilesWithRatio::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::generator::NumFilesWithRatio
 impl<T> tracing::instrument::WithSubscriber for ftzz::generator::NumFilesWithRatio
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::NumFilesWithRatio where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::NumFilesWithRatio::vzip(self) -> V
