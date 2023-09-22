@@ -461,7 +461,7 @@ dependencies = [
 
 [[package]]
 name = "ftzz"
-version = "2.0.1"
+version = "2.0.2"
 dependencies = [
  "bytesize",
  "cfg-if",
