@@ -204,6 +204,10 @@ pub enum CliError {
 }
 
 fn main() -> ExitCode {
+    #[cfg(not(debug_assertions))]
+    error_stack::Report::install_debug_hook::<std::panic::Location>(|_, _| {});
+    error_stack::Report::install_debug_hook::<ExitCode>(|_, _| {});
+
     let args = Ftzz::parse();
 
     #[cfg(not(feature = "trace"))]
