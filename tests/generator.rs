@@ -5,7 +5,7 @@ use std::{
     collections::VecDeque,
     fmt::Write,
     fs::{create_dir, DirEntry, File},
-    hash::Hasher,
+    hash::{DefaultHasher, Hasher},
     io,
     io::{stdout, BufReader, Read},
     num::NonZeroU64,
@@ -17,7 +17,6 @@ use ftzz::generator::{Generator, NumFilesWithRatio};
 use more_asserts::assert_le;
 use rand::Rng;
 use rstest::rstest;
-use seahash::SeaHasher;
 
 use crate::inspect::InspectableTempDir;
 
@@ -328,9 +327,31 @@ fn fuzz_test() {
 
 /// Recursively hashes the file and directory names in dir
 fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
+    // TODO https://github.com/rust-lang/libs-team/issues/309
+    struct HashWriteAdapter<'a, H> {
+        hasher: &'a mut H,
+    }
+
+    impl<'a, H> HashWriteAdapter<'a, H> {
+        pub fn new(hasher: &'a mut H) -> Self {
+            Self { hasher }
+        }
+    }
+
+    impl<'a, H: Hasher> io::Write for HashWriteAdapter<'a, H> {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            self.hasher.write(buf);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
     writeln!(output).unwrap();
 
-    let mut hasher = SeaHasher::new();
+    let mut hasher = DefaultHasher::new();
 
     let mut entries = Vec::new();
     let mut queue = VecDeque::from([dir.to_path_buf()]);
@@ -344,7 +365,11 @@ fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
             if entry.file_type().unwrap().is_dir() {
                 queue.push_back(entry.path());
             } else if entry.metadata().unwrap().len() > 0 {
-                io::copy(&mut File::open(entry.path()).unwrap(), &mut hasher).unwrap();
+                io::copy(
+                    &mut File::open(entry.path()).unwrap(),
+                    &mut HashWriteAdapter::new(&mut hasher),
+                )
+                .unwrap();
             }
 
             hasher.write(entry.file_name().to_str().unwrap().as_bytes());

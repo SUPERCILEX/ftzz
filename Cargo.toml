@@ -41,7 +41,6 @@ expect-test = "1.4.1"
 more-asserts = "0.3.1"
 rand = "0.8.5"
 rstest = { version = "0.18.2", default-features = false }
-seahash = { version = "4.1.0", features = ["use_std"] }
 supercilex-tests = "0.4.1"
 tempfile = "3.8.1"
 trycmd = "0.14.19"
