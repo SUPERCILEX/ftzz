@@ -344,9 +344,7 @@ fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
             if entry.file_type().unwrap().is_dir() {
                 queue.push_back(entry.path());
             } else if entry.metadata().unwrap().len() > 0 {
-                for byte in BufReader::new(File::open(entry.path()).unwrap()).bytes() {
-                    hasher.write_u8(byte.unwrap());
-                }
+                io::copy(&mut File::open(entry.path()).unwrap(), &mut hasher).unwrap();
             }
 
             hasher.write(entry.file_name().to_str().unwrap().as_bytes());

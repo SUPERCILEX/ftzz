@@ -327,7 +327,12 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
             root_num_files_hack: _,
         } = *self;
 
-        if num_files > 0 && let Some(GeneratorBytes { num_bytes_distr, fill_byte }) = *bytes {
+        if num_files > 0
+            && let Some(GeneratorBytes {
+                num_bytes_distr,
+                fill_byte,
+            }) = *bytes
+        {
             if let Some(bytes) = bytes_exact {
                 if *bytes > 0 {
                     let mut byte_counts: Vec<u64> = byte_counts_pool.pop().unwrap_or_default();

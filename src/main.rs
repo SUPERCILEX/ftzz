@@ -364,6 +364,6 @@ mod cli_tests {
 
     #[test]
     fn help_for_review() {
-        supercilex_tests::help_for_review2(Ftzz::command());
+        supercilex_tests::help_for_review(Ftzz::command());
     }
 }

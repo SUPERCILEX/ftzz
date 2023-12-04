@@ -97,7 +97,7 @@ mod tests {
             with_file_name(i.into(), |s| {
                 assert_eq!(s, i.to_string());
             });
-            with_dir_name(i.try_into().unwrap(), |s| {
+            with_dir_name(i.into(), |s| {
                 assert_eq!(s, format!("{i}.dir"));
             });
         }
