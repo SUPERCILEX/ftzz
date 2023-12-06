@@ -6,10 +6,10 @@ pub ftzz::generator::Error::Io
 pub ftzz::generator::Error::RuntimeCreation
 pub ftzz::generator::Error::TaskJoin
 impl core::error::Error for ftzz::generator::Error
-impl core::fmt::Display for ftzz::generator::Error
-pub fn ftzz::generator::Error::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::fmt::Debug for ftzz::generator::Error
 pub fn ftzz::generator::Error::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for ftzz::generator::Error
+pub fn ftzz::generator::Error::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Send for ftzz::generator::Error
 impl core::marker::Sync for ftzz::generator::Error
 impl core::marker::Unpin for ftzz::generator::Error
@@ -46,10 +46,10 @@ pub ftzz::generator::NumFilesWithRatioError::InvalidRatio
 pub ftzz::generator::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: core::num::nonzero::NonZeroU64
 pub ftzz::generator::NumFilesWithRatioError::InvalidRatio::num_files: core::num::nonzero::NonZeroU64
 impl core::error::Error for ftzz::generator::NumFilesWithRatioError
-impl core::fmt::Display for ftzz::generator::NumFilesWithRatioError
-pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::fmt::Debug for ftzz::generator::NumFilesWithRatioError
 pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for ftzz::generator::NumFilesWithRatioError
+pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Send for ftzz::generator::NumFilesWithRatioError
 impl core::marker::Sync for ftzz::generator::NumFilesWithRatioError
 impl core::marker::Unpin for ftzz::generator::NumFilesWithRatioError

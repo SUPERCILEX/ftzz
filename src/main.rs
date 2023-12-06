@@ -14,6 +14,7 @@ use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use error_stack::ResultExt;
 use ftzz::generator::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
+use io_adapters::WriteExtension;
 use paste::paste;
 
 /// A random file and directory generator
@@ -248,7 +249,7 @@ fn ftzz(
     match cmd {
         Cmd::Generate(options) => Generator::try_from(options)
             .change_context(CliError::InvalidArgs)?
-            .generate(&mut fmt_adapter::FmtWriteAdapter::from(&mut stdout))
+            .generate(&mut stdout.write_adapter())
             .change_context(CliError::Generator),
     }
 }
@@ -286,70 +287,6 @@ macro_rules! lenient_si_number {
 
 lenient_si_number!(u64);
 lenient_si_number!(u32);
-
-// TODO https://github.com/rust-lang/rust/pull/104389
-mod fmt_adapter {
-    use std::{
-        fmt,
-        fmt::Debug,
-        io::{Error, Write},
-    };
-
-    /// Adapter that enables writing through a [`fmt::Write`] to an underlying
-    /// [`io::Write`].
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// #![feature(impl_fmt_write_for_io_write)]
-    /// # use std::{fmt, io};
-    /// # use std::io::FmtWriteAdapter;
-    ///
-    /// let mut output1 = String::new();
-    /// let mut output2 = io::stdout();
-    /// let mut output2 = FmtWriteAdapter::from(&mut output2);
-    ///
-    /// my_common_writer(&mut output1).unwrap();
-    /// my_common_writer(&mut output2).unwrap();
-    ///
-    /// fn my_common_writer(output: &mut impl fmt::Write) -> fmt::Result {
-    ///     writeln!(output, "Hello World!")
-    /// }
-    /// ```
-    pub struct FmtWriteAdapter<'a, W: Write + ?Sized> {
-        inner: &'a mut W,
-        error: Option<Error>,
-    }
-
-    impl<'a, W: Write + ?Sized> From<&'a mut W> for FmtWriteAdapter<'a, W> {
-        fn from(inner: &'a mut W) -> Self {
-            Self { inner, error: None }
-        }
-    }
-
-    impl<W: Write + ?Sized> fmt::Write for FmtWriteAdapter<'_, W> {
-        fn write_str(&mut self, s: &str) -> fmt::Result {
-            match self.inner.write_all(s.as_bytes()) {
-                Ok(()) => {
-                    self.error = None;
-                    Ok(())
-                }
-                Err(e) => {
-                    self.error = Some(e);
-                    Err(fmt::Error)
-                }
-            }
-        }
-    }
-
-    impl<W: Write + ?Sized> Debug for FmtWriteAdapter<'_, W> {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            let mut builder = f.debug_struct("FmtWriteAdapter");
-            builder.field("error", &self.error);
-            builder.finish()
-        }
-    }
-}
 
 #[cfg(test)]
 mod cli_tests {

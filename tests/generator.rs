@@ -14,6 +14,7 @@ use std::{
 
 use expect_test::expect_file;
 use ftzz::generator::{Generator, NumFilesWithRatio};
+use io_adapters::WriteExtension;
 use more_asserts::assert_le;
 use rand::Rng;
 use rstest::rstest;
@@ -309,12 +310,7 @@ fn fuzz_test() {
         .bytes_exact(bytes_exact)
         .build();
     println!("Params: {g:?}");
-    {
-        // TODO https://github.com/rust-lang/rust/pull/104389
-        let mut output = String::new();
-        g.generate(&mut output).unwrap();
-        io::Write::write_all(&mut stdout(), output.as_bytes()).unwrap();
-    }
+    g.generate(&mut stdout().write_adapter()).unwrap();
 
     assert_le!(find_max_depth(&dir.path), max_depth);
     if files_exact {
@@ -327,28 +323,6 @@ fn fuzz_test() {
 
 /// Recursively hashes the file and directory names in dir
 fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
-    // TODO https://github.com/rust-lang/libs-team/issues/309
-    struct HashWriteAdapter<'a, H> {
-        hasher: &'a mut H,
-    }
-
-    impl<'a, H> HashWriteAdapter<'a, H> {
-        pub fn new(hasher: &'a mut H) -> Self {
-            Self { hasher }
-        }
-    }
-
-    impl<'a, H: Hasher> io::Write for HashWriteAdapter<'a, H> {
-        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-            self.hasher.write(buf);
-            Ok(buf.len())
-        }
-
-        fn flush(&mut self) -> io::Result<()> {
-            Ok(())
-        }
-    }
-
     writeln!(output).unwrap();
 
     let mut hasher = DefaultHasher::new();
@@ -367,7 +341,7 @@ fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
             } else if entry.metadata().unwrap().len() > 0 {
                 io::copy(
                     &mut File::open(entry.path()).unwrap(),
-                    &mut HashWriteAdapter::new(&mut hasher),
+                    &mut hasher.write_adapter(),
                 )
                 .unwrap();
             }
