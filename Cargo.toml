@@ -33,7 +33,7 @@ tracing-subscriber = { version = "0.3.18", optional = true }
 typed-builder = "0.18.0"
 
 [target.'cfg(unix)'.dependencies]
-rustix = { version = "0.38.26", features = ["fs"] }
+rustix = { version = "0.38.26", features = ["fs", "thread"] }
 
 [dev-dependencies]
 criterion = "0.5.1"

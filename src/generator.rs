@@ -344,7 +344,17 @@ fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &m
 fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
     let parallelism =
         thread::available_parallelism().unwrap_or(const { NonZeroUsize::new(1).unwrap() });
-    let runtime = tokio::runtime::Builder::new_current_thread()
+    let mut runtime = tokio::runtime::Builder::new_current_thread();
+    #[cfg(all(not(miri), target_os = "linux"))]
+    runtime.on_thread_start(|| {
+        use rustix::thread::{unshare, UnshareFlags};
+
+        let result = unshare(UnshareFlags::FILES);
+        #[cfg(debug_assertions)]
+        result.unwrap();
+        let _ = result;
+    });
+    let runtime = runtime
         .max_blocking_threads(parallelism.get())
         .build()
         .change_context(Error::RuntimeCreation)
