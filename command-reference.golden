@@ -1,26 +1,3 @@
-A random file and directory generator
-
-Usage: ftzz [OPTIONS] <COMMAND>
-
-Commands:
-  generate  Generate a random directory hierarchy with some number of files
-  help      Print this message or the help of the given subcommand(s)
-
-Options:
-  -h, --help
-          Print help (use `-h` for a summary)
-
-  -q, --quiet...
-          Less output per occurrence
-
-  -v, --verbose...
-          More output per occurrence
-
-  -V, --version
-          Print version
-
----
-
 Generate a random directory hierarchy with some number of files
 
 A pseudo-random directory hierarchy will be generated (seeded by this command's input parameters)
@@ -34,7 +11,7 @@ named `n` and directories are named `n.dir` for a given natural number `n`.
 By default, generated files are empty, but random data can be used as the file contents with the
 `total-bytes` option.
 
-Usage: ftzz generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 Arguments:
   <ROOT_DIR>
@@ -98,24 +75,5 @@ Options:
   -v, --verbose...
           More output per occurrence
 
----
-
-Print this message or the help of the given subcommand(s)
-
-Usage: ftzz help [COMMAND]
-
-Commands:
-  generate  Generate a random directory hierarchy with some number of files
-  help      Print this message or the help of the given subcommand(s)
-
----
-
-Generate a random directory hierarchy with some number of files
-
-Usage: ftzz help generate
-
----
-
-Print this message or the help of the given subcommand(s)
-
-Usage: ftzz help help
+  -V, --version
+          Print version

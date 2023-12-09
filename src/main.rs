@@ -9,7 +9,7 @@ use std::{
     process::{ExitCode, Termination},
 };
 
-use clap::{builder::ArgPredicate, ArgAction, Args, Parser, Subcommand, ValueHint};
+use clap::{builder::ArgPredicate, ArgAction, Args, Parser, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use error_stack::ResultExt;
@@ -17,7 +17,20 @@ use ftzz::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
 use io_adapters::WriteExtension;
 use paste::paste;
 
-/// A random file and directory generator
+/// Generate a random directory hierarchy with some number of files
+///
+/// A pseudo-random directory hierarchy will be generated (seeded by this
+/// command's input parameters) containing approximately the target
+/// number of files. The exact configuration of files and directories in
+/// the hierarchy is probabilistically determined to mostly match the
+/// specified parameters.
+///
+/// Generated files and directories are named using monotonically increasing
+/// numbers, where files are named `n` and directories are named `n.dir`
+/// for a given natural number `n`.
+///
+/// By default, generated files are empty, but random data can be used as
+/// the file contents with the `total-bytes` option.
 #[derive(Parser, Debug)]
 #[command(version, author = "Alex Saveau (@SUPERCILEX)")]
 #[command(infer_subcommands = true, infer_long_args = true)]
@@ -25,8 +38,8 @@ use paste::paste;
 #[command(max_term_width = 100)]
 #[cfg_attr(test, command(help_expected = true))]
 struct Ftzz {
-    #[command(subcommand)]
-    cmd: Cmd,
+    #[command(flatten)]
+    options: Generate,
 
     #[command(flatten)]
     #[command(next_display_order = None)]
@@ -36,25 +49,6 @@ struct Ftzz {
     #[arg(action = ArgAction::Help, help = "Print help (use `--help` for more detail)")]
     #[arg(long_help = "Print help (use `-h` for a summary)")]
     help: Option<bool>,
-}
-
-#[derive(Subcommand, Debug)]
-enum Cmd {
-    /// Generate a random directory hierarchy with some number of files
-    ///
-    /// A pseudo-random directory hierarchy will be generated (seeded by this
-    /// command's input parameters) containing approximately the target
-    /// number of files. The exact configuration of files and directories in
-    /// the hierarchy is probabilistically determined to mostly match the
-    /// specified parameters.
-    ///
-    /// Generated files and directories are named using monotonically increasing
-    /// numbers, where files are named `n` and directories are named `n.dir`
-    /// for a given natural number `n`.
-    ///
-    /// By default, generated files are empty, but random data can be used as
-    /// the file contents with the `total-bytes` option.
-    Generate(Generate),
 }
 
 #[derive(Args, Debug)]
@@ -240,18 +234,16 @@ fn main() -> ExitCode {
 
 fn ftzz(
     Ftzz {
-        cmd,
+        options,
         verbose: _,
         help: _,
     }: Ftzz,
 ) -> error_stack::Result<(), CliError> {
     let mut stdout = stdout();
-    match cmd {
-        Cmd::Generate(options) => Generator::try_from(options)
-            .change_context(CliError::InvalidArgs)?
-            .generate(&mut stdout.write_adapter())
-            .change_context(CliError::Generator),
-    }
+    Generator::try_from(options)
+        .change_context(CliError::InvalidArgs)?
+        .generate(&mut stdout.write_adapter())
+        .change_context(CliError::Generator)
 }
 
 fn num_files_parser(s: &str) -> Result<NonZeroU64, String> {

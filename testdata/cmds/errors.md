@@ -1,11 +1,11 @@
 Unspecified gen dir:
 
 ```console
-$ ftzz generate
+$ ftzz
 ? 2
 Generate a random directory hierarchy with some number of files
 
-Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 Arguments:
   <ROOT_DIR>  The directory in which to generate files
@@ -26,143 +26,144 @@ Options:
   -h, --help                           Print help (use `--help` for more detail)
   -q, --quiet...                       Less output per occurrence
   -v, --verbose...                     More output per occurrence
+  -V, --version                        Print version
 
 ```
 
 Negative num files:
 
 ```console
-$ ftzz generate -n -1 dir
+$ ftzz -n -1 dir
 ? 2
 error: unexpected argument '-1' found
 
   tip: to pass '-1' as a value, use '-- -1'
 
-Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
-$ ftzz generate -n "-1" dir
+$ ftzz -n "-1" dir
 ? 2
 error: unexpected argument '-1' found
 
   tip: to pass '-1' as a value, use '-- -1'
 
-Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
 Negative max depth:
 
 ```console
-$ ftzz generate -n 1 dir --depth -1
+$ ftzz -n 1 dir --depth -1
 ? 2
 error: unexpected argument '-1' found
 
   tip: to pass '-1' as a value, use '-- -1'
 
-Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
-$ ftzz generate -n 1 dir --depth "-1"
+$ ftzz -n 1 dir --depth "-1"
 ? 2
 error: unexpected argument '-1' found
 
   tip: to pass '-1' as a value, use '-- -1'
 
-Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
 Negative ratio:
 
 ```console
-$ ftzz generate -n 1 dir --ftd-ratio -1
+$ ftzz -n 1 dir --ftd-ratio -1
 ? 2
 error: unexpected argument '-1' found
 
   tip: to pass '-1' as a value, use '-- -1'
 
-Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
-$ ftzz generate -n 1 dir --ftd-ratio "-1"
+$ ftzz -n 1 dir --ftd-ratio "-1"
 ? 2
 error: unexpected argument '-1' found
 
   tip: to pass '-1' as a value, use '-- -1'
 
-Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
 Negative seed:
 
 ```console
-$ ftzz generate -n 1 dir --seed -1
+$ ftzz -n 1 dir --seed -1
 ? 2
 error: unexpected argument '-1' found
 
   tip: to pass '-1' as a value, use '-- -1'
 
-Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
-$ ftzz generate -n 1 dir --seed "-1"
+$ ftzz -n 1 dir --seed "-1"
 ? 2
 error: unexpected argument '-1' found
 
   tip: to pass '-1' as a value, use '-- -1'
 
-Usage: ftzz[EXE] generate [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
 `files-exact` and `exact` conflict:
 
 ```console
-$ ftzz generate -n 1 dir --files-exact --exact
+$ ftzz -n 1 dir --files-exact --exact
 ? 2
 error: the argument '--files-exact' cannot be used with '--exact'
 
-Usage: ftzz[EXE] generate --files <NUM_FILES> --files-exact <ROOT_DIR>
+Usage: ftzz[EXE] --files <NUM_FILES> --files-exact <ROOT_DIR>
 
 ```
 
 `bytes-exact` and `exact` conflict:
 
 ```console
-$ ftzz generate -n 1 dir --bytes-exact --exact
+$ ftzz -n 1 dir --bytes-exact --exact
 ? 2
 error: the argument '--bytes-exact' cannot be used with '--exact'
 
-Usage: ftzz[EXE] generate --files <NUM_FILES> --bytes-exact <--total-bytes <NUM_BYTES>> <ROOT_DIR>
+Usage: ftzz[EXE] --files <NUM_FILES> --bytes-exact <--total-bytes <NUM_BYTES>> <ROOT_DIR>
 
 ```
 
 `bytes-exact` cannot be used without `num-bytes`:
 
 ```console
-$ ftzz generate -n 1 dir --bytes-exact
+$ ftzz -n 1 dir --bytes-exact
 ? 2
 error: the following required arguments were not provided:
   <--total-bytes <NUM_BYTES>>
 
-Usage: ftzz[EXE] generate --files <NUM_FILES> --bytes-exact <--total-bytes <NUM_BYTES>> <ROOT_DIR>
+Usage: ftzz[EXE] --files <NUM_FILES> --bytes-exact <--total-bytes <NUM_BYTES>> <ROOT_DIR>
 
 ```
 
 `fill-byte` cannot be used without `num-bytes`:
 
 ```console
-$ ftzz generate -n 1 dir --fill-byte 42
+$ ftzz -n 1 dir --fill-byte 42
 ? 2
 error: the following required arguments were not provided:
   <--total-bytes <NUM_BYTES>>
 
-Usage: ftzz[EXE] generate --files <NUM_FILES> --fill-byte <FILL_BYTE> <--total-bytes <NUM_BYTES>> <ROOT_DIR>
+Usage: ftzz[EXE] --files <NUM_FILES> --fill-byte <FILL_BYTE> <--total-bytes <NUM_BYTES>> <ROOT_DIR>
 
 ```
 
 Number overflow:
 
 ```console
-$ ftzz generate -n 1 dir -d 999999999999999999999999999
+$ ftzz -n 1 dir -d 999999999999999999999999999
 ? 2
 error: invalid value '999999999999999999999999999' for '--max-depth <MAX_DEPTH>': number too large to fit in target type
 
