@@ -4,7 +4,8 @@
 #![allow(clippy::multiple_crate_versions)]
 #![allow(clippy::module_name_repetitions)]
 
-pub mod generator;
+pub use generator::*;
 
 mod core;
+mod generator;
 mod utils;

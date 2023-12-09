@@ -13,7 +13,7 @@ use clap::{builder::ArgPredicate, ArgAction, Args, Parser, Subcommand, ValueHint
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use error_stack::ResultExt;
-use ftzz::generator::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
+use ftzz::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
 use io_adapters::WriteExtension;
 use paste::paste;
 

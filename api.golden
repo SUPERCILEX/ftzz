@@ -1,196 +1,195 @@
 pub mod ftzz
-pub mod ftzz::generator
-pub enum ftzz::generator::Error
-pub ftzz::generator::Error::InvalidEnvironment
-pub ftzz::generator::Error::Io
-pub ftzz::generator::Error::RuntimeCreation
-pub ftzz::generator::Error::TaskJoin
-impl core::error::Error for ftzz::generator::Error
-impl core::fmt::Debug for ftzz::generator::Error
-pub fn ftzz::generator::Error::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::fmt::Display for ftzz::generator::Error
-pub fn ftzz::generator::Error::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::marker::Send for ftzz::generator::Error
-impl core::marker::Sync for ftzz::generator::Error
-impl core::marker::Unpin for ftzz::generator::Error
-impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::Error
-impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::Error
-impl<C> error_stack::context::Context for ftzz::generator::Error where C: core::error::Error + core::marker::Send + core::marker::Sync + 'static
-pub fn ftzz::generator::Error::provide<'a>(&'a self, request: &mut core::error::Request<'a>)
-impl<T, U> core::convert::Into<U> for ftzz::generator::Error where U: core::convert::From<T>
-pub fn ftzz::generator::Error::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for ftzz::generator::Error where U: core::convert::Into<T>
-pub type ftzz::generator::Error::Error = core::convert::Infallible
-pub fn ftzz::generator::Error::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for ftzz::generator::Error where U: core::convert::TryFrom<T>
-pub type ftzz::generator::Error::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn ftzz::generator::Error::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> alloc::string::ToString for ftzz::generator::Error where T: core::fmt::Display + core::marker::Sized
-pub fn ftzz::generator::Error::to_string(&self) -> alloc::string::String
-impl<T> core::any::Any for ftzz::generator::Error where T: 'static + core::marker::Sized
-pub fn ftzz::generator::Error::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::generator::Error where T: core::marker::Sized
-pub fn ftzz::generator::Error::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::generator::Error where T: core::marker::Sized
-pub fn ftzz::generator::Error::borrow_mut(&mut self) -> &mut T
-impl<T> core::convert::From<T> for ftzz::generator::Error
-pub fn ftzz::generator::Error::from(t: T) -> T
-impl<T> thousands::traits::Separable for ftzz::generator::Error where T: core::fmt::Display
-pub fn ftzz::generator::Error::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
-impl<T> tracing::instrument::Instrument for ftzz::generator::Error
-impl<T> tracing::instrument::WithSubscriber for ftzz::generator::Error
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::Error where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::Error::vzip(self) -> V
-pub enum ftzz::generator::NumFilesWithRatioError
-pub ftzz::generator::NumFilesWithRatioError::InvalidRatio
-pub ftzz::generator::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: core::num::nonzero::NonZeroU64
-pub ftzz::generator::NumFilesWithRatioError::InvalidRatio::num_files: core::num::nonzero::NonZeroU64
-impl core::error::Error for ftzz::generator::NumFilesWithRatioError
-impl core::fmt::Debug for ftzz::generator::NumFilesWithRatioError
-pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::fmt::Display for ftzz::generator::NumFilesWithRatioError
-pub fn ftzz::generator::NumFilesWithRatioError::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::marker::Send for ftzz::generator::NumFilesWithRatioError
-impl core::marker::Sync for ftzz::generator::NumFilesWithRatioError
-impl core::marker::Unpin for ftzz::generator::NumFilesWithRatioError
-impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::NumFilesWithRatioError
-impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::NumFilesWithRatioError
-impl<C> error_stack::context::Context for ftzz::generator::NumFilesWithRatioError where C: core::error::Error + core::marker::Send + core::marker::Sync + 'static
-pub fn ftzz::generator::NumFilesWithRatioError::provide<'a>(&'a self, request: &mut core::error::Request<'a>)
-impl<T, U> core::convert::Into<U> for ftzz::generator::NumFilesWithRatioError where U: core::convert::From<T>
-pub fn ftzz::generator::NumFilesWithRatioError::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for ftzz::generator::NumFilesWithRatioError where U: core::convert::Into<T>
-pub type ftzz::generator::NumFilesWithRatioError::Error = core::convert::Infallible
-pub fn ftzz::generator::NumFilesWithRatioError::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for ftzz::generator::NumFilesWithRatioError where U: core::convert::TryFrom<T>
-pub type ftzz::generator::NumFilesWithRatioError::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn ftzz::generator::NumFilesWithRatioError::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> alloc::string::ToString for ftzz::generator::NumFilesWithRatioError where T: core::fmt::Display + core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatioError::to_string(&self) -> alloc::string::String
-impl<T> core::any::Any for ftzz::generator::NumFilesWithRatioError where T: 'static + core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatioError::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::generator::NumFilesWithRatioError where T: core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatioError::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::generator::NumFilesWithRatioError where T: core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatioError::borrow_mut(&mut self) -> &mut T
-impl<T> core::convert::From<T> for ftzz::generator::NumFilesWithRatioError
-pub fn ftzz::generator::NumFilesWithRatioError::from(t: T) -> T
-impl<T> thousands::traits::Separable for ftzz::generator::NumFilesWithRatioError where T: core::fmt::Display
-pub fn ftzz::generator::NumFilesWithRatioError::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
-impl<T> tracing::instrument::Instrument for ftzz::generator::NumFilesWithRatioError
-impl<T> tracing::instrument::WithSubscriber for ftzz::generator::NumFilesWithRatioError
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::NumFilesWithRatioError where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::NumFilesWithRatioError::vzip(self) -> V
-pub struct ftzz::generator::Generator
-impl ftzz::generator::Generator
-pub fn ftzz::generator::Generator::generate(self, output: &mut impl core::fmt::Write) -> error_stack::result::Result<(), ftzz::generator::Error>
-impl core::fmt::Debug for ftzz::generator::Generator
-pub fn ftzz::generator::Generator::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl ftzz::generator::Generator
-pub fn ftzz::generator::Generator::builder() -> ftzz::generator::GeneratorBuilder<((), (), (), (), (), (), (), ())>
-impl core::marker::Send for ftzz::generator::Generator
-impl core::marker::Sync for ftzz::generator::Generator
-impl core::marker::Unpin for ftzz::generator::Generator
-impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::Generator
-impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::Generator
-impl<T, U> core::convert::Into<U> for ftzz::generator::Generator where U: core::convert::From<T>
-pub fn ftzz::generator::Generator::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for ftzz::generator::Generator where U: core::convert::Into<T>
-pub type ftzz::generator::Generator::Error = core::convert::Infallible
-pub fn ftzz::generator::Generator::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for ftzz::generator::Generator where U: core::convert::TryFrom<T>
-pub type ftzz::generator::Generator::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn ftzz::generator::Generator::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> core::any::Any for ftzz::generator::Generator where T: 'static + core::marker::Sized
-pub fn ftzz::generator::Generator::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::generator::Generator where T: core::marker::Sized
-pub fn ftzz::generator::Generator::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::generator::Generator where T: core::marker::Sized
-pub fn ftzz::generator::Generator::borrow_mut(&mut self) -> &mut T
-impl<T> core::convert::From<T> for ftzz::generator::Generator
-pub fn ftzz::generator::Generator::from(t: T) -> T
-impl<T> tracing::instrument::Instrument for ftzz::generator::Generator
-impl<T> tracing::instrument::WithSubscriber for ftzz::generator::Generator
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::Generator where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::Generator::vzip(self) -> V
-pub struct ftzz::generator::GeneratorBuilder<TypedBuilderFields>
-impl<TypedBuilderFields> core::clone::Clone for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::clone::Clone
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::clone(&self) -> Self
-impl<__files_exact: typed_builder::Optional<bool>, __num_bytes: typed_builder::Optional<u64>, __fill_byte: typed_builder::Optional<core::option::Option<u8>>, __bytes_exact: typed_builder::Optional<bool>, __max_depth: typed_builder::Optional<u32>, __seed: typed_builder::Optional<u64>> ftzz::generator::GeneratorBuilder<((std::path::PathBuf), (ftzz::generator::NumFilesWithRatio), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder<((std::path::PathBuf), (ftzz::generator::NumFilesWithRatio), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>::build(self) -> ftzz::generator::Generator
-impl<__num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed> ftzz::generator::GeneratorBuilder<((), __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder<((), __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>::root_dir(self, root_dir: std::path::PathBuf) -> ftzz::generator::GeneratorBuilder<((std::path::PathBuf), __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
-impl<__root_dir, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed> ftzz::generator::GeneratorBuilder<(__root_dir, (), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder<(__root_dir, (), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>::num_files_with_ratio(self, num_files_with_ratio: ftzz::generator::NumFilesWithRatio) -> ftzz::generator::GeneratorBuilder<(__root_dir, (ftzz::generator::NumFilesWithRatio), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
-impl<__root_dir, __num_files_with_ratio, __files_exact, __fill_byte, __bytes_exact, __max_depth, __seed> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (), __fill_byte, __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (), __fill_byte, __bytes_exact, __max_depth, __seed)>::num_bytes(self, num_bytes: u64) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (u64), __fill_byte, __bytes_exact, __max_depth, __seed)>
-impl<__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (), __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (), __bytes_exact, __max_depth, __seed)>::fill_byte(self, fill_byte: impl core::convert::Into<core::option::Option<u8>>) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (core::option::Option<u8>), __bytes_exact, __max_depth, __seed)>
-impl<__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, ())>
-pub fn ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, ())>::seed(self, seed: u64) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, (u64))>
-impl<__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __seed> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, (), __seed)>
-pub fn ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, (), __seed)>::max_depth(self, max_depth: u32) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, (u32), __seed)>
-impl<__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __max_depth, __seed> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, (), __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, (), __max_depth, __seed)>::bytes_exact(self, bytes_exact: bool) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, (bool), __max_depth, __seed)>
-impl<__root_dir, __num_files_with_ratio, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (), __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
-pub fn ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (), __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>::files_exact(self, files_exact: bool) -> ftzz::generator::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (bool), __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
-impl<TypedBuilderFields> core::marker::Send for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Send
-impl<TypedBuilderFields> core::marker::Sync for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Sync
-impl<TypedBuilderFields> core::marker::Unpin for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Unpin
-impl<TypedBuilderFields> core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::panic::unwind_safe::RefUnwindSafe
-impl<TypedBuilderFields> core::panic::unwind_safe::UnwindSafe for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::panic::unwind_safe::UnwindSafe
-impl<T, U> core::convert::Into<U> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where U: core::convert::From<T>
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where U: core::convert::Into<T>
-pub type ftzz::generator::GeneratorBuilder<TypedBuilderFields>::Error = core::convert::Infallible
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where U: core::convert::TryFrom<T>
-pub type ftzz::generator::GeneratorBuilder<TypedBuilderFields>::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> alloc::borrow::ToOwned for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where T: core::clone::Clone
-pub type ftzz::generator::GeneratorBuilder<TypedBuilderFields>::Owned = T
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::clone_into(&self, target: &mut T)
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::to_owned(&self) -> T
-impl<T> core::any::Any for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where T: 'static + core::marker::Sized
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where T: core::marker::Sized
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where T: core::marker::Sized
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::borrow_mut(&mut self) -> &mut T
-impl<T> core::convert::From<T> for ftzz::generator::GeneratorBuilder<TypedBuilderFields>
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::from(t: T) -> T
-impl<T> tracing::instrument::Instrument for ftzz::generator::GeneratorBuilder<TypedBuilderFields>
-impl<T> tracing::instrument::WithSubscriber for ftzz::generator::GeneratorBuilder<TypedBuilderFields>
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::GeneratorBuilder<TypedBuilderFields> where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::GeneratorBuilder<TypedBuilderFields>::vzip(self) -> V
-pub struct ftzz::generator::NumFilesWithRatio
-impl ftzz::generator::NumFilesWithRatio
-pub fn ftzz::generator::NumFilesWithRatio::from_num_files(num_files: core::num::nonzero::NonZeroU64) -> Self
-pub fn ftzz::generator::NumFilesWithRatio::new(num_files: core::num::nonzero::NonZeroU64, file_to_dir_ratio: core::num::nonzero::NonZeroU64) -> core::result::Result<Self, ftzz::generator::NumFilesWithRatioError>
-impl core::fmt::Debug for ftzz::generator::NumFilesWithRatio
-pub fn ftzz::generator::NumFilesWithRatio::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::marker::Send for ftzz::generator::NumFilesWithRatio
-impl core::marker::Sync for ftzz::generator::NumFilesWithRatio
-impl core::marker::Unpin for ftzz::generator::NumFilesWithRatio
-impl core::panic::unwind_safe::RefUnwindSafe for ftzz::generator::NumFilesWithRatio
-impl core::panic::unwind_safe::UnwindSafe for ftzz::generator::NumFilesWithRatio
-impl<T, U> core::convert::Into<U> for ftzz::generator::NumFilesWithRatio where U: core::convert::From<T>
-pub fn ftzz::generator::NumFilesWithRatio::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for ftzz::generator::NumFilesWithRatio where U: core::convert::Into<T>
-pub type ftzz::generator::NumFilesWithRatio::Error = core::convert::Infallible
-pub fn ftzz::generator::NumFilesWithRatio::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for ftzz::generator::NumFilesWithRatio where U: core::convert::TryFrom<T>
-pub type ftzz::generator::NumFilesWithRatio::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn ftzz::generator::NumFilesWithRatio::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> core::any::Any for ftzz::generator::NumFilesWithRatio where T: 'static + core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatio::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::generator::NumFilesWithRatio where T: core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatio::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::generator::NumFilesWithRatio where T: core::marker::Sized
-pub fn ftzz::generator::NumFilesWithRatio::borrow_mut(&mut self) -> &mut T
-impl<T> core::convert::From<T> for ftzz::generator::NumFilesWithRatio
-pub fn ftzz::generator::NumFilesWithRatio::from(t: T) -> T
-impl<T> tracing::instrument::Instrument for ftzz::generator::NumFilesWithRatio
-impl<T> tracing::instrument::WithSubscriber for ftzz::generator::NumFilesWithRatio
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::generator::NumFilesWithRatio where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::generator::NumFilesWithRatio::vzip(self) -> V
+pub enum ftzz::Error
+pub ftzz::Error::InvalidEnvironment
+pub ftzz::Error::Io
+pub ftzz::Error::RuntimeCreation
+pub ftzz::Error::TaskJoin
+impl core::error::Error for ftzz::Error
+impl core::fmt::Debug for ftzz::Error
+pub fn ftzz::Error::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for ftzz::Error
+pub fn ftzz::Error::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Send for ftzz::Error
+impl core::marker::Sync for ftzz::Error
+impl core::marker::Unpin for ftzz::Error
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::Error
+impl core::panic::unwind_safe::UnwindSafe for ftzz::Error
+impl<C> error_stack::context::Context for ftzz::Error where C: core::error::Error + core::marker::Send + core::marker::Sync + 'static
+pub fn ftzz::Error::provide<'a>(&'a self, request: &mut core::error::Request<'a>)
+impl<T, U> core::convert::Into<U> for ftzz::Error where U: core::convert::From<T>
+pub fn ftzz::Error::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for ftzz::Error where U: core::convert::Into<T>
+pub type ftzz::Error::Error = core::convert::Infallible
+pub fn ftzz::Error::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for ftzz::Error where U: core::convert::TryFrom<T>
+pub type ftzz::Error::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn ftzz::Error::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::string::ToString for ftzz::Error where T: core::fmt::Display + core::marker::Sized
+pub fn ftzz::Error::to_string(&self) -> alloc::string::String
+impl<T> core::any::Any for ftzz::Error where T: 'static + core::marker::Sized
+pub fn ftzz::Error::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for ftzz::Error where T: core::marker::Sized
+pub fn ftzz::Error::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for ftzz::Error where T: core::marker::Sized
+pub fn ftzz::Error::borrow_mut(&mut self) -> &mut T
+impl<T> core::convert::From<T> for ftzz::Error
+pub fn ftzz::Error::from(t: T) -> T
+impl<T> thousands::traits::Separable for ftzz::Error where T: core::fmt::Display
+pub fn ftzz::Error::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
+impl<T> tracing::instrument::Instrument for ftzz::Error
+impl<T> tracing::instrument::WithSubscriber for ftzz::Error
+impl<V, T> ppv_lite86::types::VZip<V> for ftzz::Error where V: ppv_lite86::types::MultiLane<T>
+pub fn ftzz::Error::vzip(self) -> V
+pub enum ftzz::NumFilesWithRatioError
+pub ftzz::NumFilesWithRatioError::InvalidRatio
+pub ftzz::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: core::num::nonzero::NonZeroU64
+pub ftzz::NumFilesWithRatioError::InvalidRatio::num_files: core::num::nonzero::NonZeroU64
+impl core::error::Error for ftzz::NumFilesWithRatioError
+impl core::fmt::Debug for ftzz::NumFilesWithRatioError
+pub fn ftzz::NumFilesWithRatioError::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for ftzz::NumFilesWithRatioError
+pub fn ftzz::NumFilesWithRatioError::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Send for ftzz::NumFilesWithRatioError
+impl core::marker::Sync for ftzz::NumFilesWithRatioError
+impl core::marker::Unpin for ftzz::NumFilesWithRatioError
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::NumFilesWithRatioError
+impl core::panic::unwind_safe::UnwindSafe for ftzz::NumFilesWithRatioError
+impl<C> error_stack::context::Context for ftzz::NumFilesWithRatioError where C: core::error::Error + core::marker::Send + core::marker::Sync + 'static
+pub fn ftzz::NumFilesWithRatioError::provide<'a>(&'a self, request: &mut core::error::Request<'a>)
+impl<T, U> core::convert::Into<U> for ftzz::NumFilesWithRatioError where U: core::convert::From<T>
+pub fn ftzz::NumFilesWithRatioError::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for ftzz::NumFilesWithRatioError where U: core::convert::Into<T>
+pub type ftzz::NumFilesWithRatioError::Error = core::convert::Infallible
+pub fn ftzz::NumFilesWithRatioError::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for ftzz::NumFilesWithRatioError where U: core::convert::TryFrom<T>
+pub type ftzz::NumFilesWithRatioError::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn ftzz::NumFilesWithRatioError::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::string::ToString for ftzz::NumFilesWithRatioError where T: core::fmt::Display + core::marker::Sized
+pub fn ftzz::NumFilesWithRatioError::to_string(&self) -> alloc::string::String
+impl<T> core::any::Any for ftzz::NumFilesWithRatioError where T: 'static + core::marker::Sized
+pub fn ftzz::NumFilesWithRatioError::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for ftzz::NumFilesWithRatioError where T: core::marker::Sized
+pub fn ftzz::NumFilesWithRatioError::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for ftzz::NumFilesWithRatioError where T: core::marker::Sized
+pub fn ftzz::NumFilesWithRatioError::borrow_mut(&mut self) -> &mut T
+impl<T> core::convert::From<T> for ftzz::NumFilesWithRatioError
+pub fn ftzz::NumFilesWithRatioError::from(t: T) -> T
+impl<T> thousands::traits::Separable for ftzz::NumFilesWithRatioError where T: core::fmt::Display
+pub fn ftzz::NumFilesWithRatioError::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
+impl<T> tracing::instrument::Instrument for ftzz::NumFilesWithRatioError
+impl<T> tracing::instrument::WithSubscriber for ftzz::NumFilesWithRatioError
+impl<V, T> ppv_lite86::types::VZip<V> for ftzz::NumFilesWithRatioError where V: ppv_lite86::types::MultiLane<T>
+pub fn ftzz::NumFilesWithRatioError::vzip(self) -> V
+pub struct ftzz::Generator
+impl ftzz::Generator
+pub fn ftzz::Generator::generate(self, output: &mut impl core::fmt::Write) -> error_stack::result::Result<(), ftzz::Error>
+impl core::fmt::Debug for ftzz::Generator
+pub fn ftzz::Generator::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl ftzz::Generator
+pub fn ftzz::Generator::builder() -> ftzz::GeneratorBuilder<((), (), (), (), (), (), (), ())>
+impl core::marker::Send for ftzz::Generator
+impl core::marker::Sync for ftzz::Generator
+impl core::marker::Unpin for ftzz::Generator
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::Generator
+impl core::panic::unwind_safe::UnwindSafe for ftzz::Generator
+impl<T, U> core::convert::Into<U> for ftzz::Generator where U: core::convert::From<T>
+pub fn ftzz::Generator::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for ftzz::Generator where U: core::convert::Into<T>
+pub type ftzz::Generator::Error = core::convert::Infallible
+pub fn ftzz::Generator::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for ftzz::Generator where U: core::convert::TryFrom<T>
+pub type ftzz::Generator::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn ftzz::Generator::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> core::any::Any for ftzz::Generator where T: 'static + core::marker::Sized
+pub fn ftzz::Generator::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for ftzz::Generator where T: core::marker::Sized
+pub fn ftzz::Generator::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for ftzz::Generator where T: core::marker::Sized
+pub fn ftzz::Generator::borrow_mut(&mut self) -> &mut T
+impl<T> core::convert::From<T> for ftzz::Generator
+pub fn ftzz::Generator::from(t: T) -> T
+impl<T> tracing::instrument::Instrument for ftzz::Generator
+impl<T> tracing::instrument::WithSubscriber for ftzz::Generator
+impl<V, T> ppv_lite86::types::VZip<V> for ftzz::Generator where V: ppv_lite86::types::MultiLane<T>
+pub fn ftzz::Generator::vzip(self) -> V
+pub struct ftzz::GeneratorBuilder<TypedBuilderFields>
+impl<TypedBuilderFields> core::clone::Clone for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::clone::Clone
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::clone(&self) -> Self
+impl<__files_exact: typed_builder::Optional<bool>, __num_bytes: typed_builder::Optional<u64>, __fill_byte: typed_builder::Optional<core::option::Option<u8>>, __bytes_exact: typed_builder::Optional<bool>, __max_depth: typed_builder::Optional<u32>, __seed: typed_builder::Optional<u64>> ftzz::GeneratorBuilder<((std::path::PathBuf), (ftzz::NumFilesWithRatio), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::GeneratorBuilder<((std::path::PathBuf), (ftzz::NumFilesWithRatio), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>::build(self) -> ftzz::Generator
+impl<__num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed> ftzz::GeneratorBuilder<((), __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::GeneratorBuilder<((), __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>::root_dir(self, root_dir: std::path::PathBuf) -> ftzz::GeneratorBuilder<((std::path::PathBuf), __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
+impl<__root_dir, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed> ftzz::GeneratorBuilder<(__root_dir, (), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::GeneratorBuilder<(__root_dir, (), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>::num_files_with_ratio(self, num_files_with_ratio: ftzz::NumFilesWithRatio) -> ftzz::GeneratorBuilder<(__root_dir, (ftzz::NumFilesWithRatio), __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
+impl<__root_dir, __num_files_with_ratio, __files_exact, __fill_byte, __bytes_exact, __max_depth, __seed> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (), __fill_byte, __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (), __fill_byte, __bytes_exact, __max_depth, __seed)>::num_bytes(self, num_bytes: u64) -> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, (u64), __fill_byte, __bytes_exact, __max_depth, __seed)>
+impl<__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __bytes_exact, __max_depth, __seed> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (), __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (), __bytes_exact, __max_depth, __seed)>::fill_byte(self, fill_byte: impl core::convert::Into<core::option::Option<u8>>) -> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, (core::option::Option<u8>), __bytes_exact, __max_depth, __seed)>
+impl<__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, ())>
+pub fn ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, ())>::seed(self, seed: u64) -> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __max_depth, (u64))>
+impl<__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, __seed> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, (), __seed)>
+pub fn ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, (), __seed)>::max_depth(self, max_depth: u32) -> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __bytes_exact, (u32), __seed)>
+impl<__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, __max_depth, __seed> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, (), __max_depth, __seed)>
+pub fn ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, (), __max_depth, __seed)>::bytes_exact(self, bytes_exact: bool) -> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, (bool), __max_depth, __seed)>
+impl<__root_dir, __num_files_with_ratio, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (), __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
+pub fn ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (), __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>::files_exact(self, files_exact: bool) -> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (bool), __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
+impl<TypedBuilderFields> core::marker::Send for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Send
+impl<TypedBuilderFields> core::marker::Sync for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Sync
+impl<TypedBuilderFields> core::marker::Unpin for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Unpin
+impl<TypedBuilderFields> core::panic::unwind_safe::RefUnwindSafe for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::panic::unwind_safe::RefUnwindSafe
+impl<TypedBuilderFields> core::panic::unwind_safe::UnwindSafe for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::panic::unwind_safe::UnwindSafe
+impl<T, U> core::convert::Into<U> for ftzz::GeneratorBuilder<TypedBuilderFields> where U: core::convert::From<T>
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for ftzz::GeneratorBuilder<TypedBuilderFields> where U: core::convert::Into<T>
+pub type ftzz::GeneratorBuilder<TypedBuilderFields>::Error = core::convert::Infallible
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for ftzz::GeneratorBuilder<TypedBuilderFields> where U: core::convert::TryFrom<T>
+pub type ftzz::GeneratorBuilder<TypedBuilderFields>::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for ftzz::GeneratorBuilder<TypedBuilderFields> where T: core::clone::Clone
+pub type ftzz::GeneratorBuilder<TypedBuilderFields>::Owned = T
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::clone_into(&self, target: &mut T)
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::to_owned(&self) -> T
+impl<T> core::any::Any for ftzz::GeneratorBuilder<TypedBuilderFields> where T: 'static + core::marker::Sized
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for ftzz::GeneratorBuilder<TypedBuilderFields> where T: core::marker::Sized
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for ftzz::GeneratorBuilder<TypedBuilderFields> where T: core::marker::Sized
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::borrow_mut(&mut self) -> &mut T
+impl<T> core::convert::From<T> for ftzz::GeneratorBuilder<TypedBuilderFields>
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::from(t: T) -> T
+impl<T> tracing::instrument::Instrument for ftzz::GeneratorBuilder<TypedBuilderFields>
+impl<T> tracing::instrument::WithSubscriber for ftzz::GeneratorBuilder<TypedBuilderFields>
+impl<V, T> ppv_lite86::types::VZip<V> for ftzz::GeneratorBuilder<TypedBuilderFields> where V: ppv_lite86::types::MultiLane<T>
+pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::vzip(self) -> V
+pub struct ftzz::NumFilesWithRatio
+impl ftzz::NumFilesWithRatio
+pub fn ftzz::NumFilesWithRatio::from_num_files(num_files: core::num::nonzero::NonZeroU64) -> Self
+pub fn ftzz::NumFilesWithRatio::new(num_files: core::num::nonzero::NonZeroU64, file_to_dir_ratio: core::num::nonzero::NonZeroU64) -> core::result::Result<Self, ftzz::NumFilesWithRatioError>
+impl core::fmt::Debug for ftzz::NumFilesWithRatio
+pub fn ftzz::NumFilesWithRatio::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Send for ftzz::NumFilesWithRatio
+impl core::marker::Sync for ftzz::NumFilesWithRatio
+impl core::marker::Unpin for ftzz::NumFilesWithRatio
+impl core::panic::unwind_safe::RefUnwindSafe for ftzz::NumFilesWithRatio
+impl core::panic::unwind_safe::UnwindSafe for ftzz::NumFilesWithRatio
+impl<T, U> core::convert::Into<U> for ftzz::NumFilesWithRatio where U: core::convert::From<T>
+pub fn ftzz::NumFilesWithRatio::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for ftzz::NumFilesWithRatio where U: core::convert::Into<T>
+pub type ftzz::NumFilesWithRatio::Error = core::convert::Infallible
+pub fn ftzz::NumFilesWithRatio::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for ftzz::NumFilesWithRatio where U: core::convert::TryFrom<T>
+pub type ftzz::NumFilesWithRatio::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn ftzz::NumFilesWithRatio::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> core::any::Any for ftzz::NumFilesWithRatio where T: 'static + core::marker::Sized
+pub fn ftzz::NumFilesWithRatio::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for ftzz::NumFilesWithRatio where T: core::marker::Sized
+pub fn ftzz::NumFilesWithRatio::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for ftzz::NumFilesWithRatio where T: core::marker::Sized
+pub fn ftzz::NumFilesWithRatio::borrow_mut(&mut self) -> &mut T
+impl<T> core::convert::From<T> for ftzz::NumFilesWithRatio
+pub fn ftzz::NumFilesWithRatio::from(t: T) -> T
+impl<T> tracing::instrument::Instrument for ftzz::NumFilesWithRatio
+impl<T> tracing::instrument::WithSubscriber for ftzz::NumFilesWithRatio
+impl<V, T> ppv_lite86::types::VZip<V> for ftzz::NumFilesWithRatio where V: ppv_lite86::types::MultiLane<T>
+pub fn ftzz::NumFilesWithRatio::vzip(self) -> V
