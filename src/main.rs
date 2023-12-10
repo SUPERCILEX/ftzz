@@ -1,5 +1,4 @@
 #![feature(string_remove_matches)]
-#![allow(clippy::multiple_crate_versions)]
 
 use std::{
     io,
