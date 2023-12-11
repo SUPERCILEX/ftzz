@@ -3,7 +3,7 @@
 ```console
 $ ftzz -n 1K -b 100 --files-exact --bytes-exact all-exact-explicit
 Exactly 1,000 files will be generated in approximately 1,000 directories distributed across a tree of maximum depth 5 where each directory contains approximately 4 other directories. Each file will contain approximately 0 bytes of random data totaling exactly 100 bytes.
-Created 1,000 files (100 B) across 788 directories.
+Created 1,000 files (100 B) across 506 directories.
 
 ```
 

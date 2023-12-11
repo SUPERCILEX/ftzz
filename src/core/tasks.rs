@@ -155,7 +155,7 @@ impl<R: RngCore + Clone + Send + 'static> TaskGenerator for DynamicGenerator<R> 
             queue(
                 build_params!(OnTheFlyGeneratedFileContents {
                     num_bytes_distr,
-                    random: random.clone(),
+                    seed: random.next_u64(),
                     fill_byte,
                 }),
                 false,
@@ -371,7 +371,7 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
                     queue(
                         build_params!(PreDefinedGeneratedFileContents {
                             byte_counts,
-                            random: random.clone(),
+                            seed: random.next_u64(),
                             fill_byte,
                         }),
                         done,
@@ -383,7 +383,7 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
                 queue(
                     build_params!(OnTheFlyGeneratedFileContents {
                         num_bytes_distr,
-                        random: random.clone(),
+                        seed: random.next_u64(),
                         fill_byte,
                     }),
                     done,

@@ -1,17 +1,23 @@
 use std::{fs::File, io, io::Read};
 
 use cfg_if::cfg_if;
-use rand::RngCore;
+use rand::{RngCore, SeedableRng};
 use rand_distr::Normal;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{core::sample_truncated, utils::FastPathBuf};
 
 pub trait FileContentsGenerator {
+    type State;
+
+    fn initialize(&self) -> Self::State;
+
     fn create_file(
         &mut self,
         file: &mut FastPathBuf,
         file_num: usize,
         retryable: bool,
+        state: &mut Self::State,
     ) -> io::Result<u64>;
 
     fn byte_counts_pool_return(self) -> Option<Vec<u64>>;
@@ -20,8 +26,18 @@ pub trait FileContentsGenerator {
 pub struct NoGeneratedFileContents;
 
 impl FileContentsGenerator for NoGeneratedFileContents {
+    type State = ();
+
+    fn initialize(&self) -> Self::State {}
+
     #[inline]
-    fn create_file(&mut self, file: &mut FastPathBuf, _: usize, _: bool) -> io::Result<u64> {
+    fn create_file(
+        &mut self,
+        file: &mut FastPathBuf,
+        _: usize,
+        _: bool,
+        (): &mut Self::State,
+    ) -> io::Result<u64> {
         cfg_if! {
             if #[cfg(any(not(unix), miri))] {
                 File::create(file).map(|_| 0)
@@ -59,13 +75,21 @@ impl FileContentsGenerator for NoGeneratedFileContents {
     }
 }
 
-pub struct OnTheFlyGeneratedFileContents<R: RngCore> {
+pub struct OnTheFlyGeneratedFileContents {
     pub num_bytes_distr: Normal<f64>,
-    pub random: R,
+    pub seed: u64,
     pub fill_byte: Option<u8>,
 }
 
-impl<R: RngCore + 'static> FileContentsGenerator for OnTheFlyGeneratedFileContents<R> {
+impl FileContentsGenerator for OnTheFlyGeneratedFileContents {
+    type State = Xoshiro256PlusPlus;
+
+    fn initialize(&self) -> Self::State {
+        let Self { seed, .. } = *self;
+
+        Xoshiro256PlusPlus::seed_from_u64(seed)
+    }
+
     #[inline]
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn create_file(
@@ -73,10 +97,11 @@ impl<R: RngCore + 'static> FileContentsGenerator for OnTheFlyGeneratedFileConten
         file: &mut FastPathBuf,
         file_num: usize,
         retryable: bool,
+        random: &mut Self::State,
     ) -> io::Result<u64> {
         let Self {
             ref num_bytes_distr,
-            ref mut random,
+            seed: _,
             fill_byte,
         } = *self;
 
@@ -109,7 +134,7 @@ impl<R: RngCore + 'static> FileContentsGenerator for OnTheFlyGeneratedFileConten
                 Ok(num_bytes)
             })
         } else {
-            NoGeneratedFileContents.create_file(file, file_num, retryable)
+            NoGeneratedFileContents.create_file(file, file_num, retryable, &mut ())
         }
     }
 
@@ -118,23 +143,32 @@ impl<R: RngCore + 'static> FileContentsGenerator for OnTheFlyGeneratedFileConten
     }
 }
 
-pub struct PreDefinedGeneratedFileContents<R: RngCore> {
+pub struct PreDefinedGeneratedFileContents {
     pub byte_counts: Vec<u64>,
-    pub random: R,
+    pub seed: u64,
     pub fill_byte: Option<u8>,
 }
 
-impl<R: RngCore + 'static> FileContentsGenerator for PreDefinedGeneratedFileContents<R> {
+impl FileContentsGenerator for PreDefinedGeneratedFileContents {
+    type State = Xoshiro256PlusPlus;
+
+    fn initialize(&self) -> Self::State {
+        let Self { seed, .. } = *self;
+
+        Xoshiro256PlusPlus::seed_from_u64(seed)
+    }
+
     #[inline]
     fn create_file(
         &mut self,
         file: &mut FastPathBuf,
         file_num: usize,
         retryable: bool,
+        random: &mut Self::State,
     ) -> io::Result<u64> {
         let Self {
             ref byte_counts,
-            ref mut random,
+            seed: _,
             fill_byte,
         } = *self;
 
@@ -144,7 +178,7 @@ impl<R: RngCore + 'static> FileContentsGenerator for PreDefinedGeneratedFileCont
                 .and_then(|f| write_bytes(f, num_bytes, (fill_byte, random)))
                 .map(|()| num_bytes)
         } else {
-            NoGeneratedFileContents.create_file(file, file_num, retryable)
+            NoGeneratedFileContents.create_file(file, file_num, retryable, &mut ())
         }
     }
 

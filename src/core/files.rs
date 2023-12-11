@@ -73,13 +73,14 @@ fn create_files(
     file: &mut FastPathBuf,
     contents: &mut impl FileContentsGenerator,
 ) -> Result<u64, io::Error> {
+    let mut state = contents.initialize();
     let mut bytes_written = 0;
 
     let mut start_file = 0;
     if num_files > 0 {
         with_file_name(offset, |s| file.push(s));
 
-        match contents.create_file(file, 0, true) {
+        match contents.create_file(file, 0, true, &mut state) {
             Ok(bytes) => {
                 bytes_written += bytes;
                 start_file += 1;
@@ -104,7 +105,7 @@ fn create_files(
         with_file_name(i + offset, |s| file.push(s));
 
         bytes_written += contents
-            .create_file(file, i.try_into().unwrap_or(usize::MAX), false)
+            .create_file(file, i.try_into().unwrap_or(usize::MAX), false, &mut state)
             .attach_printable_lazy(|| format!("Failed to create file {file:?}"))?;
 
         file.pop();
