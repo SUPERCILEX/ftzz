@@ -1,19 +1,12 @@
-use std::{fmt, num::NonZeroU64, time::Duration};
+use std::{io::sink, num::NonZeroU64, time::Duration};
 
 use criterion::{
     criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion, PlotConfiguration,
     Throughput,
 };
 use ftzz::{Generator, NumFilesWithRatio};
+use io_adapters::WriteExtension;
 use tempfile::tempdir;
-
-struct Sink;
-
-impl fmt::Write for Sink {
-    fn write_str(&mut self, _: &str) -> fmt::Result {
-        Ok(())
-    }
-}
 
 fn simple_generate(c: &mut Criterion) {
     let mut group = c.benchmark_group("simple_generate");
@@ -35,7 +28,7 @@ fn simple_generate(c: &mut Criterion) {
                         ))
                         .max_depth(5)
                         .build()
-                        .generate(&mut Sink)
+                        .generate(&mut sink().write_adapter())
                         .unwrap();
 
                     dir
@@ -66,7 +59,7 @@ fn huge_generate(c: &mut Criterion) {
                     ))
                     .max_depth(5)
                     .build()
-                    .generate(&mut Sink)
+                    .generate(&mut sink().write_adapter())
                     .unwrap();
 
                 dir
@@ -94,7 +87,7 @@ fn deep_generate(c: &mut Criterion) {
                     ))
                     .max_depth(100)
                     .build()
-                    .generate(&mut Sink)
+                    .generate(&mut sink().write_adapter())
                     .unwrap();
 
                 dir
@@ -122,7 +115,7 @@ fn shallow_generate(c: &mut Criterion) {
                     ))
                     .max_depth(0)
                     .build()
-                    .generate(&mut Sink)
+                    .generate(&mut sink().write_adapter())
                     .unwrap();
 
                 dir
@@ -154,7 +147,7 @@ fn sparse_generate(c: &mut Criterion) {
                     )
                     .max_depth(5)
                     .build()
-                    .generate(&mut Sink)
+                    .generate(&mut sink().write_adapter())
                     .unwrap();
 
                 dir
@@ -186,7 +179,7 @@ fn dense_generate(c: &mut Criterion) {
                     )
                     .max_depth(5)
                     .build()
-                    .generate(&mut Sink)
+                    .generate(&mut sink().write_adapter())
                     .unwrap();
 
                 dir
@@ -215,7 +208,7 @@ fn bytes_generate(c: &mut Criterion) {
                         .max_depth(5)
                         .num_bytes(num_bytes)
                         .build()
-                        .generate(&mut Sink)
+                        .generate(&mut sink().write_adapter())
                         .unwrap();
 
                     dir
