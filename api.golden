@@ -166,8 +166,18 @@ pub struct ftzz::NumFilesWithRatio
 impl ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::from_num_files(num_files: core::num::nonzero::NonZeroU64) -> Self
 pub fn ftzz::NumFilesWithRatio::new(num_files: core::num::nonzero::NonZeroU64, file_to_dir_ratio: core::num::nonzero::NonZeroU64) -> core::result::Result<Self, ftzz::NumFilesWithRatioError>
+impl core::clone::Clone for ftzz::NumFilesWithRatio
+pub fn ftzz::NumFilesWithRatio::clone(&self) -> ftzz::NumFilesWithRatio
+impl core::cmp::Eq for ftzz::NumFilesWithRatio
+impl core::cmp::PartialEq for ftzz::NumFilesWithRatio
+pub fn ftzz::NumFilesWithRatio::eq(&self, other: &ftzz::NumFilesWithRatio) -> bool
 impl core::fmt::Debug for ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for ftzz::NumFilesWithRatio
+pub fn ftzz::NumFilesWithRatio::hash<__H: core::hash::Hasher>(&self, state: &mut __H)
+impl core::marker::Copy for ftzz::NumFilesWithRatio
+impl core::marker::StructuralEq for ftzz::NumFilesWithRatio
+impl core::marker::StructuralPartialEq for ftzz::NumFilesWithRatio
 impl core::marker::Send for ftzz::NumFilesWithRatio
 impl core::marker::Sync for ftzz::NumFilesWithRatio
 impl core::marker::Unpin for ftzz::NumFilesWithRatio
@@ -181,6 +191,10 @@ pub fn ftzz::NumFilesWithRatio::try_from(value: U) -> core::result::Result<T, <T
 impl<T, U> core::convert::TryInto<U> for ftzz::NumFilesWithRatio where U: core::convert::TryFrom<T>
 pub type ftzz::NumFilesWithRatio::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn ftzz::NumFilesWithRatio::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for ftzz::NumFilesWithRatio where T: core::clone::Clone
+pub type ftzz::NumFilesWithRatio::Owned = T
+pub fn ftzz::NumFilesWithRatio::clone_into(&self, target: &mut T)
+pub fn ftzz::NumFilesWithRatio::to_owned(&self) -> T
 impl<T> core::any::Any for ftzz::NumFilesWithRatio where T: 'static + core::marker::Sized
 pub fn ftzz::NumFilesWithRatio::type_id(&self) -> core::any::TypeId
 impl<T> core::borrow::Borrow<T> for ftzz::NumFilesWithRatio where T: core::marker::Sized

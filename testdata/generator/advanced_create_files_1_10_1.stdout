@@ -1,21 +1,16 @@
 About 1 file will be generated in approximately 1 directory distributed across a tree of maximum depth 10 where each directory contains approximately 1 other directory.
-Created 2 files across 14 directories.
+Created 2 files across 9 directories.
 
 /0
 /0.dir
 /1
 /0.dir/0.dir
+/0.dir/1.dir
 /0.dir/0.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/1.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/1.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/1.dir/0.dir/0.dir
-/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/0.dir/1.dir/0.dir/1.dir
+/0.dir/1.dir/0.dir
+/0.dir/1.dir/0.dir/0.dir
+/0.dir/1.dir/0.dir/0.dir/0.dir
+/0.dir/1.dir/0.dir/0.dir/0.dir/0.dir
+/0.dir/1.dir/0.dir/0.dir/0.dir/0.dir/0.dir
 
-0x8928404f46867735
+0xf2138f37b14a1b0f

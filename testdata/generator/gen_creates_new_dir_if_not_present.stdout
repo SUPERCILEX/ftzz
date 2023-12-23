@@ -1,8 +1,9 @@
 About 1 file will be generated in approximately 1 directory distributed across a tree of maximum depth 5 where each directory contains approximately 1 other directory.
-Created 1 file across 1 directory.
+Created 1 file across 2 directories.
 
 /new
 /new/0
 /new/0.dir
+/new/0.dir/0.dir
 
-0x254013c78b68a2ed
+0x2fcfcde2a393466b

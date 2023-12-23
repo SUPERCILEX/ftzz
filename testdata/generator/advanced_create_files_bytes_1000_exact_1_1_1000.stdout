@@ -1,8 +1,8 @@
 About 1 file will be generated in approximately 1 directory distributed across a tree of maximum depth 1 where each directory contains approximately 1 other directory. Each file will contain approximately 1,000 bytes of random data totaling exactly 1000 bytes.
-Created 2 files (1.0 KB) across 1 directory.
+Created 1 file (1.0 KB) across 2 directories.
 
 /0
 /0.dir
-/1
+/1.dir
 
-0x3b73d734d7f86401
+0x35b1332000e7b882

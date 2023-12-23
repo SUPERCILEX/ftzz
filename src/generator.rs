@@ -8,6 +8,7 @@ use std::{
     cmp::max,
     fmt::Write,
     fs::create_dir_all,
+    hash::{DefaultHasher, Hash, Hasher},
     num::{NonZeroU64, NonZeroUsize},
     path::PathBuf,
     process::ExitCode,
@@ -38,7 +39,7 @@ pub enum Error {
     RuntimeCreation,
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct NumFilesWithRatio {
     num_files: NonZeroU64,
     file_to_dir_ratio: NonZeroU64,
@@ -246,7 +247,11 @@ fn validated_options(
         bytes_per_file,
         dirs_per_dir,
         max_depth,
-        seed,
+        seed: {
+            let mut hasher = DefaultHasher::new();
+            (num_files_with_ratio, max_depth, seed).hash(&mut hasher);
+            hasher.finish()
+        },
         human_info: HumanInfo {
             dirs_per_dir: dirs_per_dir.round() as usize,
             total_dirs: num_dirs.round() as usize,
@@ -405,12 +410,7 @@ async fn run_generator_async(
     let bytes = NonZeroU64::new(bytes);
     let dynamic = DynamicGenerator {
         num_dirs_distr: truncatable_normal(dirs_per_dir),
-        random: {
-            let seed = ((files.get().wrapping_add(max_depth.into()) as f64 * dirs_per_dir) as u64)
-                .wrapping_add(seed);
-            log!(Level::Debug, "Starting seed: {seed}");
-            Xoshiro256PlusPlus::seed_from_u64(seed)
-        },
+        random: Xoshiro256PlusPlus::seed_from_u64(seed),
 
         bytes: bytes.map(|_| GeneratorBytes {
             num_bytes_distr: truncatable_normal(bytes_per_file),
