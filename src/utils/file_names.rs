@@ -1,8 +1,6 @@
 use std::{mem::MaybeUninit, ptr, slice};
 
-struct FileNameCache {
-    cache: &'static [u8],
-}
+struct FileNameCache;
 
 /// Specialized cache for file names that takes advantage of our monotonically
 /// increasing integer naming scheme.
@@ -16,17 +14,13 @@ struct FileNameCache {
 /// since this cache is so small, we construct it at compile time and ship it
 /// with the binary.
 impl FileNameCache {
-    const fn new() -> Self {
-        Self {
-            cache: include_bytes!(concat!(env!("OUT_DIR"), "/file_name_cache.bin")),
-        }
-    }
+    fn with_file_name<T, F: FnOnce(&str) -> T>(i: u16, f: F) -> T {
+        static CACHE: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/file_name_cache.bin"));
 
-    fn with_file_name<T, F: FnOnce(&str) -> T>(&self, i: u16, f: F) -> T {
         debug_assert!(i < Self::max_cache_size());
         f(unsafe {
             std::str::from_utf8_unchecked(slice::from_raw_parts(
-                self.cache.as_ptr().add((i * 3) as usize).cast::<u8>(),
+                CACHE.as_ptr().add((i * 3) as usize).cast::<u8>(),
                 Self::str_bytes_used(i),
             ))
         })
@@ -46,11 +40,9 @@ impl FileNameCache {
     }
 }
 
-static CACHE: FileNameCache = FileNameCache::new();
-
 pub fn with_file_name<T>(i: u64, f: impl FnOnce(&str) -> T) -> T {
     if i < FileNameCache::max_cache_size().into() {
-        CACHE.with_file_name(i.try_into().unwrap(), f)
+        FileNameCache::with_file_name(i.try_into().unwrap(), f)
     } else {
         f(itoa::Buffer::new().format(i))
     }
