@@ -24,8 +24,8 @@ Options:
                                        / 1000)
       --seed <SEED>                    Change the PRNG's starting seed [default: 0]
   -h, --help                           Print help (use `--help` for more detail)
-  -q, --quiet...                       Less output per occurrence
-  -v, --verbose...                     More output per occurrence
+  -q, --quiet...                       Decrease logging verbosity
+  -v, --verbose...                     Increase logging verbosity
   -V, --version                        Print version
 
 ```

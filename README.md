@@ -137,10 +137,10 @@ Options:
           Print help (use `-h` for a summary)
 
   -q, --quiet...
-          Less output per occurrence
+          Decrease logging verbosity
 
   -v, --verbose...
-          More output per occurrence
+          Increase logging verbosity
 
   -V, --version
           Print version

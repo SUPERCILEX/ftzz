@@ -14,7 +14,7 @@ bytesize = "1.3.0"
 cfg-if = "1.0.0"
 clap = { version = "4.4.11", features = ["derive", "wrap_help"] }
 clap-num = "1.0.2"
-clap-verbosity-flag = "2.1.0"
+clap-verbosity-flag = "2.1.1"
 error-stack = "0.4.1"
 io-adapters = "0.3.0"
 itoa = "1.0.10"
@@ -25,9 +25,9 @@ rand_distr = "0.4.3"
 rand_xoshiro = "0.6.0"
 simple_logger = { version = "4.3.0", default-features = false, features = ["colors"] }
 sysexits = "0.7.7"
-thiserror = "1.0.50"
+thiserror = "1.0.51"
 thousands = "0.2.0"
-tokio = { version = "1.35.0", features = ["rt"] }
+tokio = { version = "1.35.1", features = ["rt"] }
 tracing = { version = "0.1.40", features = ["release_max_level_off", "log"], optional = true }
 tracing-chrome = { version = "0.7.1", optional = true }
 tracing-subscriber = { version = "0.3.18", optional = true }
