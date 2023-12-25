@@ -16,6 +16,10 @@ pub struct FastPathBuf {
 }
 
 impl FastPathBuf {
+    pub fn new() -> Self {
+        Self::with_capacity(0)
+    }
+
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             inner: Vec::with_capacity(capacity),
@@ -24,12 +28,11 @@ impl FastPathBuf {
     }
 
     pub fn capacity(&self) -> usize {
-        let Self {
-            ref inner,
-            last_len: _,
-        } = *self;
+        self.inner.capacity()
+    }
 
-        inner.capacity()
+    pub fn reserve(&mut self, additional: usize) {
+        self.inner.reserve(additional);
     }
 
     pub fn push(&mut self, name: &str) {
@@ -40,7 +43,8 @@ impl FastPathBuf {
 
         *last_len = inner.len();
 
-        inner.reserve(name.len() + 1);
+        // Reserve an extra byte for the eventually appended NUL terminator
+        inner.reserve(1 + name.len() + 1);
         inner.push(MAIN_SEPARATOR as u8);
         inner.extend_from_slice(name.as_bytes());
     }

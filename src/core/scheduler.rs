@@ -1,4 +1,5 @@
 use std::{
+    cmp::max,
     collections::VecDeque,
     io,
     num::{NonZeroU64, NonZeroUsize},
@@ -19,7 +20,7 @@ use crate::{
         truncatable_normal,
     },
     generator::Error,
-    utils::{with_dir_name, FastPathBuf},
+    utils::{with_dir_name, with_file_name, FastPathBuf},
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -327,15 +328,24 @@ fn schedule_task(
     let raw_next_dirs = next_dirs.spare_capacity_mut();
 
     let num_files_distr = num_files_distr(target_file_count, dirs_per_dir, max_depth - depth);
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let expected_file_name_length = max(
+        with_dir_name(dirs_per_dir.round() as usize, str::len),
+        with_file_name(num_files_distr.mean().round() as u64, str::len),
+    );
 
     #[cfg(feature = "tracing")]
     let span_guard = gen_span.enter();
     for i in 0..num_dirs_to_generate {
         let path = with_dir_name(i, |s| {
-            let mut buf = path_pool.pop().unwrap_or_else(|| {
-                // Space for inner, the path separator, name, and a NUL terminator
-                FastPathBuf::with_capacity(target_dir.capacity() + 1 + s.len() + 1)
-            });
+            let mut buf = path_pool.pop().unwrap_or_else(FastPathBuf::new);
+
+            // Space for the parent dir, the path separator, the target dir, child separator
+            // and name, and a NUL terminator
+            buf.reserve(
+                (target_dir.capacity() + 1 + s.len() + 1 + expected_file_name_length + 1)
+                    .saturating_sub(buf.capacity()),
+            );
 
             buf.clone_from(target_dir);
             buf.push(s);
