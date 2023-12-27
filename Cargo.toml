@@ -14,7 +14,7 @@ bytesize = "1.3.0"
 cfg-if = "1.0.0"
 clap = { version = "4.4.11", features = ["derive", "wrap_help"] }
 clap-num = "1.0.2"
-clap-verbosity-flag = "2.1.1"
+clap-verbosity-flag2 = "2.1.1"
 error-stack = "0.4.1"
 io-adapters = "0.3.0"
 itoa = "1.0.10"
@@ -29,8 +29,10 @@ thiserror = "1.0.51"
 thousands = "0.2.0"
 tokio = { version = "1.35.1", features = ["rt"] }
 tracing = { version = "0.1.40", features = ["release_max_level_off", "log"], optional = true }
-tracing-chrome = { version = "0.7.1", optional = true }
+tracing-log = { version = "0.2.0", optional = true }
 tracing-subscriber = { version = "0.3.18", optional = true }
+tracing-tracy = { version = "0.10.4", optional = true }
+tracy-client = { version = "0.16.4", optional = true }
 typed-builder = "0.18.0"
 
 [target.'cfg(unix)'.dependencies]
@@ -50,7 +52,7 @@ trycmd = "0.14.19"
 itoa = "1.0.10"
 
 [features]
-trace = ["tracing", "tracing-chrome", "tracing-subscriber"]
+trace = ["tracing", "dep:tracing-log", "dep:tracing-subscriber", "dep:tracing-tracy", "dep:tracy-client"]
 dry_run = []
 
 [[bench]]
@@ -66,4 +68,5 @@ panic = "abort"
 [profile.dr]
 inherits = "release"
 debug = true
+debug-assertions = true
 strip = false

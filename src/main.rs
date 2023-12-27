@@ -11,10 +11,16 @@ use std::{
 use clap::{builder::ArgPredicate, ArgAction, Args, Parser, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
+use clap_verbosity_flag2 as clap_verbosity_flag;
 use error_stack::ResultExt;
 use ftzz::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
 use io_adapters::WriteExtension;
 use paste::paste;
+
+#[cfg(not(feature = "trace"))]
+type DefaultLevel = clap_verbosity_flag::WarnLevel;
+#[cfg(feature = "trace")]
+type DefaultLevel = clap_verbosity_flag::TraceLevel;
 
 /// Generate a random directory hierarchy with some number of files
 ///
@@ -42,7 +48,7 @@ struct Ftzz {
 
     #[command(flatten)]
     #[command(next_display_order = None)]
-    verbose: Verbosity,
+    verbose: Verbosity<DefaultLevel>,
 
     #[arg(short, long, short_alias = '?', global = true)]
     #[arg(action = ArgAction::Help, help = "Print help (use `--help` for more detail)")]
@@ -197,6 +203,11 @@ pub enum CliError {
     InvalidArgs,
 }
 
+#[cfg(feature = "trace")]
+#[global_allocator]
+static GLOBAL: tracy_client::ProfiledAllocator<std::alloc::System> =
+    tracy_client::ProfiledAllocator::new(std::alloc::System, 100);
+
 fn main() -> ExitCode {
     #[cfg(not(debug_assertions))]
     error_stack::Report::install_debug_hook::<std::panic::Location>(|_, _| {});
@@ -204,23 +215,27 @@ fn main() -> ExitCode {
 
     let args = Ftzz::parse();
 
-    #[cfg(not(feature = "trace"))]
-    match simple_logger::init_with_level(args.verbose.log_level().unwrap_or_else(log::Level::max)) {
-        Ok(()) => {}
-        Err(e) => {
-            drop(writeln!(io::stderr(), "Failed to initialize logger: {e:?}"));
-        }
-    }
-    #[cfg(feature = "trace")]
-    let _guard = {
-        use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+    {
+        let level = args.verbose.log_level().unwrap_or_else(log::Level::max);
 
-        let (chrome_layer, guard) = tracing_chrome::ChromeLayerBuilder::new()
-            .include_args(true)
-            .build();
-        tracing_subscriber::registry().with(chrome_layer).init();
-        guard
-    };
+        #[cfg(not(feature = "trace"))]
+        match simple_logger::init_with_level(level) {
+            Ok(()) => {}
+            Err(e) => {
+                drop(writeln!(io::stderr(), "Failed to initialize logger: {e:?}"));
+            }
+        }
+        #[cfg(feature = "trace")]
+        {
+            use tracing_log::AsTrace;
+            use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+            tracing_subscriber::registry()
+                .with(tracing_tracy::TracyLayer::new().with_stackdepth(32))
+                .with(tracing::level_filters::LevelFilter::from(level.as_trace()))
+                .init();
+        };
+    }
 
     match ftzz(args) {
         Ok(o) => o.report(),
