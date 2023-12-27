@@ -180,6 +180,7 @@ struct HumanInfo {
     bytes_per_files: usize,
 }
 
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
 fn validated_options(
     Generator {
         root_dir,
@@ -260,6 +261,10 @@ fn validated_options(
     })
 }
 
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(output))
+)]
 fn print_configuration_info(
     &Configuration {
         root_dir: _,
@@ -331,6 +336,10 @@ fn print_configuration_info(
     .attach(ExitCode::from(sysexits::ExitCode::IoErr))
 }
 
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(output))
+)]
 fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &mut impl Write) {
     // Ignore I/O errors since it'd be dumb to fail if we actually succeeded in
     // creating all the files
@@ -354,6 +363,7 @@ fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &m
     );
 }
 
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
 fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
     let parallelism =
         thread::available_parallelism().unwrap_or(const { NonZeroUsize::new(1).unwrap() });
@@ -377,6 +387,7 @@ fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
     runtime.block_on(run_generator_async(config, parallelism))
 }
 
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
 async fn run_generator_async(
     Configuration {
         root_dir,

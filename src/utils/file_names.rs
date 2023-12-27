@@ -40,6 +40,7 @@ impl FileNameCache {
     }
 }
 
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(f)))]
 pub fn with_file_name<T>(i: u64, f: impl FnOnce(&str) -> T) -> T {
     if i < FileNameCache::max_cache_size().into() {
         FileNameCache::with_file_name(i.try_into().unwrap(), f)
@@ -48,6 +49,7 @@ pub fn with_file_name<T>(i: u64, f: impl FnOnce(&str) -> T) -> T {
     }
 }
 
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(f)))]
 pub fn with_dir_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
     const SUFFIX: &str = ".dir";
     with_file_name(i.try_into().unwrap(), |s| {

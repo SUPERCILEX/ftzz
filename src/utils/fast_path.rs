@@ -35,6 +35,7 @@ impl FastPathBuf {
         self.inner.reserve(additional);
     }
 
+    #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
     pub fn push(&mut self, name: &str) {
         let Self {
             ref mut inner,
@@ -49,6 +50,7 @@ impl FastPathBuf {
         inner.extend_from_slice(name.as_bytes());
     }
 
+    #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
     pub fn pop(&mut self) {
         let Self {
             ref mut inner,
@@ -66,6 +68,7 @@ impl FastPathBuf {
         }
     }
 
+    #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
     pub fn set_file_name(&mut self, name: &str) {
         self.pop();
         self.push(name);

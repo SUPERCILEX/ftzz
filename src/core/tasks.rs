@@ -54,6 +54,10 @@ pub trait TaskGenerator {
     }
 }
 
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(params))
+)]
 fn queue(
     params @ GeneratorTaskParams {
         num_files,
@@ -119,6 +123,7 @@ pub struct DynamicGenerator<R> {
 }
 
 impl<R: RngCore + Clone + Send + 'static> TaskGenerator for DynamicGenerator<R> {
+    #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(self)))]
     fn queue_gen(
         &mut self,
         num_files_distr: &Normal<f64>,
@@ -177,6 +182,10 @@ pub struct StaticGenerator<R> {
 }
 
 impl<R: RngCore + Clone + Send + 'static> TaskGenerator for StaticGenerator<R> {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "trace", skip(self, byte_counts_pool))
+    )]
     fn queue_gen(
         &mut self,
         num_files_distr: &Normal<f64>,
@@ -294,6 +303,10 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
         }
     }
 
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "trace", skip(self, byte_counts_pool))
+    )]
     fn queue_gen_internal(
         &mut self,
         file: FastPathBuf,

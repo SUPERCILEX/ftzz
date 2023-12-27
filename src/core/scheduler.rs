@@ -83,6 +83,10 @@ struct ObjectPool {
     byte_counts: Vec<Vec<u64>>,
 }
 
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(generator))
+)]
 pub async fn run(
     root_dir: PathBuf,
     target_file_count: NonZeroU64,
@@ -198,6 +202,10 @@ pub async fn run(
     Ok(stats)
 }
 
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(tasks, path_pool, byte_counts_pool))
+)]
 async fn flush_tasks(
     &mut Scheduler {
         ref mut tasks,
@@ -246,6 +254,13 @@ fn handle_task_result(
     Ok(outcome)
 }
 
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(
+        level = "trace",
+        skip(generator, tasks, stack, path_pool, byte_counts_pool)
+    )
+)]
 fn schedule_root_dir(
     generator: &mut impl TaskGenerator,
     target_file_count: NonZeroU64,
@@ -291,6 +306,13 @@ fn schedule_root_dir(
     }
 }
 
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(
+        level = "trace",
+        skip(generator, tasks, stack, dir_pool, path_pool, byte_counts_pool)
+    )
+)]
 fn schedule_task(
     target_file_count: u64,
     num_dirs_to_generate: usize,
@@ -397,6 +419,7 @@ fn schedule_task(
     }
 }
 
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip_all))]
 fn schedule_last_task(mut generator: impl TaskGenerator, mut scheduler: Scheduler<'_>) {
     let Scheduler {
         ref mut tasks,
@@ -421,6 +444,10 @@ fn schedule_last_task(mut generator: impl TaskGenerator, mut scheduler: Schedule
     }
 }
 
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(stack, directory_pool))
+)]
 fn handle_directory_completion(
     &mut Scheduler {
         tasks: _,
@@ -465,6 +492,7 @@ fn next_target_file_count(target_file_count: u64, dirs_created: usize, files_cre
 }
 
 #[allow(clippy::cast_precision_loss)]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
 fn num_files_distr(
     target_file_count: u64,
     dirs_per_dir: f64,

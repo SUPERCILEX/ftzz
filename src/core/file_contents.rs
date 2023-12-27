@@ -31,6 +31,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
     fn initialize(&self) -> Self::State {}
 
     #[inline]
+    #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(self)))]
     fn create_file(
         &mut self,
         file: &mut FastPathBuf,
@@ -75,6 +76,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
     }
 }
 
+#[derive(Debug)]
 pub struct OnTheFlyGeneratedFileContents {
     pub num_bytes_distr: Normal<f64>,
     pub seed: u64,
@@ -92,6 +94,7 @@ impl FileContentsGenerator for OnTheFlyGeneratedFileContents {
 
     #[inline]
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
     fn create_file(
         &mut self,
         file: &mut FastPathBuf,
@@ -143,6 +146,7 @@ impl FileContentsGenerator for OnTheFlyGeneratedFileContents {
     }
 }
 
+#[derive(Debug)]
 pub struct PreDefinedGeneratedFileContents {
     pub byte_counts: Vec<u64>,
     pub seed: u64,
@@ -159,6 +163,7 @@ impl FileContentsGenerator for PreDefinedGeneratedFileContents {
     }
 
     #[inline]
+    #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
     fn create_file(
         &mut self,
         file: &mut FastPathBuf,

@@ -26,7 +26,7 @@ pub struct GeneratorTaskOutcome {
 
 #[cfg_attr(
     feature = "tracing",
-    tracing::instrument(level = "trace", skip(file_contents))
+    tracing::instrument(level = "debug", skip(file_contents))
 )]
 pub fn create_files_and_dirs(
     GeneratorTaskParams {
