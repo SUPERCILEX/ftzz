@@ -1,7 +1,7 @@
 use std::{
     ffi::OsStr,
     fmt,
-    ops::Deref,
+    ops::{Deref, DerefMut},
     os::unix::ffi::{OsStrExt, OsStringExt},
     path::{Path, PathBuf, MAIN_SEPARATOR},
 };
@@ -9,17 +9,19 @@ use std::{
 /// A specialized [`PathBuf`][std::path::PathBuf] implementation that takes
 /// advantage of a few assumptions. Specifically, it *only* supports adding
 /// single-level directories (e.g. "foo", "foo/bar" is not allowed) and updating
-/// the current file name. Any other usage is UB.
+/// the current file name.
 pub struct FastPathBuf {
     inner: Vec<u8>,
     last_len: usize,
 }
 
 impl FastPathBuf {
+    #[must_use]
     pub fn new() -> Self {
         Self::with_capacity(0)
     }
 
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             inner: Vec::with_capacity(capacity),
@@ -36,22 +38,12 @@ impl FastPathBuf {
     }
 
     #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
-    pub fn push(&mut self, name: &str) {
-        let Self {
-            ref mut inner,
-            ref mut last_len,
-        } = *self;
-
-        *last_len = inner.len();
-
-        // Reserve an extra byte for the eventually appended NUL terminator
-        inner.reserve(1 + name.len() + 1);
-        inner.push(MAIN_SEPARATOR as u8);
-        inner.extend_from_slice(name.as_bytes());
+    pub fn push(&mut self, name: &str) -> PopGuard {
+        PopGuard::push(self, name)
     }
 
     #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
-    pub fn pop(&mut self) {
+    pub unsafe fn pop(&mut self) {
         let Self {
             ref mut inner,
             last_len,
@@ -69,12 +61,15 @@ impl FastPathBuf {
     }
 
     #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
-    pub fn set_file_name(&mut self, name: &str) {
-        self.pop();
+    pub unsafe fn set_file_name(&mut self, name: &str) {
+        unsafe {
+            self.pop();
+        }
         self.push(name);
     }
 
     #[cfg(all(unix, not(miri)))]
+    #[must_use]
     pub fn to_cstr_mut(&mut self) -> unix::CStrFastPathBufGuard {
         unix::CStrFastPathBufGuard::new(self)
     }
@@ -92,6 +87,12 @@ impl From<PathBuf> for FastPathBuf {
 
 fn bytes_as_path(bytes: &[u8]) -> &Path {
     OsStr::from_bytes(bytes).as_ref()
+}
+
+impl Default for FastPathBuf {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Deref for FastPathBuf {
@@ -143,6 +144,56 @@ impl Clone for FastPathBuf {
     }
 }
 
+pub struct PopGuard<'a>(&'a mut FastPathBuf);
+
+impl<'a> PopGuard<'a> {
+    fn push(path: &'a mut FastPathBuf, name: &str) -> Self {
+        let FastPathBuf {
+            ref mut inner,
+            ref mut last_len,
+        } = *path;
+
+        *last_len = inner.len();
+
+        // Reserve an extra byte for the eventually appended NUL terminator
+        inner.reserve(1 + name.len() + 1);
+        inner.push(MAIN_SEPARATOR as u8);
+        inner.extend_from_slice(name.as_bytes());
+
+        Self(path)
+    }
+
+    pub fn pop(&mut self) {
+        unsafe { self.0.pop() }
+    }
+}
+
+impl Deref for PopGuard<'_> {
+    type Target = FastPathBuf;
+
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
+}
+
+impl DerefMut for PopGuard<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0
+    }
+}
+
+impl AsRef<Path> for PopGuard<'_> {
+    fn as_ref(&self) -> &Path {
+        self.0
+    }
+}
+
+impl fmt::Debug for PopGuard<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
+}
+
 #[cfg(all(unix, not(miri)))]
 mod unix {
     use std::{ffi::CStr, ops::Deref};
@@ -154,6 +205,7 @@ mod unix {
     }
 
     impl<'a> CStrFastPathBufGuard<'a> {
+        #[must_use]
         pub fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard {
             let FastPathBuf {
                 ref mut inner,

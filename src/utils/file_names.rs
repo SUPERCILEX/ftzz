@@ -14,7 +14,7 @@ struct FileNameCache;
 /// since this cache is so small, we construct it at compile time and ship it
 /// with the binary.
 impl FileNameCache {
-    fn with_file_name<T, F: FnOnce(&str) -> T>(i: u16, f: F) -> T {
+    unsafe fn with_file_name<T, F: FnOnce(&str) -> T>(i: u16, f: F) -> T {
         static CACHE: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/file_name_cache.bin"));
 
         debug_assert!(i < Self::max_cache_size());
@@ -43,7 +43,7 @@ impl FileNameCache {
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(f)))]
 pub fn with_file_name<T>(i: u64, f: impl FnOnce(&str) -> T) -> T {
     if i < FileNameCache::max_cache_size().into() {
-        FileNameCache::with_file_name(i.try_into().unwrap(), f)
+        unsafe { FileNameCache::with_file_name(i.try_into().unwrap(), f) }
     } else {
         f(itoa::Buffer::new().format(i))
     }
@@ -53,7 +53,10 @@ pub fn with_file_name<T>(i: u64, f: impl FnOnce(&str) -> T) -> T {
 pub fn with_dir_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
     const SUFFIX: &str = ".dir";
     with_file_name(i.try_into().unwrap(), |s| {
+        #[allow(clippy::assertions_on_constants)]
+        const { assert!(usize::BITS <= 128, "Unsupported usize width.") }
         let mut buf = [MaybeUninit::<u8>::uninit(); 39 + SUFFIX.len()]; // 39 to support u128
+
         unsafe {
             let buf_ptr = buf.as_mut_ptr().cast::<u8>();
             ptr::copy_nonoverlapping(s.as_ptr(), buf_ptr, s.len());

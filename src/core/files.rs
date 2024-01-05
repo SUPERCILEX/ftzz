@@ -53,7 +53,7 @@ pub fn create_files_and_dirs(
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
 fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> Result<(), io::Error> {
     for i in 0..num_dirs {
-        with_dir_name(i, |s| dir.push(s));
+        let mut dir = with_dir_name(i, |s| dir.push(s));
 
         create_dir_all(&dir)
             .attach_printable_lazy(|| format!("Failed to create directory {dir:?}"))?;
@@ -78,20 +78,20 @@ fn create_files(
 
     let mut start_file = 0;
     if num_files > 0 {
-        with_file_name(offset, |s| file.push(s));
+        let mut guard = with_file_name(offset, |s| file.push(s));
 
-        match contents.create_file(file, 0, true, &mut state) {
+        match contents.create_file(&mut guard, 0, true, &mut state) {
             Ok(bytes) => {
                 bytes_written += bytes;
                 start_file += 1;
-                file.pop();
+                guard.pop();
             }
             Err(e) => {
                 if e.kind() == NotFound {
                     #[cfg(feature = "tracing")]
-                    tracing::event!(tracing::Level::TRACE, file = ?file, "Parent directory not created in time");
+                    tracing::event!(tracing::Level::TRACE, file = ?guard, "Parent directory not created in time");
 
-                    file.pop();
+                    guard.pop();
                     create_dir_all(&file)
                         .attach_printable_lazy(|| format!("Failed to create directory {file:?}"))?;
                 } else {
@@ -102,10 +102,15 @@ fn create_files(
         }
     }
     for i in start_file..num_files {
-        with_file_name(i + offset, |s| file.push(s));
+        let mut file = with_file_name(i + offset, |s| file.push(s));
 
         bytes_written += contents
-            .create_file(file, i.try_into().unwrap_or(usize::MAX), false, &mut state)
+            .create_file(
+                &mut file,
+                i.try_into().unwrap_or(usize::MAX),
+                false,
+                &mut state,
+            )
             .attach_printable_lazy(|| format!("Failed to create file {file:?}"))?;
 
         file.pop();

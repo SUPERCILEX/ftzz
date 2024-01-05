@@ -184,7 +184,9 @@ pub async fn run(
             scheduler.stack.push(directory);
             with_dir_name(0, |s| scheduler.target_dir.push(s));
         } else if !is_completing {
-            with_dir_name(next_stack_dir, |s| scheduler.target_dir.set_file_name(s));
+            with_dir_name(next_stack_dir, |s| unsafe {
+                scheduler.target_dir.set_file_name(s);
+            });
         }
     }
     #[cfg(feature = "tracing")]
@@ -474,10 +476,12 @@ fn handle_directory_completion(
         ref child_dir_counts,
     }) = stack.last()
     {
-        target_dir.pop();
+        unsafe {
+            target_dir.pop();
+        }
 
         if !child_dir_counts.is_empty() {
-            with_dir_name(total_dirs - child_dir_counts.len(), |s| {
+            with_dir_name(total_dirs - child_dir_counts.len(), |s| unsafe {
                 target_dir.set_file_name(s);
             });
         }
