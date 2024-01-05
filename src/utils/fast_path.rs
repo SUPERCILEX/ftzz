@@ -2,7 +2,6 @@ use std::{
     ffi::OsStr,
     fmt,
     ops::{Deref, DerefMut},
-    os::unix::ffi::{OsStrExt, OsStringExt},
     path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
@@ -52,8 +51,8 @@ impl FastPathBuf {
         if inner.len() > last_len {
             inner.truncate(last_len);
         } else {
-            inner.truncate({
-                let parent = bytes_as_path(inner).parent();
+            self.inner.truncate({
+                let parent = self.parent();
                 let parent = unsafe { parent.unwrap_unchecked() };
                 parent.as_os_str().len()
             });
@@ -77,16 +76,12 @@ impl FastPathBuf {
 
 impl From<PathBuf> for FastPathBuf {
     fn from(p: PathBuf) -> Self {
-        let inner = p.into_os_string().into_vec();
+        let inner = p.into_os_string().into_encoded_bytes();
         Self {
             last_len: inner.len(),
             inner,
         }
     }
-}
-
-fn bytes_as_path(bytes: &[u8]) -> &Path {
-    OsStr::from_bytes(bytes).as_ref()
 }
 
 impl Default for FastPathBuf {
@@ -104,7 +99,7 @@ impl Deref for FastPathBuf {
             last_len: _,
         } = *self;
 
-        bytes_as_path(inner)
+        unsafe { OsStr::from_encoded_bytes_unchecked(inner) }.as_ref()
     }
 }
 

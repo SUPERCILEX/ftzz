@@ -105,10 +105,7 @@ pub async fn run(
 
     let mut scheduler = Scheduler {
         stack: Vec::with_capacity(max_depth),
-        #[cfg(unix)]
         target_dir: FastPathBuf::from(root_dir),
-        #[cfg(not(unix))]
-        target_dir: root_dir,
 
         cache: {
             let paths = Vec::with_capacity(tasks.capacity() / 2);
