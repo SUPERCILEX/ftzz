@@ -30,7 +30,7 @@ Options:
 
 ```
 
-Negative num files:
+Invalid num files:
 
 ```console
 $ ftzz -n -1 dir
@@ -48,6 +48,10 @@ error: unexpected argument '-1' found
   tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+
+$ ftzz -n 0 dir
+? 2
+error: invalid value '0' for '--files <NUM_FILES>': At least one file must be generated.
 
 ```
 
@@ -72,7 +76,7 @@ Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
 ```
 
-Negative ratio:
+Invalid ratio:
 
 ```console
 $ ftzz -n 1 dir --ftd-ratio -1
@@ -90,6 +94,10 @@ error: unexpected argument '-1' found
   tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+
+$ ftzz -n 1 dir --ftd-ratio 0
+? 2
+error: invalid value '0' for '--ftd-ratio <FILE_TO_DIR_RATIO>': Cannot have no files per directory.
 
 ```
 

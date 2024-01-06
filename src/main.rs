@@ -1,6 +1,5 @@
-#![feature(string_remove_matches)]
-
 use std::{
+    borrow::Cow,
     io,
     io::{stdout, Write},
     num::NonZeroU64,
@@ -15,7 +14,6 @@ use clap_verbosity_flag2 as clap_verbosity_flag;
 use error_stack::ResultExt;
 use ftzz::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
 use io_adapters::WriteExtension;
-use paste::paste;
 
 #[cfg(not(feature = "trace"))]
 type DefaultLevel = clap_verbosity_flag::WarnLevel;
@@ -85,7 +83,7 @@ struct Generate {
     /// data may be generated so long as we attempt to get close to N.
     #[arg(short = 'b', long = "total-bytes", aliases = & ["num-bytes", "num-total-bytes"])]
     #[arg(group = "num-bytes")]
-    #[arg(value_parser = num_bytes_parser)]
+    #[arg(value_parser = si_number::<u64>)]
     #[arg(default_value = "0")]
     num_bytes: u64,
 
@@ -110,7 +108,7 @@ struct Generate {
 
     /// The maximum directory tree depth
     #[arg(short = 'd', long = "max-depth", alias = "depth")]
-    #[arg(value_parser = max_depth_parser)]
+    #[arg(value_parser = si_number::<u32>)]
     #[arg(default_value = "5")]
     max_depth: u32,
 
@@ -231,7 +229,11 @@ fn main() -> ExitCode {
             use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
             tracing_subscriber::registry()
-                .with(tracing_tracy::TracyLayer::new().with_stackdepth(32))
+                .with(
+                    tracing_tracy::TracyLayer::new()
+                        .with_stackdepth(32)
+                        .with_fields_in_zone_name(false),
+                )
                 .with(tracing::level_filters::LevelFilter::from(level.as_trace()))
                 .init();
         };
@@ -260,39 +262,13 @@ fn ftzz(
         .change_context(CliError::Generator)
 }
 
-fn num_files_parser(s: &str) -> Result<NonZeroU64, String> {
-    NonZeroU64::new(lenient_si_number_u64(s)?)
-        .ok_or_else(|| String::from("At least one file must be generated."))
+fn num_files_parser(s: &str) -> Result<NonZeroU64, Cow<'static, str>> {
+    NonZeroU64::new(si_number(s)?).ok_or_else(|| "At least one file must be generated.".into())
 }
 
-fn num_bytes_parser(s: &str) -> Result<u64, String> {
-    lenient_si_number_u64(s)
+fn file_to_dir_ratio_parser(s: &str) -> Result<NonZeroU64, Cow<'static, str>> {
+    NonZeroU64::new(si_number(s)?).ok_or_else(|| "Cannot have no files per directory.".into())
 }
-
-fn max_depth_parser(s: &str) -> Result<u32, String> {
-    lenient_si_number_u32(s)
-}
-
-fn file_to_dir_ratio_parser(s: &str) -> Result<NonZeroU64, String> {
-    NonZeroU64::new(lenient_si_number_u64(s)?)
-        .ok_or_else(|| String::from("Cannot have no files per directory."))
-}
-
-macro_rules! lenient_si_number {
-    ($ty:ty) => {
-        paste! {
-            fn [<lenient_si_number_$ty>](s: &str) -> Result<$ty, String> {
-                let mut s = s.replace('K', "k");
-                s.remove_matches(",");
-                s.remove_matches("_");
-                si_number(&s)
-            }
-        }
-    };
-}
-
-lenient_si_number!(u64);
-lenient_si_number!(u32);
 
 #[cfg(test)]
 mod cli_tests {

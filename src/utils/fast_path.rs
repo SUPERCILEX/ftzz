@@ -68,7 +68,6 @@ impl FastPathBuf {
     }
 
     #[cfg(all(unix, not(miri)))]
-    #[must_use]
     pub fn to_cstr_mut(&mut self) -> unix::CStrFastPathBufGuard {
         unix::CStrFastPathBufGuard::new(self)
     }
@@ -195,12 +194,12 @@ mod unix {
 
     use super::FastPathBuf;
 
+    #[must_use]
     pub struct CStrFastPathBufGuard<'a> {
         buf: &'a mut FastPathBuf,
     }
 
     impl<'a> CStrFastPathBufGuard<'a> {
-        #[must_use]
         pub fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard {
             let FastPathBuf {
                 ref mut inner,

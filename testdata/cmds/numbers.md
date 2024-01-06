@@ -16,15 +16,6 @@ Created 996 files across 42 directories.
 
 ```
 
-Commas:
-
-```console
-$ ftzz --files 1,000 --max-depth 0,010 --ftd-ratio 1,0,0 commas
-About 1,000 files will be generated in approximately 10 directories distributed across a tree of maximum depth 10 where each directory contains approximately 1 other directory.
-Created 996 files across 42 directories.
-
-```
-
 Underscores:
 
 ```console
