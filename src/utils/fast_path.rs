@@ -158,7 +158,7 @@ impl<'a> PopGuard<'a> {
         Self(path)
     }
 
-    pub fn pop(&mut self) {
+    pub fn pop(self) {
         unsafe { self.0.pop() }
     }
 }

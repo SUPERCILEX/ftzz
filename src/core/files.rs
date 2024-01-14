@@ -53,7 +53,7 @@ pub fn create_files_and_dirs(
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
 fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> Result<(), io::Error> {
     for i in 0..num_dirs {
-        let mut dir = with_dir_name(i, |s| dir.push(s));
+        let dir = with_dir_name(i, |s| dir.push(s));
 
         create_dir_all(&dir)
             .attach_printable_lazy(|| format!("Failed to create directory {dir:?}"))?;
