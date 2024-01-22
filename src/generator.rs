@@ -365,8 +365,7 @@ fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &m
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
 fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
-    let parallelism =
-        thread::available_parallelism().unwrap_or(const { NonZeroUsize::new(1).unwrap() });
+    let parallelism = thread::available_parallelism().unwrap_or(NonZeroUsize::new(1).unwrap());
     let mut runtime = tokio::runtime::Builder::new_current_thread();
     #[cfg(all(not(miri), target_os = "linux"))]
     runtime.on_thread_start(|| {
