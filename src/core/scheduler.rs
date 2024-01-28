@@ -1,7 +1,7 @@
 use std::{
     cmp::max,
     collections::VecDeque,
-    io,
+    io, mem,
     num::{NonZeroU64, NonZeroUsize},
     ops::AddAssign,
     path::PathBuf,
@@ -220,7 +220,19 @@ async fn flush_tasks(
 ) -> Result<(), Error> {
     #[cfg(feature = "tracing")]
     tracing::event!(tracing::Level::TRACE, "Flushing pending task queue");
-    for task in tasks.drain(..tasks.len() / 2) {
+
+    let mut drain = tasks.len() / 2;
+    while drain > 0 {
+        let task = {
+            let mut task = tasks.pop_front().unwrap();
+            if !task.is_finished()
+                && let Some(h) = tasks.iter_mut().find(|h| h.is_finished())
+            {
+                mem::swap(&mut task, h);
+            }
+            task
+        };
+
         #[cfg(not(feature = "dry_run"))]
         let outcome = handle_task_result(task.await, stats)?;
         #[cfg(feature = "dry_run")]
@@ -231,6 +243,8 @@ async fn flush_tasks(
             vec.clear();
             byte_counts_pool.push(vec);
         }
+
+        drain -= 1;
     }
     Ok(())
 }
