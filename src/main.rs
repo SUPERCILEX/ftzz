@@ -226,14 +226,31 @@ fn main() -> ExitCode {
         #[cfg(feature = "trace")]
         {
             use tracing_log::AsTrace;
-            use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+            use tracing_subscriber::{
+                fmt::format::DefaultFields, layer::SubscriberExt, util::SubscriberInitExt,
+            };
+
+            #[derive(Default)]
+            struct Config(DefaultFields);
+
+            impl tracing_tracy::Config for Config {
+                type Formatter = DefaultFields;
+
+                fn formatter(&self) -> &Self::Formatter {
+                    &self.0
+                }
+
+                fn stack_depth(&self, _: &tracing::Metadata<'_>) -> u16 {
+                    32
+                }
+
+                fn format_fields_in_zone_name(&self) -> bool {
+                    false
+                }
+            }
 
             tracing_subscriber::registry()
-                .with(
-                    tracing_tracy::TracyLayer::new()
-                        .with_stackdepth(32)
-                        .with_fields_in_zone_name(false),
-                )
+                .with(tracing_tracy::TracyLayer::new(Config::default()))
                 .with(tracing::level_filters::LevelFilter::from(level.as_trace()))
                 .init();
         };

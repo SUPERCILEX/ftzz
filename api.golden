@@ -176,7 +176,6 @@ pub fn ftzz::NumFilesWithRatio::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> 
 impl core::hash::Hash for ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::hash<__H: core::hash::Hasher>(&self, state: &mut __H)
 impl core::marker::Copy for ftzz::NumFilesWithRatio
-impl core::marker::StructuralEq for ftzz::NumFilesWithRatio
 impl core::marker::StructuralPartialEq for ftzz::NumFilesWithRatio
 impl core::marker::Send for ftzz::NumFilesWithRatio
 impl core::marker::Sync for ftzz::NumFilesWithRatio
