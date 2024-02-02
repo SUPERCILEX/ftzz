@@ -10,7 +10,6 @@ use std::{
 use clap::{builder::ArgPredicate, ArgAction, Args, Parser, ValueHint};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
-use clap_verbosity_flag2 as clap_verbosity_flag;
 use error_stack::ResultExt;
 use ftzz::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
 use io_adapters::WriteExtension;
