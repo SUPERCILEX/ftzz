@@ -15,6 +15,7 @@ cfg-if = "1.0.0"
 clap = { version = "4.4.18", features = ["derive", "wrap_help"] }
 clap-num = "1.1.1"
 clap-verbosity-flag = { package = "clap-verbosity-flag2", version = "2.1.1" }
+env_logger = { version = "0.11.1", default-features = false, features = ["auto-color"] }
 error-stack = "0.4.1"
 io-adapters = "0.3.0"
 itoa = "1.0.10"
@@ -22,7 +23,6 @@ log = { version = "0.4.20", features = ["release_max_level_info"] }
 rand = { version = "0.8.5", default-features = false, features = ["std"] }
 rand_distr = "0.4.3"
 rand_xoshiro = "0.6.0"
-simple_logger = { version = "4.3.3", default-features = false, features = ["colors"] }
 sysexits = "0.7.11"
 thiserror = "1.0.56"
 thousands = "0.2.0"

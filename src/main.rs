@@ -216,12 +216,10 @@ fn main() -> ExitCode {
         let level = args.verbose.log_level().unwrap_or_else(log::Level::max);
 
         #[cfg(not(feature = "trace"))]
-        match simple_logger::init_with_level(level) {
-            Ok(()) => {}
-            Err(e) => {
-                drop(writeln!(io::stderr(), "Failed to initialize logger: {e:?}"));
-            }
-        }
+        env_logger::builder()
+            .format_timestamp(None)
+            .filter_level(level.to_level_filter())
+            .init();
         #[cfg(feature = "trace")]
         {
             use tracing_log::AsTrace;
