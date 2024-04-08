@@ -12,21 +12,21 @@ license = "Apache-2.0"
 [dependencies]
 bytesize = "1.3.0"
 cfg-if = "1.0.0"
-clap = { version = "4.4.18", features = ["derive", "wrap_help"] }
+clap = { version = "4.5.4", features = ["derive", "wrap_help"] }
 clap-num = "1.1.1"
 clap-verbosity-flag = { package = "clap-verbosity-flag2", version = "2.1.1" }
-env_logger = { version = "0.11.1", default-features = false, features = ["auto-color"] }
+env_logger = { version = "0.11.3", default-features = false, features = ["auto-color"] }
 error-stack = "0.4.1"
 io-adapters = "0.3.0"
-itoa = "1.0.10"
-log = { version = "0.4.20", features = ["release_max_level_info"] }
+itoa = "1.0.11"
+log = { version = "0.4.21", features = ["release_max_level_info"] }
 rand = { version = "0.8.5", default-features = false, features = ["std"] }
 rand_distr = "0.4.3"
 rand_xoshiro = "0.6.0"
-sysexits = "0.7.11"
-thiserror = "1.0.56"
+sysexits = "0.7.12"
+thiserror = "1.0.58"
 thousands = "0.2.0"
-tokio = { version = "1.35.1", features = ["rt"] }
+tokio = { version = "1.37.0", features = ["rt"] }
 tracing = { version = "0.1.40", features = ["log"], optional = true }
 tracing-log = { version = "0.2.0", optional = true }
 tracing-subscriber = { version = "0.3.18", optional = true }
@@ -35,20 +35,20 @@ tracy-client = { version = "0.17.0", optional = true }
 typed-builder = "0.18.1"
 
 [target.'cfg(unix)'.dependencies]
-rustix = { version = "0.38.30", features = ["fs", "thread"] }
+rustix = { version = "0.38.32", features = ["fs", "thread"] }
 
 [dev-dependencies]
 criterion = "0.5.1"
-expect-test = "1.4.1"
+expect-test = "1.5.0"
 more-asserts = "0.3.1"
 rand = "0.8.5"
 rstest = { version = "0.18.2", default-features = false }
 supercilex-tests = "0.4.4"
-tempfile = "3.9.0"
-trycmd = "0.14.20"
+tempfile = "3.10.1"
+trycmd = "0.15.1"
 
 [build-dependencies]
-itoa = "1.0.10"
+itoa = "1.0.11"
 
 [features]
 trace = ["tracing", "dep:tracing-log", "dep:tracing-subscriber", "dep:tracing-tracy", "dep:tracy-client"]

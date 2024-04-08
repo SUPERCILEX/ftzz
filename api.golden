@@ -9,6 +9,7 @@ impl core::fmt::Debug for ftzz::Error
 pub fn ftzz::Error::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::fmt::Display for ftzz::Error
 pub fn ftzz::Error::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for ftzz::Error
 impl core::marker::Send for ftzz::Error
 impl core::marker::Sync for ftzz::Error
 impl core::marker::Unpin for ftzz::Error
@@ -49,6 +50,7 @@ impl core::fmt::Debug for ftzz::NumFilesWithRatioError
 pub fn ftzz::NumFilesWithRatioError::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::fmt::Display for ftzz::NumFilesWithRatioError
 pub fn ftzz::NumFilesWithRatioError::fmt(&self, __formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for ftzz::NumFilesWithRatioError
 impl core::marker::Send for ftzz::NumFilesWithRatioError
 impl core::marker::Sync for ftzz::NumFilesWithRatioError
 impl core::marker::Unpin for ftzz::NumFilesWithRatioError
@@ -87,6 +89,7 @@ impl core::fmt::Debug for ftzz::Generator
 pub fn ftzz::Generator::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl ftzz::Generator
 pub fn ftzz::Generator::builder() -> ftzz::GeneratorBuilder<((), (), (), (), (), (), (), ())>
+impl core::marker::Freeze for ftzz::Generator
 impl core::marker::Send for ftzz::Generator
 impl core::marker::Sync for ftzz::Generator
 impl core::marker::Unpin for ftzz::Generator
@@ -133,6 +136,7 @@ impl<__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte
 pub fn ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, (), __max_depth, __seed)>::bytes_exact(self, bytes_exact: bool) -> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, __files_exact, __num_bytes, __fill_byte, (bool), __max_depth, __seed)>
 impl<__root_dir, __num_files_with_ratio, __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (), __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
 pub fn ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (), __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>::files_exact(self, files_exact: bool) -> ftzz::GeneratorBuilder<(__root_dir, __num_files_with_ratio, (bool), __num_bytes, __fill_byte, __bytes_exact, __max_depth, __seed)>
+impl<TypedBuilderFields> core::marker::Freeze for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Freeze
 impl<TypedBuilderFields> core::marker::Send for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Send
 impl<TypedBuilderFields> core::marker::Sync for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Sync
 impl<TypedBuilderFields> core::marker::Unpin for ftzz::GeneratorBuilder<TypedBuilderFields> where TypedBuilderFields: core::marker::Unpin
@@ -177,6 +181,7 @@ impl core::hash::Hash for ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::hash<__H: core::hash::Hasher>(&self, state: &mut __H)
 impl core::marker::Copy for ftzz::NumFilesWithRatio
 impl core::marker::StructuralPartialEq for ftzz::NumFilesWithRatio
+impl core::marker::Freeze for ftzz::NumFilesWithRatio
 impl core::marker::Send for ftzz::NumFilesWithRatio
 impl core::marker::Sync for ftzz::NumFilesWithRatio
 impl core::marker::Unpin for ftzz::NumFilesWithRatio
