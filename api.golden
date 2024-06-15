@@ -160,6 +160,8 @@ impl<T> core::borrow::Borrow<T> for ftzz::GeneratorBuilder<TypedBuilderFields> w
 pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::borrow(&self) -> &T
 impl<T> core::borrow::BorrowMut<T> for ftzz::GeneratorBuilder<TypedBuilderFields> where T: core::marker::Sized
 pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for ftzz::GeneratorBuilder<TypedBuilderFields> where T: core::clone::Clone
+pub unsafe fn ftzz::GeneratorBuilder<TypedBuilderFields>::clone_to_uninit(&self, dst: *mut T)
 impl<T> core::convert::From<T> for ftzz::GeneratorBuilder<TypedBuilderFields>
 pub fn ftzz::GeneratorBuilder<TypedBuilderFields>::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::GeneratorBuilder<TypedBuilderFields>
@@ -205,6 +207,10 @@ impl<T> core::borrow::Borrow<T> for ftzz::NumFilesWithRatio where T: core::marke
 pub fn ftzz::NumFilesWithRatio::borrow(&self) -> &T
 impl<T> core::borrow::BorrowMut<T> for ftzz::NumFilesWithRatio where T: core::marker::Sized
 pub fn ftzz::NumFilesWithRatio::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for ftzz::NumFilesWithRatio where T: core::clone::Clone
+pub unsafe fn ftzz::NumFilesWithRatio::clone_to_uninit(&self, dst: *mut T)
+impl<T> core::clone::CloneToUninit for ftzz::NumFilesWithRatio where T: core::marker::Copy
+pub unsafe fn ftzz::NumFilesWithRatio::clone_to_uninit(&self, dst: *mut T)
 impl<T> core::convert::From<T> for ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::NumFilesWithRatio

@@ -92,6 +92,8 @@ fn create_files(
                     tracing::event!(tracing::Level::TRACE, file = ?guard, "Parent directory not created in time");
 
                     guard.pop();
+                    // TODO https://github.com/rust-lang/rust-clippy/issues/13095
+                    #[allow(clippy::needless_borrows_for_generic_args)]
                     create_dir_all(&file)
                         .attach_printable_lazy(|| format!("Failed to create directory {file:?}"))?;
                 } else {

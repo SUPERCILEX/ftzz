@@ -41,6 +41,8 @@ error: unexpected argument '-1' found
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
+For more information, try '--help'.
+
 $ ftzz -n "-1" dir
 ? 2
 error: unexpected argument '-1' found
@@ -49,9 +51,13 @@ error: unexpected argument '-1' found
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
+For more information, try '--help'.
+
 $ ftzz -n 0 dir
 ? 2
 error: invalid value '0' for '--files <NUM_FILES>': At least one file must be generated.
+
+For more information, try '--help'.
 
 ```
 
@@ -66,6 +72,8 @@ error: unexpected argument '-1' found
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
+For more information, try '--help'.
+
 $ ftzz -n 1 dir --depth "-1"
 ? 2
 error: unexpected argument '-1' found
@@ -73,6 +81,8 @@ error: unexpected argument '-1' found
   tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+
+For more information, try '--help'.
 
 ```
 
@@ -87,6 +97,8 @@ error: unexpected argument '-1' found
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
+For more information, try '--help'.
+
 $ ftzz -n 1 dir --ftd-ratio "-1"
 ? 2
 error: unexpected argument '-1' found
@@ -95,9 +107,13 @@ error: unexpected argument '-1' found
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
+For more information, try '--help'.
+
 $ ftzz -n 1 dir --ftd-ratio 0
 ? 2
 error: invalid value '0' for '--ftd-ratio <FILE_TO_DIR_RATIO>': Cannot have no files per directory.
+
+For more information, try '--help'.
 
 ```
 
@@ -112,6 +128,8 @@ error: unexpected argument '-1' found
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
 
+For more information, try '--help'.
+
 $ ftzz -n 1 dir --seed "-1"
 ? 2
 error: unexpected argument '-1' found
@@ -119,6 +137,8 @@ error: unexpected argument '-1' found
   tip: to pass '-1' as a value, use '-- -1'
 
 Usage: ftzz[EXE] [OPTIONS] --files <NUM_FILES> <ROOT_DIR>
+
+For more information, try '--help'.
 
 ```
 
@@ -131,6 +151,8 @@ error: the argument '--files-exact' cannot be used with '--exact'
 
 Usage: ftzz[EXE] --files <NUM_FILES> --files-exact <ROOT_DIR>
 
+For more information, try '--help'.
+
 ```
 
 `bytes-exact` and `exact` conflict:
@@ -141,6 +163,8 @@ $ ftzz -n 1 dir --bytes-exact --exact
 error: the argument '--bytes-exact' cannot be used with '--exact'
 
 Usage: ftzz[EXE] --files <NUM_FILES> --bytes-exact <--total-bytes <NUM_BYTES>> <ROOT_DIR>
+
+For more information, try '--help'.
 
 ```
 
@@ -154,6 +178,8 @@ error: the following required arguments were not provided:
 
 Usage: ftzz[EXE] --files <NUM_FILES> --bytes-exact <--total-bytes <NUM_BYTES>> <ROOT_DIR>
 
+For more information, try '--help'.
+
 ```
 
 `fill-byte` cannot be used without `num-bytes`:
@@ -166,6 +192,8 @@ error: the following required arguments were not provided:
 
 Usage: ftzz[EXE] --files <NUM_FILES> --fill-byte <FILL_BYTE> <--total-bytes <NUM_BYTES>> <ROOT_DIR>
 
+For more information, try '--help'.
+
 ```
 
 Number overflow:
@@ -174,5 +202,7 @@ Number overflow:
 $ ftzz -n 1 dir -d 999999999999999999999999999
 ? 2
 error: invalid value '999999999999999999999999999' for '--max-depth <MAX_DEPTH>': number too large to fit in target type
+
+For more information, try '--help'.
 
 ```
