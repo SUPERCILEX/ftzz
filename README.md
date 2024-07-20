@@ -2,6 +2,8 @@
 
 File Tree Fuzzer creates a pseudo-random directory hierarchy filled with some number of files.
 
+A technical overview of the project is available at https://alexsaveau.dev/blog/ftzz.
+
 ## Installation
 
 ### Use prebuilt binaries
@@ -15,7 +17,8 @@ Binaries for a number of platforms are available on the
 $ cargo +nightly install ftzz
 ```
 
-> To install cargo, follow [these instructions](https://doc.rust-lang.org/cargo/getting-started/installation.html).
+> To install cargo, follow
+> [these instructions](https://doc.rust-lang.org/cargo/getting-started/installation.html).
 
 ## Usage
 
