@@ -134,7 +134,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.target }}/release/ftzz
-          asset_name: ftzz-${{ matrix.target }}
+          asset_name: ${{ matrix.target }}-ftzz
           tag: ${{ github.ref }}
       - name: Upload binary
         if: matrix.os == 'windows-latest'
@@ -142,5 +142,5 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.target }}/release/ftzz.exe
-          asset_name: ftzz-${{ matrix.target }}.exe
+          asset_name: ${{ matrix.target }}-ftzz.exe
           tag: ${{ github.ref }}
