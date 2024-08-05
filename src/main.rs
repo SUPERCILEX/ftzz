@@ -151,7 +151,7 @@ impl TryFrom<Generate> for Generator {
         let builder = builder.bytes_exact(bytes_exact);
         let builder = builder.max_depth(max_depth);
         let builder = builder.seed(seed);
-        let builder = builder.fill_byte(fill_byte);
+        let builder = builder.maybe_fill_byte(fill_byte);
         let builder = if let Some(ratio) = file_to_dir_ratio {
             builder.num_files_with_ratio(NumFilesWithRatio::new(num_files, ratio)?)
         } else {

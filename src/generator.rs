@@ -15,7 +15,7 @@ use std::{
     thread,
 };
 
-pub use builder::{Generator, GeneratorBuilder};
+use bon::builder;
 use error_stack::{Report, Result, ResultExt};
 use log::{log, Level};
 use rand::SeedableRng;
@@ -89,32 +89,22 @@ impl NumFilesWithRatio {
     }
 }
 
-mod builder {
-    use std::path::PathBuf;
-
-    use typed_builder::TypedBuilder;
-
-    use crate::NumFilesWithRatio;
-
-    #[derive(TypedBuilder, Debug)]
-    #[builder(doc)]
-    pub struct Generator {
-        pub(crate) root_dir: PathBuf,
-        pub(crate) num_files_with_ratio: NumFilesWithRatio,
-        #[builder(default = false)]
-        pub(crate) files_exact: bool,
-        #[builder(default = 0)]
-        pub(crate) num_bytes: u64,
-        #[builder(default = None)]
-        #[builder(setter(into))]
-        pub(crate) fill_byte: Option<u8>,
-        #[builder(default = false)]
-        pub(crate) bytes_exact: bool,
-        #[builder(default = 5)]
-        pub(crate) max_depth: u32,
-        #[builder(default = 0)]
-        pub(crate) seed: u64,
-    }
+#[derive(Debug)]
+#[builder]
+pub struct Generator {
+    root_dir: PathBuf,
+    num_files_with_ratio: NumFilesWithRatio,
+    #[builder(default = false)]
+    files_exact: bool,
+    #[builder(default = 0)]
+    num_bytes: u64,
+    fill_byte: Option<u8>,
+    #[builder(default = false)]
+    bytes_exact: bool,
+    #[builder(default = 5)]
+    max_depth: u32,
+    #[builder(default = 0)]
+    seed: u64,
 }
 
 #[cfg(test)]
