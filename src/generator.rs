@@ -80,7 +80,6 @@ impl NumFilesWithRatio {
     }
 
     #[must_use]
-    #[allow(clippy::missing_panics_doc)]
     pub fn from_num_files(num_files: NonZeroU64) -> Self {
         Self {
             num_files,
@@ -139,7 +138,6 @@ mod tests {
 }
 
 impl Generator {
-    #[allow(clippy::missing_errors_doc)]
     pub fn generate(self, output: &mut impl Write) -> Result<(), Error> {
         let options = validated_options(self)?;
         print_configuration_info(&options, output)?;
