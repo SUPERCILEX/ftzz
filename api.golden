@@ -25,13 +25,13 @@ pub fn ftzz::Error::try_from(value: U) -> core::result::Result<T, <T as core::co
 impl<T, U> core::convert::TryInto<U> for ftzz::Error where U: core::convert::TryFrom<T>
 pub type ftzz::Error::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn ftzz::Error::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> alloc::string::ToString for ftzz::Error where T: core::fmt::Display + core::marker::Sized
+impl<T> alloc::string::ToString for ftzz::Error where T: core::fmt::Display + ?core::marker::Sized
 pub fn ftzz::Error::to_string(&self) -> alloc::string::String
-impl<T> core::any::Any for ftzz::Error where T: 'static + core::marker::Sized
+impl<T> core::any::Any for ftzz::Error where T: 'static + ?core::marker::Sized
 pub fn ftzz::Error::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::Error where T: core::marker::Sized
+impl<T> core::borrow::Borrow<T> for ftzz::Error where T: ?core::marker::Sized
 pub fn ftzz::Error::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::Error where T: core::marker::Sized
+impl<T> core::borrow::BorrowMut<T> for ftzz::Error where T: ?core::marker::Sized
 pub fn ftzz::Error::borrow_mut(&mut self) -> &mut T
 impl<T> core::convert::From<T> for ftzz::Error
 pub fn ftzz::Error::from(t: T) -> T
@@ -66,13 +66,13 @@ pub fn ftzz::NumFilesWithRatioError::try_from(value: U) -> core::result::Result<
 impl<T, U> core::convert::TryInto<U> for ftzz::NumFilesWithRatioError where U: core::convert::TryFrom<T>
 pub type ftzz::NumFilesWithRatioError::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn ftzz::NumFilesWithRatioError::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> alloc::string::ToString for ftzz::NumFilesWithRatioError where T: core::fmt::Display + core::marker::Sized
+impl<T> alloc::string::ToString for ftzz::NumFilesWithRatioError where T: core::fmt::Display + ?core::marker::Sized
 pub fn ftzz::NumFilesWithRatioError::to_string(&self) -> alloc::string::String
-impl<T> core::any::Any for ftzz::NumFilesWithRatioError where T: 'static + core::marker::Sized
+impl<T> core::any::Any for ftzz::NumFilesWithRatioError where T: 'static + ?core::marker::Sized
 pub fn ftzz::NumFilesWithRatioError::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::NumFilesWithRatioError where T: core::marker::Sized
+impl<T> core::borrow::Borrow<T> for ftzz::NumFilesWithRatioError where T: ?core::marker::Sized
 pub fn ftzz::NumFilesWithRatioError::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::NumFilesWithRatioError where T: core::marker::Sized
+impl<T> core::borrow::BorrowMut<T> for ftzz::NumFilesWithRatioError where T: ?core::marker::Sized
 pub fn ftzz::NumFilesWithRatioError::borrow_mut(&mut self) -> &mut T
 impl<T> core::convert::From<T> for ftzz::NumFilesWithRatioError
 pub fn ftzz::NumFilesWithRatioError::from(t: T) -> T
@@ -84,11 +84,11 @@ impl<V, T> ppv_lite86::types::VZip<V> for ftzz::NumFilesWithRatioError where V: 
 pub fn ftzz::NumFilesWithRatioError::vzip(self) -> V
 pub struct ftzz::Generator
 impl ftzz::Generator
-pub fn ftzz::Generator::builder() -> ftzz::GeneratorBuilder
-impl ftzz::Generator
 pub fn ftzz::Generator::generate(self, output: &mut impl core::fmt::Write) -> error_stack::result::Result<(), ftzz::Error>
 impl core::fmt::Debug for ftzz::Generator
 pub fn ftzz::Generator::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl ftzz::Generator
+pub fn ftzz::Generator::builder() -> ftzz::GeneratorBuilder
 impl core::marker::Freeze for ftzz::Generator
 impl core::marker::Send for ftzz::Generator
 impl core::marker::Sync for ftzz::Generator
@@ -103,11 +103,11 @@ pub fn ftzz::Generator::try_from(value: U) -> core::result::Result<T, <T as core
 impl<T, U> core::convert::TryInto<U> for ftzz::Generator where U: core::convert::TryFrom<T>
 pub type ftzz::Generator::Error = <U as core::convert::TryFrom<T>>::Error
 pub fn ftzz::Generator::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> core::any::Any for ftzz::Generator where T: 'static + core::marker::Sized
+impl<T> core::any::Any for ftzz::Generator where T: 'static + ?core::marker::Sized
 pub fn ftzz::Generator::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::Generator where T: core::marker::Sized
+impl<T> core::borrow::Borrow<T> for ftzz::Generator where T: ?core::marker::Sized
 pub fn ftzz::Generator::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::Generator where T: core::marker::Sized
+impl<T> core::borrow::BorrowMut<T> for ftzz::Generator where T: ?core::marker::Sized
 pub fn ftzz::Generator::borrow_mut(&mut self) -> &mut T
 impl<T> core::convert::From<T> for ftzz::Generator
 pub fn ftzz::Generator::from(t: T) -> T
@@ -115,57 +115,49 @@ impl<T> tracing::instrument::Instrument for ftzz::Generator
 impl<T> tracing::instrument::WithSubscriber for ftzz::Generator
 impl<V, T> ppv_lite86::types::VZip<V> for ftzz::Generator where V: ppv_lite86::types::MultiLane<T>
 pub fn ftzz::Generator::vzip(self) -> V
-pub struct ftzz::GeneratorBuilder<__State: __GeneratorBuilderState>
-impl<__State: __GeneratorBuilderState<BytesExact = bon::private::Optional<bool>>> ftzz::GeneratorBuilder<__State>
-pub fn ftzz::GeneratorBuilder<__State>::bytes_exact(self, value: bool) -> __GeneratorBuilderSetBytesExact<__State>
-pub fn ftzz::GeneratorBuilder<__State>::maybe_bytes_exact(self, value: core::option::Option<bool>) -> __GeneratorBuilderSetBytesExact<__State>
-impl<__State: __GeneratorBuilderState<FilesExact = bon::private::Optional<bool>>> ftzz::GeneratorBuilder<__State>
-pub fn ftzz::GeneratorBuilder<__State>::files_exact(self, value: bool) -> __GeneratorBuilderSetFilesExact<__State>
-pub fn ftzz::GeneratorBuilder<__State>::maybe_files_exact(self, value: core::option::Option<bool>) -> __GeneratorBuilderSetFilesExact<__State>
-impl<__State: __GeneratorBuilderState<FillByte = bon::private::Optional<u8>>> ftzz::GeneratorBuilder<__State>
-pub fn ftzz::GeneratorBuilder<__State>::fill_byte(self, value: u8) -> __GeneratorBuilderSetFillByte<__State>
-pub fn ftzz::GeneratorBuilder<__State>::maybe_fill_byte(self, value: core::option::Option<u8>) -> __GeneratorBuilderSetFillByte<__State>
-impl<__State: __GeneratorBuilderState<MaxDepth = bon::private::Optional<u32>>> ftzz::GeneratorBuilder<__State>
-pub fn ftzz::GeneratorBuilder<__State>::max_depth(self, value: u32) -> __GeneratorBuilderSetMaxDepth<__State>
-pub fn ftzz::GeneratorBuilder<__State>::maybe_max_depth(self, value: core::option::Option<u32>) -> __GeneratorBuilderSetMaxDepth<__State>
-impl<__State: __GeneratorBuilderState<NumBytes = bon::private::Optional<u64>>> ftzz::GeneratorBuilder<__State>
-pub fn ftzz::GeneratorBuilder<__State>::maybe_num_bytes(self, value: core::option::Option<u64>) -> __GeneratorBuilderSetNumBytes<__State>
-pub fn ftzz::GeneratorBuilder<__State>::num_bytes(self, value: u64) -> __GeneratorBuilderSetNumBytes<__State>
-impl<__State: __GeneratorBuilderState<NumFilesWithRatio = bon::private::Required<ftzz::NumFilesWithRatio>>> ftzz::GeneratorBuilder<__State>
-pub fn ftzz::GeneratorBuilder<__State>::num_files_with_ratio(self, value: impl core::convert::Into<ftzz::NumFilesWithRatio>) -> __GeneratorBuilderSetNumFilesWithRatio<__State>
-impl<__State: __GeneratorBuilderState<RootDir = bon::private::Required<std::path::PathBuf>>> ftzz::GeneratorBuilder<__State>
-pub fn ftzz::GeneratorBuilder<__State>::root_dir(self, value: impl core::convert::Into<std::path::PathBuf>) -> __GeneratorBuilderSetRootDir<__State>
-impl<__State: __GeneratorBuilderState<Seed = bon::private::Optional<u64>>> ftzz::GeneratorBuilder<__State>
-pub fn ftzz::GeneratorBuilder<__State>::maybe_seed(self, value: core::option::Option<u64>) -> __GeneratorBuilderSetSeed<__State>
-pub fn ftzz::GeneratorBuilder<__State>::seed(self, value: u64) -> __GeneratorBuilderSetSeed<__State>
-impl<__State: __GeneratorBuilderState> ftzz::GeneratorBuilder<__State> where <__State as >::RootDir: bon::private::IntoSet<std::path::PathBuf>, <__State as >::NumFilesWithRatio: bon::private::IntoSet<ftzz::NumFilesWithRatio>, <__State as >::FilesExact: bon::private::IntoSet<core::option::Option<bool>>, <__State as >::NumBytes: bon::private::IntoSet<core::option::Option<u64>>, <__State as >::FillByte: bon::private::IntoSet<core::option::Option<u8>>, <__State as >::BytesExact: bon::private::IntoSet<core::option::Option<bool>>, <__State as >::MaxDepth: bon::private::IntoSet<core::option::Option<u32>>, <__State as >::Seed: bon::private::IntoSet<core::option::Option<u64>>
-pub fn ftzz::GeneratorBuilder<__State>::build(self) -> ftzz::Generator
-impl<__State> core::marker::Freeze for ftzz::GeneratorBuilder<__State> where <__State as __GeneratorBuilderState>::RootDir: core::marker::Freeze, <__State as __GeneratorBuilderState>::NumFilesWithRatio: core::marker::Freeze, <__State as __GeneratorBuilderState>::FilesExact: core::marker::Freeze, <__State as __GeneratorBuilderState>::NumBytes: core::marker::Freeze, <__State as __GeneratorBuilderState>::FillByte: core::marker::Freeze, <__State as __GeneratorBuilderState>::BytesExact: core::marker::Freeze, <__State as __GeneratorBuilderState>::MaxDepth: core::marker::Freeze, <__State as __GeneratorBuilderState>::Seed: core::marker::Freeze
-impl<__State> core::marker::Send for ftzz::GeneratorBuilder<__State> where <__State as __GeneratorBuilderState>::RootDir: core::marker::Send, <__State as __GeneratorBuilderState>::NumFilesWithRatio: core::marker::Send, <__State as __GeneratorBuilderState>::FilesExact: core::marker::Send, <__State as __GeneratorBuilderState>::NumBytes: core::marker::Send, <__State as __GeneratorBuilderState>::FillByte: core::marker::Send, <__State as __GeneratorBuilderState>::BytesExact: core::marker::Send, <__State as __GeneratorBuilderState>::MaxDepth: core::marker::Send, <__State as __GeneratorBuilderState>::Seed: core::marker::Send, __State: core::marker::Send
-impl<__State> core::marker::Sync for ftzz::GeneratorBuilder<__State> where <__State as __GeneratorBuilderState>::RootDir: core::marker::Sync, <__State as __GeneratorBuilderState>::NumFilesWithRatio: core::marker::Sync, <__State as __GeneratorBuilderState>::FilesExact: core::marker::Sync, <__State as __GeneratorBuilderState>::NumBytes: core::marker::Sync, <__State as __GeneratorBuilderState>::FillByte: core::marker::Sync, <__State as __GeneratorBuilderState>::BytesExact: core::marker::Sync, <__State as __GeneratorBuilderState>::MaxDepth: core::marker::Sync, <__State as __GeneratorBuilderState>::Seed: core::marker::Sync, __State: core::marker::Sync
-impl<__State> core::marker::Unpin for ftzz::GeneratorBuilder<__State> where <__State as __GeneratorBuilderState>::RootDir: core::marker::Unpin, <__State as __GeneratorBuilderState>::NumFilesWithRatio: core::marker::Unpin, <__State as __GeneratorBuilderState>::FilesExact: core::marker::Unpin, <__State as __GeneratorBuilderState>::NumBytes: core::marker::Unpin, <__State as __GeneratorBuilderState>::FillByte: core::marker::Unpin, <__State as __GeneratorBuilderState>::BytesExact: core::marker::Unpin, <__State as __GeneratorBuilderState>::MaxDepth: core::marker::Unpin, <__State as __GeneratorBuilderState>::Seed: core::marker::Unpin, __State: core::marker::Unpin
-impl<__State> core::panic::unwind_safe::RefUnwindSafe for ftzz::GeneratorBuilder<__State> where <__State as __GeneratorBuilderState>::RootDir: core::panic::unwind_safe::RefUnwindSafe, <__State as __GeneratorBuilderState>::NumFilesWithRatio: core::panic::unwind_safe::RefUnwindSafe, <__State as __GeneratorBuilderState>::FilesExact: core::panic::unwind_safe::RefUnwindSafe, <__State as __GeneratorBuilderState>::NumBytes: core::panic::unwind_safe::RefUnwindSafe, <__State as __GeneratorBuilderState>::FillByte: core::panic::unwind_safe::RefUnwindSafe, <__State as __GeneratorBuilderState>::BytesExact: core::panic::unwind_safe::RefUnwindSafe, <__State as __GeneratorBuilderState>::MaxDepth: core::panic::unwind_safe::RefUnwindSafe, <__State as __GeneratorBuilderState>::Seed: core::panic::unwind_safe::RefUnwindSafe, __State: core::panic::unwind_safe::RefUnwindSafe
-impl<__State> core::panic::unwind_safe::UnwindSafe for ftzz::GeneratorBuilder<__State> where <__State as __GeneratorBuilderState>::RootDir: core::panic::unwind_safe::UnwindSafe, <__State as __GeneratorBuilderState>::NumFilesWithRatio: core::panic::unwind_safe::UnwindSafe, <__State as __GeneratorBuilderState>::FilesExact: core::panic::unwind_safe::UnwindSafe, <__State as __GeneratorBuilderState>::NumBytes: core::panic::unwind_safe::UnwindSafe, <__State as __GeneratorBuilderState>::FillByte: core::panic::unwind_safe::UnwindSafe, <__State as __GeneratorBuilderState>::BytesExact: core::panic::unwind_safe::UnwindSafe, <__State as __GeneratorBuilderState>::MaxDepth: core::panic::unwind_safe::UnwindSafe, <__State as __GeneratorBuilderState>::Seed: core::panic::unwind_safe::UnwindSafe, __State: core::panic::unwind_safe::UnwindSafe
-impl<T, U> core::convert::Into<U> for ftzz::GeneratorBuilder<__State> where U: core::convert::From<T>
-pub fn ftzz::GeneratorBuilder<__State>::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for ftzz::GeneratorBuilder<__State> where U: core::convert::Into<T>
-pub type ftzz::GeneratorBuilder<__State>::Error = core::convert::Infallible
-pub fn ftzz::GeneratorBuilder<__State>::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for ftzz::GeneratorBuilder<__State> where U: core::convert::TryFrom<T>
-pub type ftzz::GeneratorBuilder<__State>::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn ftzz::GeneratorBuilder<__State>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> core::any::Any for ftzz::GeneratorBuilder<__State> where T: 'static + core::marker::Sized
-pub fn ftzz::GeneratorBuilder<__State>::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::GeneratorBuilder<__State> where T: core::marker::Sized
-pub fn ftzz::GeneratorBuilder<__State>::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::GeneratorBuilder<__State> where T: core::marker::Sized
-pub fn ftzz::GeneratorBuilder<__State>::borrow_mut(&mut self) -> &mut T
-impl<T> core::convert::From<T> for ftzz::GeneratorBuilder<__State>
-pub fn ftzz::GeneratorBuilder<__State>::from(t: T) -> T
-impl<T> tracing::instrument::Instrument for ftzz::GeneratorBuilder<__State>
-impl<T> tracing::instrument::WithSubscriber for ftzz::GeneratorBuilder<__State>
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::GeneratorBuilder<__State> where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::GeneratorBuilder<__State>::vzip(self) -> V
+pub struct ftzz::GeneratorBuilder<S: generator_builder::State>
+impl<S: generator_builder::State> ftzz::GeneratorBuilder<S>
+pub fn ftzz::GeneratorBuilder<S>::build(self) -> ftzz::Generator where S: generator_builder::IsComplete
+pub fn ftzz::GeneratorBuilder<S>::bytes_exact(self, value: bool) -> ftzz::GeneratorBuilder<generator_builder::SetBytesExact<S>> where <S as >::BytesExact: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::files_exact(self, value: bool) -> ftzz::GeneratorBuilder<generator_builder::SetFilesExact<S>> where <S as >::FilesExact: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::fill_byte(self, value: u8) -> ftzz::GeneratorBuilder<generator_builder::SetFillByte<S>> where <S as >::FillByte: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::max_depth(self, value: u32) -> ftzz::GeneratorBuilder<generator_builder::SetMaxDepth<S>> where <S as >::MaxDepth: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_bytes_exact(self, value: core::option::Option<bool>) -> ftzz::GeneratorBuilder<generator_builder::SetBytesExact<S>> where <S as >::BytesExact: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_files_exact(self, value: core::option::Option<bool>) -> ftzz::GeneratorBuilder<generator_builder::SetFilesExact<S>> where <S as >::FilesExact: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_fill_byte(self, value: core::option::Option<u8>) -> ftzz::GeneratorBuilder<generator_builder::SetFillByte<S>> where <S as >::FillByte: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_max_depth(self, value: core::option::Option<u32>) -> ftzz::GeneratorBuilder<generator_builder::SetMaxDepth<S>> where <S as >::MaxDepth: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_num_bytes(self, value: core::option::Option<u64>) -> ftzz::GeneratorBuilder<generator_builder::SetNumBytes<S>> where <S as >::NumBytes: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_seed(self, value: core::option::Option<u64>) -> ftzz::GeneratorBuilder<generator_builder::SetSeed<S>> where <S as >::Seed: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::num_bytes(self, value: u64) -> ftzz::GeneratorBuilder<generator_builder::SetNumBytes<S>> where <S as >::NumBytes: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::num_files_with_ratio(self, value: ftzz::NumFilesWithRatio) -> ftzz::GeneratorBuilder<generator_builder::SetNumFilesWithRatio<S>> where <S as >::NumFilesWithRatio: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::root_dir(self, value: impl core::convert::Into<std::path::PathBuf>) -> ftzz::GeneratorBuilder<generator_builder::SetRootDir<S>> where <S as >::RootDir: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::seed(self, value: u64) -> ftzz::GeneratorBuilder<generator_builder::SetSeed<S>> where <S as >::Seed: bon::builder_state::IsUnset
+impl<S> core::marker::Freeze for ftzz::GeneratorBuilder<S>
+impl<S> core::marker::Send for ftzz::GeneratorBuilder<S>
+impl<S> core::marker::Sync for ftzz::GeneratorBuilder<S>
+impl<S> core::marker::Unpin for ftzz::GeneratorBuilder<S>
+impl<S> core::panic::unwind_safe::RefUnwindSafe for ftzz::GeneratorBuilder<S>
+impl<S> core::panic::unwind_safe::UnwindSafe for ftzz::GeneratorBuilder<S>
+impl<T, U> core::convert::Into<U> for ftzz::GeneratorBuilder<S> where U: core::convert::From<T>
+pub fn ftzz::GeneratorBuilder<S>::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for ftzz::GeneratorBuilder<S> where U: core::convert::Into<T>
+pub type ftzz::GeneratorBuilder<S>::Error = core::convert::Infallible
+pub fn ftzz::GeneratorBuilder<S>::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for ftzz::GeneratorBuilder<S> where U: core::convert::TryFrom<T>
+pub type ftzz::GeneratorBuilder<S>::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn ftzz::GeneratorBuilder<S>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> core::any::Any for ftzz::GeneratorBuilder<S> where T: 'static + ?core::marker::Sized
+pub fn ftzz::GeneratorBuilder<S>::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for ftzz::GeneratorBuilder<S> where T: ?core::marker::Sized
+pub fn ftzz::GeneratorBuilder<S>::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for ftzz::GeneratorBuilder<S> where T: ?core::marker::Sized
+pub fn ftzz::GeneratorBuilder<S>::borrow_mut(&mut self) -> &mut T
+impl<T> core::convert::From<T> for ftzz::GeneratorBuilder<S>
+pub fn ftzz::GeneratorBuilder<S>::from(t: T) -> T
+impl<T> tracing::instrument::Instrument for ftzz::GeneratorBuilder<S>
+impl<T> tracing::instrument::WithSubscriber for ftzz::GeneratorBuilder<S>
+impl<V, T> ppv_lite86::types::VZip<V> for ftzz::GeneratorBuilder<S> where V: ppv_lite86::types::MultiLane<T>
+pub fn ftzz::GeneratorBuilder<S>::vzip(self) -> V
 pub struct ftzz::NumFilesWithRatio
 impl ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::from_num_files(num_files: core::num::nonzero::NonZeroU64) -> Self
@@ -199,16 +191,14 @@ impl<T> alloc::borrow::ToOwned for ftzz::NumFilesWithRatio where T: core::clone:
 pub type ftzz::NumFilesWithRatio::Owned = T
 pub fn ftzz::NumFilesWithRatio::clone_into(&self, target: &mut T)
 pub fn ftzz::NumFilesWithRatio::to_owned(&self) -> T
-impl<T> core::any::Any for ftzz::NumFilesWithRatio where T: 'static + core::marker::Sized
+impl<T> core::any::Any for ftzz::NumFilesWithRatio where T: 'static + ?core::marker::Sized
 pub fn ftzz::NumFilesWithRatio::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for ftzz::NumFilesWithRatio where T: core::marker::Sized
+impl<T> core::borrow::Borrow<T> for ftzz::NumFilesWithRatio where T: ?core::marker::Sized
 pub fn ftzz::NumFilesWithRatio::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for ftzz::NumFilesWithRatio where T: core::marker::Sized
+impl<T> core::borrow::BorrowMut<T> for ftzz::NumFilesWithRatio where T: ?core::marker::Sized
 pub fn ftzz::NumFilesWithRatio::borrow_mut(&mut self) -> &mut T
 impl<T> core::clone::CloneToUninit for ftzz::NumFilesWithRatio where T: core::clone::Clone
-pub unsafe fn ftzz::NumFilesWithRatio::clone_to_uninit(&self, dst: *mut T)
-impl<T> core::clone::CloneToUninit for ftzz::NumFilesWithRatio where T: core::marker::Copy
-pub unsafe fn ftzz::NumFilesWithRatio::clone_to_uninit(&self, dst: *mut T)
+pub unsafe fn ftzz::NumFilesWithRatio::clone_to_uninit(&self, dst: *mut u8)
 impl<T> core::convert::From<T> for ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::NumFilesWithRatio

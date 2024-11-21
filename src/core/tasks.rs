@@ -12,7 +12,7 @@ use crate::{
             FileContentsGenerator, NoGeneratedFileContents, OnTheFlyGeneratedFileContents,
             PreDefinedGeneratedFileContents,
         },
-        files::{create_files_and_dirs, GeneratorTaskOutcome, GeneratorTaskParams},
+        files::{GeneratorTaskOutcome, GeneratorTaskParams, create_files_and_dirs},
         sample_truncated,
     },
     utils::FastPathBuf,

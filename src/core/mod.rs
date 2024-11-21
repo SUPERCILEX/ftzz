@@ -1,6 +1,6 @@
-use rand::{distributions::Distribution, Rng};
+use rand::{Rng, distributions::Distribution};
 use rand_distr::Normal;
-pub use scheduler::{run, GeneratorStats};
+pub use scheduler::{GeneratorStats, run};
 pub use tasks::{DynamicGenerator, GeneratorBytes, StaticGenerator};
 
 mod file_contents;

@@ -2,7 +2,7 @@ use std::{
     ffi::OsStr,
     fmt,
     ops::{Deref, DerefMut},
-    path::{Path, PathBuf, MAIN_SEPARATOR},
+    path::{MAIN_SEPARATOR, Path, PathBuf},
 };
 
 /// A specialized [`PathBuf`][std::path::PathBuf] implementation that takes
@@ -199,7 +199,7 @@ mod unix {
         buf: &'a mut FastPathBuf,
     }
 
-    impl<'a> CStrFastPathBufGuard<'a> {
+    impl CStrFastPathBufGuard<'_> {
         pub fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard {
             let FastPathBuf {
                 ref mut inner,
@@ -211,7 +211,7 @@ mod unix {
         }
     }
 
-    impl<'a> Deref for CStrFastPathBufGuard<'a> {
+    impl Deref for CStrFastPathBufGuard<'_> {
         type Target = CStr;
 
         fn deref(&self) -> &Self::Target {
@@ -231,13 +231,13 @@ mod unix {
         }
     }
 
-    impl<'a> AsRef<CStr> for CStrFastPathBufGuard<'a> {
+    impl AsRef<CStr> for CStrFastPathBufGuard<'_> {
         fn as_ref(&self) -> &CStr {
             self
         }
     }
 
-    impl<'a> Drop for CStrFastPathBufGuard<'a> {
+    impl Drop for CStrFastPathBufGuard<'_> {
         fn drop(&mut self) {
             let Self {
                 buf:

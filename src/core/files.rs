@@ -4,7 +4,7 @@ use error_stack::{Report, Result, ResultExt};
 
 use crate::{
     core::file_contents::FileContentsGenerator,
-    utils::{with_dir_name, with_file_name, FastPathBuf},
+    utils::{FastPathBuf, with_dir_name, with_file_name},
 };
 
 pub struct GeneratorTaskParams<G: FileContentsGenerator> {

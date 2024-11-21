@@ -4,10 +4,10 @@ use std::{
     cmp::{max, min},
     collections::VecDeque,
     fmt::Write,
-    fs::{create_dir, DirEntry, File},
+    fs::{DirEntry, File, create_dir},
     hash::{DefaultHasher, Hasher},
     io,
-    io::{stdout, BufReader, Read},
+    io::{BufReader, Read, stdout},
     num::NonZeroU64,
     path::Path,
 };
@@ -24,7 +24,7 @@ use crate::inspect::InspectableTempDir;
 mod inspect {
     use std::path::PathBuf;
 
-    use tempfile::{tempdir, TempDir};
+    use tempfile::{TempDir, tempdir};
 
     pub struct InspectableTempDir {
         pub path: PathBuf,
@@ -341,7 +341,7 @@ fn print_and_hash_dir(dir: &Path, output: &mut impl Write) {
             } else if entry.metadata().unwrap().len() > 0 {
                 io::copy(
                     &mut File::open(entry.path()).unwrap(),
-                    &mut hasher.write_adapter(),
+                    &mut (&mut hasher).write_adapter(),
                 )
                 .unwrap();
             }

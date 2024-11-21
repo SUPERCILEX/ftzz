@@ -1,13 +1,13 @@
 use std::{
     borrow::Cow,
     io,
-    io::{stdout, Write},
+    io::{Write, stdout},
     num::NonZeroU64,
     path::PathBuf,
     process::{ExitCode, Termination},
 };
 
-use clap::{builder::ArgPredicate, ArgAction, Args, Parser, ValueHint};
+use clap::{ArgAction, Args, Parser, ValueHint, builder::ArgPredicate};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
 use error_stack::ResultExt;
@@ -269,7 +269,7 @@ fn ftzz(
         help: _,
     }: Ftzz,
 ) -> error_stack::Result<(), CliError> {
-    let mut stdout = stdout();
+    let stdout = stdout();
     Generator::try_from(options)
         .change_context(CliError::InvalidArgs)?
         .generate(&mut stdout.write_adapter())

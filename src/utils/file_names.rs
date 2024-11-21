@@ -1,5 +1,7 @@
 use std::{mem::MaybeUninit, ptr, slice};
 
+use itoa::Integer;
+
 struct FileNameCache;
 
 /// Specialized cache for file names that takes advantage of our monotonically
@@ -53,8 +55,7 @@ pub fn with_file_name<T>(i: u64, f: impl FnOnce(&str) -> T) -> T {
 pub fn with_dir_name<T>(i: usize, f: impl FnOnce(&str) -> T) -> T {
     const SUFFIX: &str = ".dir";
     with_file_name(i.try_into().unwrap(), |s| {
-        const _: () = assert!(usize::BITS <= 128, "Unsupported usize width.");
-        let mut buf = [MaybeUninit::<u8>::uninit(); 39 + SUFFIX.len()]; // 39 to support u128
+        let mut buf = [MaybeUninit::<u8>::uninit(); usize::MAX_STR_LEN + SUFFIX.len()];
 
         unsafe {
             let buf_ptr = buf.as_mut_ptr().cast::<u8>();

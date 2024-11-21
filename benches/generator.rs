@@ -1,8 +1,8 @@
 use std::{io::sink, num::NonZeroU64, time::Duration};
 
 use criterion::{
-    criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion, PlotConfiguration,
-    Throughput,
+    AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput, criterion_group,
+    criterion_main,
 };
 use ftzz::{Generator, NumFilesWithRatio};
 use io_adapters::WriteExtension;

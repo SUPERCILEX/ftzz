@@ -20,7 +20,7 @@ use crate::{
         truncatable_normal,
     },
     generator::Error,
-    utils::{with_dir_name, with_file_name, FastPathBuf},
+    utils::{FastPathBuf, with_dir_name, with_file_name},
 };
 
 #[derive(Debug, Copy, Clone)]

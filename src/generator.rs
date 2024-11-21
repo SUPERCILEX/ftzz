@@ -15,16 +15,16 @@ use std::{
     thread,
 };
 
-use bon::builder;
+use bon::Builder;
 use error_stack::{Report, Result, ResultExt};
-use log::{log, Level};
+use log::{Level, log};
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use thiserror::Error;
 use thousands::Separable;
 
 use crate::core::{
-    run, truncatable_normal, DynamicGenerator, GeneratorBytes, GeneratorStats, StaticGenerator,
+    DynamicGenerator, GeneratorBytes, GeneratorStats, StaticGenerator, run, truncatable_normal,
 };
 
 #[derive(Error, Debug)]
@@ -88,9 +88,9 @@ impl NumFilesWithRatio {
     }
 }
 
-#[derive(Debug)]
-#[builder]
+#[derive(Debug, Builder)]
 pub struct Generator {
+    #[builder(into)]
     root_dir: PathBuf,
     num_files_with_ratio: NumFilesWithRatio,
     #[builder(default = false)]
@@ -357,7 +357,7 @@ fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
     let mut runtime = tokio::runtime::Builder::new_current_thread();
     #[cfg(all(not(miri), target_os = "linux"))]
     runtime.on_thread_start(|| {
-        use rustix::thread::{unshare, UnshareFlags};
+        use rustix::thread::{UnshareFlags, unshare};
 
         let result = unshare(UnshareFlags::FILES);
         #[cfg(debug_assertions)]
