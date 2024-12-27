@@ -217,7 +217,7 @@ mod unix {
         fn deref(&self) -> &Self::Target {
             let Self {
                 buf:
-                    FastPathBuf {
+                    &mut FastPathBuf {
                         ref inner,
                         last_len: _,
                     },
@@ -241,7 +241,7 @@ mod unix {
         fn drop(&mut self) {
             let Self {
                 buf:
-                    FastPathBuf {
+                    &mut FastPathBuf {
                         ref mut inner,
                         last_len: _,
                     },
