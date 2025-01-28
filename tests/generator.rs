@@ -283,17 +283,17 @@ fn fill_byte_is_respected(#[case] fill_byte: u8) {
 fn fuzz_test() {
     let dir = InspectableTempDir::new();
 
-    let mut rng = rand::thread_rng();
-    let num_files = rng.gen_range(1..25_000);
-    let num_bytes = if rng.r#gen() {
-        rng.gen_range(0..100_000)
+    let mut rng = rand::rng();
+    let num_files = rng.random_range(1..25_000);
+    let num_bytes = if rng.random() {
+        rng.random_range(0..100_000)
     } else {
         0
     };
-    let max_depth = rng.gen_range(0..100);
-    let ratio = rng.gen_range(1..num_files);
-    let files_exact = rng.r#gen();
-    let bytes_exact = rng.r#gen();
+    let max_depth = rng.random_range(0..100);
+    let ratio = rng.random_range(1..num_files);
+    let files_exact = rng.random();
+    let bytes_exact = rng.random();
 
     let g = Generator::builder()
         .root_dir(dir.path.clone())

@@ -1,5 +1,5 @@
-use rand::{Rng, distributions::Distribution};
-use rand_distr::Normal;
+use rand::Rng;
+use rand_distr::{Distribution, Normal};
 pub use scheduler::{GeneratorStats, run};
 pub use tasks::{DynamicGenerator, GeneratorBytes, StaticGenerator};
 

@@ -1,7 +1,7 @@
 use std::{fs::File, io, io::Read};
 
 use cfg_if::cfg_if;
-use rand::{RngCore, SeedableRng};
+use rand::{RngCore, SeedableRng, TryRngCore};
 use rand_distr::Normal;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
@@ -213,10 +213,7 @@ fn write_bytes<'a, R: RngCore + 'static>(
     kind: impl Into<BytesKind<'a, R>>,
 ) -> io::Result<()> {
     let copied = match kind.into() {
-        BytesKind::Random(random) => {
-            // TODO use adapter when it's available
-            io::copy(&mut (random as &mut dyn RngCore).take(num), &mut file)
-        }
+        BytesKind::Random(random) => io::copy(&mut random.read_adapter().take(num), &mut file),
         BytesKind::Fixed(byte) => io::copy(&mut io::repeat(byte).take(num), &mut file),
     }?;
     debug_assert_eq!(num, copied);

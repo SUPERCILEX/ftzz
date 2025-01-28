@@ -39,8 +39,6 @@ impl<T> thousands::traits::Separable for ftzz::Error where T: core::fmt::Display
 pub fn ftzz::Error::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
 impl<T> tracing::instrument::Instrument for ftzz::Error
 impl<T> tracing::instrument::WithSubscriber for ftzz::Error
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::Error where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::Error::vzip(self) -> V
 pub enum ftzz::NumFilesWithRatioError
 pub ftzz::NumFilesWithRatioError::InvalidRatio
 pub ftzz::NumFilesWithRatioError::InvalidRatio::file_to_dir_ratio: core::num::nonzero::NonZeroU64
@@ -80,8 +78,6 @@ impl<T> thousands::traits::Separable for ftzz::NumFilesWithRatioError where T: c
 pub fn ftzz::NumFilesWithRatioError::separate_by_policy(&self, policy: thousands::policies::SeparatorPolicy<'_>) -> alloc::string::String
 impl<T> tracing::instrument::Instrument for ftzz::NumFilesWithRatioError
 impl<T> tracing::instrument::WithSubscriber for ftzz::NumFilesWithRatioError
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::NumFilesWithRatioError where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::NumFilesWithRatioError::vzip(self) -> V
 pub struct ftzz::Generator
 impl ftzz::Generator
 pub fn ftzz::Generator::generate(self, output: &mut impl core::fmt::Write) -> error_stack::result::Result<(), ftzz::Error>
@@ -113,25 +109,23 @@ impl<T> core::convert::From<T> for ftzz::Generator
 pub fn ftzz::Generator::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::Generator
 impl<T> tracing::instrument::WithSubscriber for ftzz::Generator
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::Generator where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::Generator::vzip(self) -> V
-pub struct ftzz::GeneratorBuilder<S: generator_builder::State>
-impl<S: generator_builder::State> ftzz::GeneratorBuilder<S>
-pub fn ftzz::GeneratorBuilder<S>::build(self) -> ftzz::Generator where S: generator_builder::IsComplete
-pub fn ftzz::GeneratorBuilder<S>::bytes_exact(self, value: bool) -> ftzz::GeneratorBuilder<generator_builder::SetBytesExact<S>> where <S as >::BytesExact: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::files_exact(self, value: bool) -> ftzz::GeneratorBuilder<generator_builder::SetFilesExact<S>> where <S as >::FilesExact: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::fill_byte(self, value: u8) -> ftzz::GeneratorBuilder<generator_builder::SetFillByte<S>> where <S as >::FillByte: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::max_depth(self, value: u32) -> ftzz::GeneratorBuilder<generator_builder::SetMaxDepth<S>> where <S as >::MaxDepth: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::maybe_bytes_exact(self, value: core::option::Option<bool>) -> ftzz::GeneratorBuilder<generator_builder::SetBytesExact<S>> where <S as >::BytesExact: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::maybe_files_exact(self, value: core::option::Option<bool>) -> ftzz::GeneratorBuilder<generator_builder::SetFilesExact<S>> where <S as >::FilesExact: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::maybe_fill_byte(self, value: core::option::Option<u8>) -> ftzz::GeneratorBuilder<generator_builder::SetFillByte<S>> where <S as >::FillByte: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::maybe_max_depth(self, value: core::option::Option<u32>) -> ftzz::GeneratorBuilder<generator_builder::SetMaxDepth<S>> where <S as >::MaxDepth: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::maybe_num_bytes(self, value: core::option::Option<u64>) -> ftzz::GeneratorBuilder<generator_builder::SetNumBytes<S>> where <S as >::NumBytes: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::maybe_seed(self, value: core::option::Option<u64>) -> ftzz::GeneratorBuilder<generator_builder::SetSeed<S>> where <S as >::Seed: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::num_bytes(self, value: u64) -> ftzz::GeneratorBuilder<generator_builder::SetNumBytes<S>> where <S as >::NumBytes: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::num_files_with_ratio(self, value: ftzz::NumFilesWithRatio) -> ftzz::GeneratorBuilder<generator_builder::SetNumFilesWithRatio<S>> where <S as >::NumFilesWithRatio: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::root_dir(self, value: impl core::convert::Into<std::path::PathBuf>) -> ftzz::GeneratorBuilder<generator_builder::SetRootDir<S>> where <S as >::RootDir: bon::builder_state::IsUnset
-pub fn ftzz::GeneratorBuilder<S>::seed(self, value: u64) -> ftzz::GeneratorBuilder<generator_builder::SetSeed<S>> where <S as >::Seed: bon::builder_state::IsUnset
+pub struct ftzz::GeneratorBuilder<S: ftzz::generator::generator_builder::State>
+impl<S: ftzz::generator::generator_builder::State> ftzz::GeneratorBuilder<S>
+pub fn ftzz::GeneratorBuilder<S>::build(self) -> ftzz::Generator where S: ftzz::generator::generator_builder::IsComplete
+pub fn ftzz::GeneratorBuilder<S>::bytes_exact(self, value: bool) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetBytesExact<S>> where <S as ftzz::generator::generator_builder::State>::BytesExact: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::files_exact(self, value: bool) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetFilesExact<S>> where <S as ftzz::generator::generator_builder::State>::FilesExact: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::fill_byte(self, value: u8) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetFillByte<S>> where <S as ftzz::generator::generator_builder::State>::FillByte: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::max_depth(self, value: u32) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetMaxDepth<S>> where <S as ftzz::generator::generator_builder::State>::MaxDepth: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_bytes_exact(self, value: core::option::Option<bool>) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetBytesExact<S>> where <S as ftzz::generator::generator_builder::State>::BytesExact: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_files_exact(self, value: core::option::Option<bool>) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetFilesExact<S>> where <S as ftzz::generator::generator_builder::State>::FilesExact: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_fill_byte(self, value: core::option::Option<u8>) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetFillByte<S>> where <S as ftzz::generator::generator_builder::State>::FillByte: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_max_depth(self, value: core::option::Option<u32>) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetMaxDepth<S>> where <S as ftzz::generator::generator_builder::State>::MaxDepth: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_num_bytes(self, value: core::option::Option<u64>) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetNumBytes<S>> where <S as ftzz::generator::generator_builder::State>::NumBytes: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::maybe_seed(self, value: core::option::Option<u64>) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetSeed<S>> where <S as ftzz::generator::generator_builder::State>::Seed: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::num_bytes(self, value: u64) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetNumBytes<S>> where <S as ftzz::generator::generator_builder::State>::NumBytes: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::num_files_with_ratio(self, value: ftzz::NumFilesWithRatio) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetNumFilesWithRatio<S>> where <S as ftzz::generator::generator_builder::State>::NumFilesWithRatio: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::root_dir(self, value: impl core::convert::Into<std::path::PathBuf>) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetRootDir<S>> where <S as ftzz::generator::generator_builder::State>::RootDir: bon::builder_state::IsUnset
+pub fn ftzz::GeneratorBuilder<S>::seed(self, value: u64) -> ftzz::GeneratorBuilder<ftzz::generator::generator_builder::SetSeed<S>> where <S as ftzz::generator::generator_builder::State>::Seed: bon::builder_state::IsUnset
 impl<S> core::marker::Freeze for ftzz::GeneratorBuilder<S>
 impl<S> core::marker::Send for ftzz::GeneratorBuilder<S>
 impl<S> core::marker::Sync for ftzz::GeneratorBuilder<S>
@@ -156,8 +150,6 @@ impl<T> core::convert::From<T> for ftzz::GeneratorBuilder<S>
 pub fn ftzz::GeneratorBuilder<S>::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::GeneratorBuilder<S>
 impl<T> tracing::instrument::WithSubscriber for ftzz::GeneratorBuilder<S>
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::GeneratorBuilder<S> where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::GeneratorBuilder<S>::vzip(self) -> V
 pub struct ftzz::NumFilesWithRatio
 impl ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::from_num_files(num_files: core::num::nonzero::NonZeroU64) -> Self
@@ -203,5 +195,3 @@ impl<T> core::convert::From<T> for ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::NumFilesWithRatio
 impl<T> tracing::instrument::WithSubscriber for ftzz::NumFilesWithRatio
-impl<V, T> ppv_lite86::types::VZip<V> for ftzz::NumFilesWithRatio where V: ppv_lite86::types::MultiLane<T>
-pub fn ftzz::NumFilesWithRatio::vzip(self) -> V
