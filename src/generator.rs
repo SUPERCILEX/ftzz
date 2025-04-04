@@ -9,10 +9,9 @@ use std::{
     fmt::Write,
     fs::create_dir_all,
     hash::{DefaultHasher, Hash, Hasher},
-    num::{NonZeroU64, NonZeroUsize},
+    num::NonZeroU64,
     path::PathBuf,
     process::ExitCode,
-    thread,
 };
 
 use bon::Builder;
@@ -36,8 +35,6 @@ pub enum Error {
     Io,
     #[error("Failed to achieve valid generator environment.")]
     InvalidEnvironment,
-    #[error("Failed to create the async runtime.")]
-    RuntimeCreation,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -142,6 +139,7 @@ impl Generator {
     pub fn generate(self, output: &mut impl Write) -> Result<(), Error> {
         let options = validated_options(self)?;
         print_configuration_info(&options, output)?;
+        log!(Level::Info, "Starting config: {options:?}");
         print_stats(run_generator(options)?, output);
         Ok(())
     }
@@ -353,30 +351,7 @@ fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &m
 }
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
-fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
-    let parallelism = thread::available_parallelism().unwrap_or(NonZeroUsize::new(1).unwrap());
-    let mut runtime = tokio::runtime::Builder::new_current_thread();
-    #[cfg(all(not(miri), target_os = "linux"))]
-    runtime.on_thread_start(|| {
-        use rustix::thread::{UnshareFlags, unshare};
-
-        let result = unshare(UnshareFlags::FILES);
-        #[cfg(debug_assertions)]
-        result.unwrap();
-        let _ = result;
-    });
-    let runtime = runtime
-        .max_blocking_threads(parallelism.get())
-        .build()
-        .change_context(Error::RuntimeCreation)
-        .attach(ExitCode::from(sysexits::ExitCode::OsErr))?;
-
-    log!(Level::Info, "Starting config: {config:?}");
-    runtime.block_on(run_generator_async(config, parallelism))
-}
-
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
-async fn run_generator_async(
+fn run_generator(
     Configuration {
         root_dir,
         files,
@@ -390,7 +365,6 @@ async fn run_generator_async(
         seed,
         human_info: _,
     }: Configuration,
-    parallelism: NonZeroUsize,
 ) -> Result<GeneratorStats, Error> {
     macro_rules! run {
         ($generator:expr) => {{
@@ -399,10 +373,8 @@ async fn run_generator_async(
                 files,
                 dirs_per_dir,
                 max_depth.try_into().unwrap_or(usize::MAX),
-                parallelism,
                 $generator,
             )
-            .await
         }};
     }
 

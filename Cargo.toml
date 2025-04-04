@@ -8,7 +8,6 @@ repository = "https://github.com/SUPERCILEX/ftzz"
 keywords = ["tools", "files", "fuzz"]
 categories = ["command-line-utilities", "development-tools", "development-tools::testing", "filesystem"]
 license = "Apache-2.0"
-rust-version = "1.88"
 
 [dependencies]
 bon = "3.6.4"
@@ -21,6 +20,7 @@ env_logger = { version = "0.11.8", default-features = false, features = ["auto-c
 error-stack = { version = "0.5.0", default-features = false, features = ["std"] }
 io-adapters = "0.4.0"
 itoa = "1.0.15"
+lockness-executor = { path = "/home/asaveau/Desktop/wip/lockness/executor" }
 log = { version = "0.4.27", features = ["release_max_level_info"] }
 rand = { version = "0.9.1", default-features = false, features = ["std"] }
 rand_distr = "0.5.1"
@@ -28,7 +28,6 @@ rand_xoshiro = "0.7.0"
 sysexits = "0.9.0"
 thiserror = "2.0.12"
 thousands = "0.2.0"
-tokio = { version = "1.45.1", features = ["rt"] }
 tracing = { version = "0.1.41", features = ["log"], optional = true }
 tracing-log = { version = "0.2.0", optional = true }
 tracing-subscriber = { version = "0.3.19", optional = true }
@@ -53,7 +52,6 @@ itoa = "1.0.15"
 
 [features]
 trace = ["tracing", "dep:tracing-log", "dep:tracing-subscriber", "dep:tracing-tracy", "dep:tracy-client"]
-dry_run = []
 
 [[bench]]
 name = "generator"
