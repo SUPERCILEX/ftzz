@@ -19,8 +19,6 @@ pub trait FileContentsGenerator {
         retryable: bool,
         state: &mut Self::State,
     ) -> io::Result<u64>;
-
-    fn byte_counts_pool_return(self) -> Option<Vec<u64>>;
 }
 
 pub struct NoGeneratedFileContents;
@@ -69,10 +67,6 @@ impl FileContentsGenerator for NoGeneratedFileContents {
                 .map(|_| 0)
             }
         }
-    }
-
-    fn byte_counts_pool_return(self) -> Option<Vec<u64>> {
-        None
     }
 }
 
@@ -140,10 +134,6 @@ impl FileContentsGenerator for OnTheFlyGeneratedFileContents {
             NoGeneratedFileContents.create_file(file, file_num, retryable, &mut ())
         }
     }
-
-    fn byte_counts_pool_return(self) -> Option<Vec<u64>> {
-        None
-    }
 }
 
 #[derive(Debug)]
@@ -185,10 +175,6 @@ impl FileContentsGenerator for PreDefinedGeneratedFileContents {
         } else {
             NoGeneratedFileContents.create_file(file, file_num, retryable, &mut ())
         }
-    }
-
-    fn byte_counts_pool_return(self) -> Option<Vec<u64>> {
-        Some(self.byte_counts)
     }
 }
 
