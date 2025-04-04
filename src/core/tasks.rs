@@ -1,10 +1,10 @@
 #![allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 
-use std::{cmp::min, io, num::NonZeroU64};
+use std::{cmp::min, num::NonZeroU64};
 
+use lockness_executor::Spawner;
 use rand::RngCore;
 use rand_distr::Normal;
-use tokio::{task, task::JoinHandle};
 
 use crate::{
     core::{
@@ -12,8 +12,9 @@ use crate::{
             FileContentsGenerator, NoGeneratedFileContents, OnTheFlyGeneratedFileContents,
             PreDefinedGeneratedFileContents,
         },
-        files::{GeneratorTaskOutcome, GeneratorTaskParams, create_files_and_dirs},
+        files::{GeneratorTaskParams, create_files_and_dirs},
         sample_truncated,
+        scheduler::Params,
     },
     utils::FastPathBuf,
 };
@@ -21,11 +22,6 @@ use crate::{
 pub type QueueResult = Result<QueueOutcome, QueueErrors>;
 
 pub struct QueueOutcome {
-    #[cfg(not(feature = "dry_run"))]
-    pub task: JoinHandle<error_stack::Result<GeneratorTaskOutcome, io::Error>>,
-    #[cfg(feature = "dry_run")]
-    pub task: GeneratorTaskOutcome,
-
     pub num_files: u64,
     pub num_dirs: usize,
     pub done: bool,
@@ -42,15 +38,11 @@ pub trait TaskGenerator {
         num_files_distr: &Normal<f64>,
         file: FastPathBuf,
         gen_dirs: bool,
-        byte_counts_pool: &mut Vec<Vec<u64>>,
+        spawner: &Spawner<Params>,
     ) -> QueueResult;
 
-    fn maybe_queue_final_gen(&mut self, file: FastPathBuf, _: &mut Vec<Vec<u64>>) -> QueueResult {
+    fn maybe_queue_final_gen(&mut self, file: FastPathBuf, _: &Spawner<Params>) -> QueueResult {
         Err(QueueErrors::NothingToDo(file))
-    }
-
-    fn uses_byte_counts_pool(&self) -> bool {
-        false
     }
 }
 
@@ -65,27 +57,18 @@ fn queue(
         ..
     }: GeneratorTaskParams<impl FileContentsGenerator + Send + 'static>,
     done: bool,
+    spawner: &Spawner<Params>,
 ) -> QueueResult {
     if num_files > 0 || num_dirs > 0 {
+        spawner.spawn0(move |state| {
+            let generated = create_files_and_dirs(params)?;
+            state.add(generated);
+            Ok(())
+        });
         Ok(QueueOutcome {
             num_files,
             num_dirs,
             done,
-
-            #[cfg(not(feature = "dry_run"))]
-            task: task::spawn_blocking(move || create_files_and_dirs(params)),
-            #[cfg(feature = "dry_run")]
-            task: {
-                std::hint::black_box(&params);
-                GeneratorTaskOutcome {
-                    files_generated: num_files,
-                    dirs_generated: num_dirs,
-                    bytes_generated: 0,
-
-                    pool_return_file: params.target_dir,
-                    pool_return_byte_counts: None,
-                }
-            },
         })
     } else {
         Err(QueueErrors::NothingToDo(params.target_dir))
@@ -123,13 +106,16 @@ pub struct DynamicGenerator<R> {
 }
 
 impl<R: RngCore + Clone + Send + 'static> TaskGenerator for DynamicGenerator<R> {
-    #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(self)))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "trace", skip(self, spawner))
+    )]
     fn queue_gen(
         &mut self,
         num_files_distr: &Normal<f64>,
         file: FastPathBuf,
         gen_dirs: bool,
-        _: &mut Vec<Vec<u64>>,
+        spawner: &Spawner<Params>,
     ) -> QueueResult {
         let Self {
             ref num_dirs_distr,
@@ -164,9 +150,10 @@ impl<R: RngCore + Clone + Send + 'static> TaskGenerator for DynamicGenerator<R> 
                     fill_byte,
                 }),
                 false,
+                spawner,
             )
         } else {
-            queue(build_params!(NoGeneratedFileContents), false)
+            queue(build_params!(NoGeneratedFileContents), false, spawner)
         }
     }
 }
@@ -184,14 +171,14 @@ pub struct StaticGenerator<R> {
 impl<R: RngCore + Clone + Send + 'static> TaskGenerator for StaticGenerator<R> {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "trace", skip(self, byte_counts_pool))
+        tracing::instrument(level = "trace", skip(self, spawner))
     )]
     fn queue_gen(
         &mut self,
         num_files_distr: &Normal<f64>,
         file: FastPathBuf,
         gen_dirs: bool,
-        byte_counts_pool: &mut Vec<Vec<u64>>,
+        spawner: &Spawner<Params>,
     ) -> QueueResult {
         let Self {
             dynamic:
@@ -227,13 +214,13 @@ impl<R: RngCore + Clone + Send + 'static> TaskGenerator for StaticGenerator<R> {
         } else {
             dirs_to_gen(num_files, gen_dirs, num_dirs_distr, random)
         };
-        self.queue_gen_internal(file, num_files, num_dirs, 0, byte_counts_pool)
+        self.queue_gen_internal(file, num_files, num_dirs, 0, spawner)
     }
 
     fn maybe_queue_final_gen(
         &mut self,
         file: FastPathBuf,
-        byte_counts_pool: &mut Vec<Vec<u64>>,
+        spawner: &Spawner<Params>,
     ) -> QueueResult {
         let Self {
             dynamic: _,
@@ -256,34 +243,12 @@ impl<R: RngCore + Clone + Send + 'static> TaskGenerator for StaticGenerator<R> {
         // generated,  but I haven't had time to think about how to do so
         // properly.
         if let Some(files) = files_exact {
-            self.queue_gen_internal(
-                file,
-                files,
-                0,
-                root_num_files_hack.unwrap_or(0),
-                byte_counts_pool,
-            )
+            self.queue_gen_internal(file, files, 0, root_num_files_hack.unwrap_or(0), spawner)
         } else if matches!(bytes_exact, Some(b) if b > 0) {
-            self.queue_gen_internal(
-                file,
-                1,
-                0,
-                root_num_files_hack.unwrap_or(0),
-                byte_counts_pool,
-            )
+            self.queue_gen_internal(file, 1, 0, root_num_files_hack.unwrap_or(0), spawner)
         } else {
             Err(QueueErrors::NothingToDo(file))
         }
-    }
-
-    fn uses_byte_counts_pool(&self) -> bool {
-        let Self {
-            dynamic: DynamicGenerator { ref bytes, .. },
-            bytes_exact,
-            ..
-        } = *self;
-
-        bytes.is_some() && matches!(bytes_exact, Some(b) if b > 0)
     }
 }
 
@@ -305,7 +270,7 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
 
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "trace", skip(self, byte_counts_pool))
+        tracing::instrument(level = "trace", skip(self, spawner))
     )]
     fn queue_gen_internal(
         &mut self,
@@ -313,7 +278,7 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
         num_files: u64,
         num_dirs: usize,
         offset: u64,
-        byte_counts_pool: &mut Vec<Vec<u64>>,
+        spawner: &Spawner<Params>,
     ) -> QueueResult {
         macro_rules! build_params {
             ($file_contents:expr) => {{
@@ -348,7 +313,7 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
         {
             if let Some(bytes) = bytes_exact {
                 if *bytes > 0 {
-                    let mut byte_counts: Vec<u64> = byte_counts_pool.pop().unwrap_or_default();
+                    let mut byte_counts: Vec<u64> = Vec::new();
                     debug_assert!(byte_counts.is_empty());
                     let num_files_usize = num_files.try_into().unwrap_or(usize::MAX);
                     byte_counts.reserve(num_files_usize);
@@ -388,9 +353,10 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
                             fill_byte,
                         }),
                         done,
+                        spawner,
                     )
                 } else {
-                    queue(build_params!(NoGeneratedFileContents), done)
+                    queue(build_params!(NoGeneratedFileContents), done, spawner)
                 }
             } else {
                 queue(
@@ -400,10 +366,11 @@ impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
                         fill_byte,
                     }),
                     done,
+                    spawner,
                 )
             }
         } else {
-            queue(build_params!(NoGeneratedFileContents), done)
+            queue(build_params!(NoGeneratedFileContents), done, spawner)
         }
     }
 }
