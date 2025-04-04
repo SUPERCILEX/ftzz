@@ -11,7 +11,6 @@ use std::{
 
 use error_stack::{Result, ResultExt};
 use rand_distr::Normal;
-use tokio::task::{JoinError, JoinHandle};
 
 use crate::{
     core::{
@@ -47,10 +46,6 @@ impl AddAssign<&GeneratorTaskOutcome> for GeneratorStats {
 }
 
 struct Scheduler<'a> {
-    #[cfg(not(feature = "dry_run"))]
-    tasks: &'a mut VecDeque<JoinHandle<Result<GeneratorTaskOutcome, io::Error>>>,
-    #[cfg(feature = "dry_run")]
-    tasks: &'a mut VecDeque<GeneratorTaskOutcome>,
     stats: &'a mut GeneratorStats,
 
     stack: Vec<Directory>,
@@ -87,16 +82,14 @@ struct ObjectPool {
     feature = "tracing",
     tracing::instrument(level = "trace", skip(generator))
 )]
-pub async fn run(
+pub fn run(
     root_dir: PathBuf,
     target_file_count: NonZeroU64,
     dirs_per_dir: f64,
     max_depth: usize,
-    parallelism: NonZeroUsize,
+    executor: LocknessExecutor,
     mut generator: impl TaskGenerator + Send,
 ) -> Result<GeneratorStats, Error> {
-    // Minus 1 because VecDeque adds 1 and then rounds to a power of 2
-    let mut tasks = VecDeque::with_capacity(parallelism.get().pow(2) - 1);
     let mut stats = GeneratorStats {
         files: 0,
         dirs: 0,
@@ -119,19 +112,19 @@ pub async fn run(
             }
         },
 
-        tasks: &mut tasks,
         stats: &mut stats,
     };
 
     #[cfg(feature = "tracing")]
     tracing::event!(
         tracing::Level::DEBUG,
-        task_queue = scheduler.tasks.capacity(),
         object_pool.dirs = scheduler.cache.directories.capacity(),
         object_pool.paths = scheduler.cache.paths.capacity(),
         object_pool.file_sizes = scheduler.cache.byte_counts.capacity(),
         "Entry allocations"
     );
+
+    let (send, recv) = executor.channels();
 
     schedule_root_dir(
         &mut generator,
@@ -160,11 +153,9 @@ pub async fn run(
         let next_stack_dir = total_dirs - child_dir_counts.len();
         let is_completing = child_dir_counts.is_empty();
 
-        if scheduler.tasks.len() + num_dirs_to_generate >= scheduler.tasks.capacity() {
-            flush_tasks(&mut scheduler).await?;
-        }
+        recv.try_iter
 
-        let Ok(directory) = schedule_task(
+        let Ok(directory) = schedule_dir(
             target_file_count,
             num_dirs_to_generate,
             dirs_per_dir,
@@ -189,7 +180,7 @@ pub async fn run(
     #[cfg(feature = "tracing")]
     drop(gen_span);
 
-    schedule_last_task(generator, scheduler);
+    schedule_last_dir(generator, scheduler);
 
     for task in tasks {
         #[cfg(not(feature = "dry_run"))]
@@ -326,7 +317,7 @@ fn schedule_root_dir(
         skip(generator, tasks, stack, dir_pool, path_pool, byte_counts_pool)
     )
 )]
-fn schedule_task(
+fn schedule_dir(
     target_file_count: u64,
     num_dirs_to_generate: usize,
     dirs_per_dir: f64,
@@ -433,7 +424,7 @@ fn schedule_task(
 }
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip_all))]
-fn schedule_last_task(mut generator: impl TaskGenerator, mut scheduler: Scheduler<'_>) {
+fn schedule_last_dir(mut generator: impl TaskGenerator, mut scheduler: Scheduler<'_>) {
     let Scheduler {
         ref mut tasks,
         stats: _,

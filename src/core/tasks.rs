@@ -1,10 +1,9 @@
 #![allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 
-use std::{cmp::min, io, num::NonZeroU64};
+use std::{cmp::min, num::NonZeroU64};
 
 use rand::RngCore;
 use rand_distr::Normal;
-use tokio::{task, task::JoinHandle};
 
 use crate::{
     core::{
@@ -21,11 +20,6 @@ use crate::{
 pub type QueueResult = Result<QueueOutcome, QueueErrors>;
 
 pub struct QueueOutcome {
-    #[cfg(not(feature = "dry_run"))]
-    pub task: JoinHandle<error_stack::Result<GeneratorTaskOutcome, io::Error>>,
-    #[cfg(feature = "dry_run")]
-    pub task: GeneratorTaskOutcome,
-
     pub num_files: u64,
     pub num_dirs: usize,
     pub done: bool,
@@ -43,6 +37,7 @@ pub trait TaskGenerator {
         file: FastPathBuf,
         gen_dirs: bool,
         byte_counts_pool: &mut Vec<Vec<u64>>,
+        spawner: &mut LocknessTaskSpawner,
     ) -> QueueResult;
 
     fn maybe_queue_final_gen(&mut self, file: FastPathBuf, _: &mut Vec<Vec<u64>>) -> QueueResult {
