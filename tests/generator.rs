@@ -38,7 +38,7 @@ mod inspect {
 
             if option_env!("INSPECT").is_some() {
                 Self {
-                    path: dir.into_path(),
+                    path: dir.keep(),
                     _guard: None,
                 }
             } else {

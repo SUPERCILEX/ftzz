@@ -111,10 +111,11 @@ pub async fn run(
             let paths = Vec::with_capacity(tasks.capacity() / 2);
             ObjectPool {
                 directories: Vec::with_capacity(max_depth),
-                byte_counts: generator
-                    .uses_byte_counts_pool()
-                    .then(|| Vec::with_capacity(paths.capacity()))
-                    .unwrap_or_default(),
+                byte_counts: if generator.uses_byte_counts_pool() {
+                    Vec::with_capacity(paths.capacity())
+                } else {
+                    Vec::default()
+                },
                 paths,
             }
         },

@@ -190,7 +190,7 @@ pub fn ftzz::NumFilesWithRatio::borrow(&self) -> &T
 impl<T> core::borrow::BorrowMut<T> for ftzz::NumFilesWithRatio where T: ?core::marker::Sized
 pub fn ftzz::NumFilesWithRatio::borrow_mut(&mut self) -> &mut T
 impl<T> core::clone::CloneToUninit for ftzz::NumFilesWithRatio where T: core::clone::Clone
-pub unsafe fn ftzz::NumFilesWithRatio::clone_to_uninit(&self, dst: *mut u8)
+pub unsafe fn ftzz::NumFilesWithRatio::clone_to_uninit(&self, dest: *mut u8)
 impl<T> core::convert::From<T> for ftzz::NumFilesWithRatio
 pub fn ftzz::NumFilesWithRatio::from(t: T) -> T
 impl<T> tracing::instrument::Instrument for ftzz::NumFilesWithRatio

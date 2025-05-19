@@ -28,7 +28,7 @@ impl FastPathBuf {
         }
     }
 
-    pub fn capacity(&self) -> usize {
+    pub const fn capacity(&self) -> usize {
         self.inner.capacity()
     }
 

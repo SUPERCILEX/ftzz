@@ -16,6 +16,7 @@ use std::{
 };
 
 use bon::Builder;
+use bytesize::ByteSize;
 use error_stack::{Report, Result, ResultExt};
 use log::{Level, log};
 use rand::SeedableRng;
@@ -344,7 +345,7 @@ fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &m
         },
         bytes_info = if bytes > 0 {
             log!(Level::Info, "{bytes} bytes written");
-            format!(" ({})", bytesize::to_string(bytes, false))
+            format!(" ({})", ByteSize(bytes).display().si())
         } else {
             String::new()
         }

@@ -45,7 +45,7 @@ Generate ~10_000 files with ~1 MB of random data spread across them:
 ```console
 $ ftzz ./with_data -n 10K -b 1M
 About 10,000 files will be generated in approximately 1,000 directories distributed across a tree of maximum depth 5 where each directory contains approximately 4 other directories. Each file will contain approximately 100 bytes of random data.
-Created 9,312 files (924.6 KB) across 1,570 directories.
+Created 9,312 files (924.6 kB) across 1,570 directories.
 
 ```
 
