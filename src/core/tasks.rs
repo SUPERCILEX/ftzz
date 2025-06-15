@@ -36,16 +36,11 @@ pub trait TaskGenerator {
         num_files_distr: &Normal<f64>,
         file: FastPathBuf,
         gen_dirs: bool,
-        byte_counts_pool: &mut Vec<Vec<u64>>,
-        spawner: &mut LocknessTaskSpawner,
+        spawner: &mut Spawner,
     ) -> QueueResult;
 
-    fn maybe_queue_final_gen(&mut self, file: FastPathBuf, _: &mut Vec<Vec<u64>>) -> QueueResult {
+    fn maybe_queue_final_gen(&mut self, file: FastPathBuf, spawner: &mut Spawner) -> QueueResult {
         Err(QueueErrors::NothingToDo(file))
-    }
-
-    fn uses_byte_counts_pool(&self) -> bool {
-        false
     }
 }
 
@@ -62,25 +57,11 @@ fn queue(
     done: bool,
 ) -> QueueResult {
     if num_files > 0 || num_dirs > 0 {
+        spawner.spawn_blocking(move || create_files_and_dirs(params));
         Ok(QueueOutcome {
             num_files,
             num_dirs,
             done,
-
-            #[cfg(not(feature = "dry_run"))]
-            task: task::spawn_blocking(move || create_files_and_dirs(params)),
-            #[cfg(feature = "dry_run")]
-            task: {
-                std::hint::black_box(&params);
-                GeneratorTaskOutcome {
-                    files_generated: num_files,
-                    dirs_generated: num_dirs,
-                    bytes_generated: 0,
-
-                    pool_return_file: params.target_dir,
-                    pool_return_byte_counts: None,
-                }
-            },
         })
     } else {
         Err(QueueErrors::NothingToDo(params.target_dir))

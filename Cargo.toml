@@ -20,7 +20,8 @@ env_logger = { version = "0.11.6", default-features = false, features = ["auto-c
 error-stack = { version = "0.5.0", default-features = false, features = ["std"] }
 io-adapters = "0.4.0"
 itoa = "1.0.14"
-lockness-executor = { path = "/home/asaveau/Desktop/wip/lockness/executor" }
+lockness-bags = { path = "/home/asaveau/Desktop/wip/lockness" }
+lockness-executor = { path = "/home/asaveau/Desktop/wip/lockness" }
 log = { version = "0.4.25", features = ["release_max_level_info"] }
 rand = { version = "0.9.0", default-features = false, features = ["std"] }
 rand_distr = "0.5.0"

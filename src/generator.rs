@@ -25,7 +25,8 @@ use thiserror::Error;
 use thousands::Separable;
 
 use crate::core::{
-    DynamicGenerator, GeneratorBytes, GeneratorStats, StaticGenerator, run, truncatable_normal,
+    DynamicGenerator, GeneratorBytes, GeneratorStats, StaticGenerator, ThreadState, run,
+    truncatable_normal,
 };
 
 #[derive(Error, Debug)]
@@ -140,6 +141,7 @@ impl Generator {
     pub fn generate(self, output: &mut impl Write) -> Result<(), Error> {
         let options = validated_options(self)?;
         print_configuration_info(&options, output)?;
+        log!(Level::Info, "Starting config: {options:?}");
         print_stats(run_generator(options)?, output);
         Ok(())
     }
@@ -351,27 +353,6 @@ fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &m
 }
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
-fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
-    let parallelism = thread::available_parallelism().unwrap_or(NonZeroUsize::new(1).unwrap());
-    let mut executor = LocknessExecutorBuilder::new()
-        .max_threads(parallelism)
-        .build();
-    #[cfg(all(not(miri), target_os = "linux"))]
-    executor.prepare_cache(|| {
-        use rustix::thread::{UnshareFlags, unshare};
-
-        let result = unshare(UnshareFlags::FILES);
-        #[cfg(debug_assertions)]
-        result.unwrap();
-        let _ = result;
-    });
-    let runtime = executor.max_threads(parallelism).build();
-
-    log!(Level::Info, "Starting config: {config:?}");
-    run_generator_(config, executor)
-}
-
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
 fn run_generator_(
     Configuration {
         root_dir,
@@ -386,7 +367,6 @@ fn run_generator_(
         seed,
         human_info: _,
     }: Configuration,
-    executor: LocknessExecutor,
 ) -> Result<GeneratorStats, Error> {
     macro_rules! run {
         ($generator:expr) => {{
@@ -395,7 +375,6 @@ fn run_generator_(
                 files,
                 dirs_per_dir,
                 max_depth.try_into().unwrap_or(usize::MAX),
-                executor,
                 $generator,
             )
         }};

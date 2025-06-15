@@ -7,10 +7,13 @@ use std::{
     path::PathBuf,
     process::ExitCode,
     result,
+    sync::{Arc, Mutex},
 };
 
-use error_stack::{Result, ResultExt};
+use error_stack::{FutureExt, Report, Result, ResultExt};
+use lockness_executor::LocknessExecutor;
 use rand_distr::Normal;
+use rustix::thread::{UnshareFlags, unshare};
 
 use crate::{
     core::{
@@ -22,36 +25,67 @@ use crate::{
     utils::{FastPathBuf, with_dir_name, with_file_name},
 };
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct GeneratorStats {
     pub files: u64,
     pub dirs: usize,
     pub bytes: u64,
 }
 
-impl AddAssign<&GeneratorTaskOutcome> for GeneratorStats {
-    fn add_assign(
-        &mut self,
-        GeneratorTaskOutcome {
-            files_generated,
-            dirs_generated,
-            bytes_generated,
-            ..
-        }: &GeneratorTaskOutcome,
-    ) {
-        self.files += files_generated;
-        self.dirs += dirs_generated;
-        self.bytes += bytes_generated;
+impl AddAssign<GeneratorStats> for GeneratorStats {
+    fn add_assign(&mut self, rhs: GeneratorStats) {
+        let GeneratorStats { files, dirs, bytes } = self;
+        let GeneratorStats {
+            files: files_,
+            dirs: dirs_,
+            bytes: bytes_,
+        } = rhs;
+        *files += files_;
+        *dirs += dirs_;
+        *bytes += bytes_;
     }
 }
 
-struct Scheduler<'a> {
-    stats: &'a mut GeneratorStats,
+struct ThreadState {
+    buffered: GeneratorStats,
+    totals: Arc<Mutex<GeneratorStats>>,
+}
 
+impl ThreadState {
+    fn new(totals: Arc<Mutex<GeneratorStats>>, errors: Sender<Report<Error>>) -> Self {
+        #[cfg(all(not(miri), target_os = "linux"))]
+        if let Err(e) = unshare(UnshareFlags::FILES) {
+            errors.send(
+                Err(e)
+                    .attach_printable("Failed to unshare I/O")
+                    .change_context(Error::Io)
+                    .attach(ExitCode::from(sysexits::ExitCode::IoErr)),
+            );
+        }
+        Self {
+            buffered: GeneratorStats::default(),
+            totals,
+        }
+    }
+}
+
+impl Drop for ThreadState {
+    fn drop(&mut self) {
+        let Self {
+            buffered,
+            ref totals,
+        } = *self;
+        let mut totals = totals.lock().unwrap();
+        *totals += buffered;
+    }
+}
+
+struct Scheduler {
+    spawner: Spawner<ThreadState>,
     stack: Vec<Directory>,
     target_dir: FastPathBuf,
 
-    cache: ObjectPool,
+    cache: Vec<Vec<DirChild>>,
 }
 
 /// Given a directory
@@ -72,12 +106,6 @@ struct DirChild {
     dirs: usize,
 }
 
-struct ObjectPool {
-    directories: Vec<Vec<DirChild>>,
-    paths: Vec<FastPathBuf>,
-    byte_counts: Vec<Vec<u64>>,
-}
-
 #[cfg_attr(
     feature = "tracing",
     tracing::instrument(level = "trace", skip(generator))
@@ -87,44 +115,31 @@ pub fn run(
     target_file_count: NonZeroU64,
     dirs_per_dir: f64,
     max_depth: usize,
-    executor: LocknessExecutor,
     mut generator: impl TaskGenerator + Send,
 ) -> Result<GeneratorStats, Error> {
-    let mut stats = GeneratorStats {
-        files: 0,
-        dirs: 0,
-        bytes: 0,
-    };
+    let stats = Arc::new(Mutex::new(GeneratorStats::default()));
+    let (sender, receiver) = lockness_bags::mpsc();
+    let executor = LocknessExecutor::builder()
+        .thread_initializer({
+            let stats = stats.clone();
+            || ThreadState::new(stats, sender)
+        })
+        .build();
 
     let mut scheduler = Scheduler {
+        spawner: executor.spawner(),
         stack: Vec::with_capacity(max_depth),
         target_dir: FastPathBuf::from(root_dir),
 
-        cache: {
-            let paths = Vec::with_capacity(tasks.capacity() / 2);
-            ObjectPool {
-                directories: Vec::with_capacity(max_depth),
-                byte_counts: generator
-                    .uses_byte_counts_pool()
-                    .then(|| Vec::with_capacity(paths.capacity()))
-                    .unwrap_or_default(),
-                paths,
-            }
-        },
-
-        stats: &mut stats,
+        cache: Vec::with_capacity(max_depth),
     };
 
     #[cfg(feature = "tracing")]
     tracing::event!(
         tracing::Level::DEBUG,
         object_pool.dirs = scheduler.cache.directories.capacity(),
-        object_pool.paths = scheduler.cache.paths.capacity(),
-        object_pool.file_sizes = scheduler.cache.byte_counts.capacity(),
         "Entry allocations"
     );
-
-    let (send, recv) = executor.channels();
 
     schedule_root_dir(
         &mut generator,
@@ -153,8 +168,6 @@ pub fn run(
         let next_stack_dir = total_dirs - child_dir_counts.len();
         let is_completing = child_dir_counts.is_empty();
 
-        recv.try_iter
-
         let Ok(directory) = schedule_dir(
             target_file_count,
             num_dirs_to_generate,
@@ -182,80 +195,19 @@ pub fn run(
 
     schedule_last_dir(generator, scheduler);
 
-    for task in tasks {
-        #[cfg(not(feature = "dry_run"))]
-        handle_task_result(task.await, &mut stats)?;
-        #[cfg(feature = "dry_run")]
-        handle_task_result(task, &mut stats)?;
+    let finisher = executor.finisher();
+    if let Some(e) = receiver.into_iter().next() {
+        return Err(e);
+    }
+    if let Some(e) = finisher.reap().next() {
+        return Err(e)
+            .change_context(Error::TaskJoin)
+            .attach(ExitCode::from(sysexits::ExitCode::Software))?
+            .change_context(Error::Io)
+            .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
     }
 
-    Ok(stats)
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(tasks, path_pool, byte_counts_pool))
-)]
-async fn flush_tasks(
-    &mut Scheduler {
-        ref mut tasks,
-        ref mut stats,
-        cache:
-            ObjectPool {
-                directories: _,
-                paths: ref mut path_pool,
-                byte_counts: ref mut byte_counts_pool,
-            },
-        ..
-    }: &mut Scheduler<'_>,
-) -> Result<(), Error> {
-    #[cfg(feature = "tracing")]
-    tracing::event!(tracing::Level::TRACE, "Flushing pending task queue");
-
-    let mut drain = tasks.len() / 2;
-    while drain > 0 {
-        let task = {
-            let mut task = tasks.pop_front().unwrap();
-            if !task.is_finished()
-                && let Some(h) = tasks.iter_mut().find(|h| h.is_finished())
-            {
-                mem::swap(&mut task, h);
-            }
-            task
-        };
-
-        #[cfg(not(feature = "dry_run"))]
-        let outcome = handle_task_result(task.await, stats)?;
-        #[cfg(feature = "dry_run")]
-        let outcome = handle_task_result(task, stats)?;
-
-        path_pool.push(outcome.pool_return_file);
-        if let Some(mut vec) = outcome.pool_return_byte_counts {
-            vec.clear();
-            byte_counts_pool.push(vec);
-        }
-
-        drain -= 1;
-    }
-    Ok(())
-}
-
-fn handle_task_result(
-    #[cfg(not(feature = "dry_run"))] task_result: result::Result<
-        Result<GeneratorTaskOutcome, io::Error>,
-        JoinError,
-    >,
-    #[cfg(feature = "dry_run")] outcome: GeneratorTaskOutcome,
-    stats: &mut GeneratorStats,
-) -> Result<GeneratorTaskOutcome, Error> {
-    #[cfg(not(feature = "dry_run"))]
-    let outcome = task_result
-        .change_context(Error::TaskJoin)
-        .attach(ExitCode::from(sysexits::ExitCode::Software))?
-        .change_context(Error::Io)
-        .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
-    *stats += &outcome;
-    Ok(outcome)
+    Ok(Arc::into_inner(stats).unwrap().into_inner().unwrap())
 }
 
 #[cfg_attr(
@@ -271,31 +223,23 @@ fn schedule_root_dir(
     dirs_per_dir: f64,
     max_depth: usize,
     &mut Scheduler {
-        ref mut tasks,
-        stats: _,
+        spawner,
         ref mut stack,
         ref target_dir,
-        cache:
-            ObjectPool {
-                directories: _,
-                paths: ref mut path_pool,
-                byte_counts: ref mut byte_counts_pool,
-            },
-    }: &mut Scheduler<'_>,
+        cache: _,
+    }: &mut Scheduler,
 ) {
     match generator.queue_gen(
         &num_files_distr(target_file_count.get(), dirs_per_dir, max_depth),
         target_dir.clone(),
         max_depth > 0,
-        byte_counts_pool,
+        spawner,
     ) {
         Ok(QueueOutcome {
-            task,
             num_files,
             num_dirs,
             done: _,
         }) => {
-            tasks.push_back(task);
             if num_dirs > 0 {
                 stack.push(Directory {
                     total_dirs: 1,
@@ -306,7 +250,7 @@ fn schedule_root_dir(
                 });
             }
         }
-        Err(QueueErrors::NothingToDo(path)) => path_pool.push(path),
+        Err(QueueErrors::NothingToDo(_)) => (),
     }
 }
 
@@ -324,17 +268,11 @@ fn schedule_dir(
     max_depth: usize,
     generator: &mut impl TaskGenerator,
     &mut Scheduler {
-        ref mut tasks,
-        stats: _,
+        spawner,
         ref stack,
         ref target_dir,
-        cache:
-            ObjectPool {
-                directories: ref mut dir_pool,
-                paths: ref mut path_pool,
-                byte_counts: ref mut byte_counts_pool,
-            },
-    }: &mut Scheduler<'_>,
+        cache: ref mut dir_pool,
+    }: &mut Scheduler,
     #[cfg(feature = "tracing")] gen_span: &tracing::Span,
 ) -> result::Result<Option<Directory>, ()> {
     let depth = stack.len();
@@ -364,7 +302,7 @@ fn schedule_dir(
     let span_guard = gen_span.enter();
     for i in 0..num_dirs_to_generate {
         let path = with_dir_name(i, |s| {
-            let mut buf = path_pool.pop().unwrap_or_else(FastPathBuf::new);
+            let mut buf = FastPathBuf::new();
 
             // Space for the parent dir, the path separator, the target dir, child separator
             // and name, and a NUL terminator
@@ -379,28 +317,22 @@ fn schedule_dir(
             buf
         });
 
-        let child =
-            match generator.queue_gen(&num_files_distr, path, gen_next_dirs, byte_counts_pool) {
-                Ok(QueueOutcome {
-                    task,
-                    num_files,
-                    num_dirs,
-                    done,
-                }) => {
-                    tasks.push_back(task);
-                    if done {
-                        return Err(());
-                    }
-                    DirChild {
-                        files: next_target_file_count(target_file_count, num_dirs, num_files),
-                        dirs: num_dirs,
-                    }
+        let child = match generator.queue_gen(&num_files_distr, path, gen_next_dirs, spawner) {
+            Ok(QueueOutcome {
+                num_files,
+                num_dirs,
+                done,
+            }) => {
+                if done {
+                    return Err(());
                 }
-                Err(QueueErrors::NothingToDo(path)) => {
-                    path_pool.push(path);
-                    DirChild { files: 0, dirs: 0 }
+                DirChild {
+                    files: next_target_file_count(target_file_count, num_dirs, num_files),
+                    dirs: num_dirs,
                 }
-            };
+            }
+            Err(QueueErrors::NothingToDo(_)) => DirChild { files: 0, dirs: 0 },
+        };
 
         if gen_next_dirs {
             raw_next_dirs[num_dirs_to_generate - i - 1].write(child);
@@ -424,28 +356,15 @@ fn schedule_dir(
 }
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip_all))]
-fn schedule_last_dir(mut generator: impl TaskGenerator, mut scheduler: Scheduler<'_>) {
+fn schedule_last_dir(mut generator: impl TaskGenerator, mut scheduler: Scheduler) {
     let Scheduler {
-        ref mut tasks,
-        stats: _,
+        spawner,
         stack: _,
         target_dir,
-        cache:
-            ObjectPool {
-                byte_counts: ref mut byte_counts_pool,
-                ..
-            },
+        cache: _,
     } = scheduler;
 
-    if let Ok(QueueOutcome {
-        task,
-        num_files: _,
-        num_dirs: _,
-        done: _,
-    }) = generator.maybe_queue_final_gen(target_dir, byte_counts_pool)
-    {
-        tasks.push_back(task);
-    }
+    let _ = generator.maybe_queue_final_gen(target_dir, spawner);
 }
 
 #[cfg_attr(
@@ -454,16 +373,11 @@ fn schedule_last_dir(mut generator: impl TaskGenerator, mut scheduler: Scheduler
 )]
 fn handle_directory_completion(
     &mut Scheduler {
-        tasks: _,
-        stats: _,
+        spawner,
         ref mut stack,
         ref mut target_dir,
-        cache:
-            ObjectPool {
-                directories: ref mut directory_pool,
-                ..
-            },
-    }: &mut Scheduler<'_>,
+        cache: ref mut directory_pool,
+    }: &mut Scheduler,
 ) {
     if let Some(Directory {
         total_dirs: _,

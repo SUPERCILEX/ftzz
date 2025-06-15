@@ -3,7 +3,7 @@ use std::{fs::create_dir_all, io, io::ErrorKind::NotFound};
 use error_stack::{Report, Result, ResultExt};
 
 use crate::{
-    core::file_contents::FileContentsGenerator,
+    core::{GeneratorStats, file_contents::FileContentsGenerator},
     utils::{FastPathBuf, with_dir_name, with_file_name},
 };
 
@@ -13,15 +13,6 @@ pub struct GeneratorTaskParams<G: FileContentsGenerator> {
     pub num_dirs: usize,
     pub file_offset: u64,
     pub file_contents: G,
-}
-
-pub struct GeneratorTaskOutcome {
-    pub files_generated: u64,
-    pub dirs_generated: usize,
-    pub bytes_generated: u64,
-
-    pub pool_return_file: FastPathBuf,
-    pub pool_return_byte_counts: Option<Vec<u64>>,
 }
 
 #[cfg_attr(
@@ -36,7 +27,7 @@ pub fn create_files_and_dirs(
         file_offset,
         mut file_contents,
     }: GeneratorTaskParams<impl FileContentsGenerator>,
-) -> Result<GeneratorTaskOutcome, io::Error> {
+) -> Result<(), io::Error> {
     create_dirs(num_dirs, &mut target_dir)?;
     create_files(num_files, file_offset, &mut target_dir, &mut file_contents).map(|bytes_written| {
         GeneratorTaskOutcome {
