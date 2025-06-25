@@ -11,10 +11,10 @@ license = "Apache-2.0"
 rust-version = "1.88"
 
 [dependencies]
-bon = "3.6.3"
+bon = "3.6.4"
 bytesize = "2.0.1"
-cfg-if = "1.0.0"
-clap = { version = "4.5.38", features = ["derive", "wrap_help"] }
+cfg-if = "1.0.1"
+clap = { version = "4.5.40", features = ["derive", "wrap_help"] }
 clap-num = "1.2.0"
 clap-verbosity-flag = { package = "clap-verbosity-flag2", version = "2.1.1" }
 env_logger = { version = "0.11.8", default-features = false, features = ["auto-color"] }
@@ -28,12 +28,12 @@ rand_xoshiro = "0.7.0"
 sysexits = "0.9.0"
 thiserror = "2.0.12"
 thousands = "0.2.0"
-tokio = { version = "1.45.0", features = ["rt"] }
+tokio = { version = "1.45.1", features = ["rt"] }
 tracing = { version = "0.1.41", features = ["log"], optional = true }
 tracing-log = { version = "0.2.0", optional = true }
 tracing-subscriber = { version = "0.3.19", optional = true }
 tracing-tracy = { version = "0.11.4", features = ["flush-on-exit"], optional = true }
-tracy-client = { version = "0.18.0", optional = true }
+tracy-client = { version = "0.18.1", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 rustix = { version = "1.0.7", features = ["fs", "thread"] }
@@ -44,7 +44,7 @@ expect-test = "1.5.1"
 more-asserts = "0.3.1"
 rand = "0.9.1"
 rstest = { version = "0.25.0", default-features = false }
-supercilex-tests = "0.4.17"
+supercilex-tests = "0.4.18"
 tempfile = "3.20.0"
 trycmd = "0.15.9"
 

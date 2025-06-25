@@ -37,7 +37,7 @@ impl FastPathBuf {
     }
 
     #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
-    pub fn push(&mut self, name: &str) -> PopGuard {
+    pub fn push(&mut self, name: &str) -> PopGuard<'_> {
         PopGuard::push(self, name)
     }
 
@@ -68,7 +68,7 @@ impl FastPathBuf {
     }
 
     #[cfg(all(unix, not(miri)))]
-    pub fn to_cstr_mut(&mut self) -> unix::CStrFastPathBufGuard {
+    pub fn to_cstr_mut(&mut self) -> unix::CStrFastPathBufGuard<'_> {
         unix::CStrFastPathBufGuard::new(self)
     }
 }
@@ -200,7 +200,7 @@ mod unix {
     }
 
     impl CStrFastPathBufGuard<'_> {
-        pub fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard {
+        pub fn new(buf: &mut FastPathBuf) -> CStrFastPathBufGuard<'_> {
             let FastPathBuf {
                 ref mut inner,
                 last_len: _,
