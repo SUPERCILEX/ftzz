@@ -1,12 +1,12 @@
 name: CI/CD
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -28,7 +28,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -73,16 +73,21 @@ jobs:
           MIRIFLAGS: -Zmiri-disable-isolation
 
   deploy_release:
-    needs: [build, test]
+    needs: [ build, test ]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Install crates.io auth token
+        uses: rust-lang/crates-io-auth-action@v1
+        id: auth
       - name: Publish release
         run: cargo publish
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
   attach_binaries:
     strategy:
@@ -113,7 +118,7 @@ jobs:
           - target: aarch64-pc-windows-msvc
             os: windows-latest
             tool: cross
-    needs: [build, test]
+    needs: [ build, test ]
     runs-on: ${{ matrix.os }}
     if: startsWith(github.ref, 'refs/tags/')
     steps:
