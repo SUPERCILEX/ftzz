@@ -358,9 +358,9 @@ fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
     let mut runtime = tokio::runtime::Builder::new_current_thread();
     #[cfg(all(not(miri), target_os = "linux"))]
     runtime.on_thread_start(|| {
-        use rustix::thread::{UnshareFlags, unshare};
+        use rustix::thread::{UnshareFlags, unshare_unsafe};
 
-        let result = unshare(UnshareFlags::FILES);
+        let result = unsafe { unshare_unsafe(UnshareFlags::FILES) };
         #[cfg(debug_assertions)]
         result.unwrap();
         let _ = result;
