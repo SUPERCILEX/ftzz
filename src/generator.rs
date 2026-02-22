@@ -17,7 +17,7 @@ use std::{
 
 use bon::Builder;
 use bytesize::ByteSize;
-use error_stack::{Report, Result, ResultExt};
+use error_stack::{Report, ResultExt};
 use log::{Level, log};
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -139,7 +139,7 @@ mod tests {
 }
 
 impl Generator {
-    pub fn generate(self, output: &mut impl Write) -> Result<(), Error> {
+    pub fn generate(self, output: &mut impl Write) -> Result<(), Report<Error>> {
         let options = validated_options(self)?;
         print_configuration_info(&options, output)?;
         print_stats(run_generator(options)?, output);
@@ -181,22 +181,22 @@ fn validated_options(
         max_depth,
         seed,
     }: Generator,
-) -> Result<Configuration, Error> {
+) -> Result<Configuration, Report<Error>> {
     create_dir_all(&root_dir)
-        .attach_printable_lazy(|| format!("Failed to create directory {root_dir:?}"))
+        .attach_with(|| format!("Failed to create directory {root_dir:?}"))
         .change_context(Error::InvalidEnvironment)
-        .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
+        .attach_opaque(ExitCode::from(sysexits::ExitCode::IoErr))?;
     if root_dir
         .read_dir()
-        .attach_printable_lazy(|| format!("Failed to read directory {root_dir:?}"))
+        .attach_with(|| format!("Failed to read directory {root_dir:?}"))
         .change_context(Error::InvalidEnvironment)
-        .attach(ExitCode::from(sysexits::ExitCode::IoErr))?
+        .attach_opaque(ExitCode::from(sysexits::ExitCode::IoErr))?
         .count()
         != 0
     {
         return Err(Report::new(Error::InvalidEnvironment))
-            .attach_printable(format!("The root directory {root_dir:?} must be empty."))
-            .attach(ExitCode::from(sysexits::ExitCode::DataErr));
+            .attach(format!("The root directory {root_dir:?} must be empty."))
+            .attach_opaque(ExitCode::from(sysexits::ExitCode::DataErr));
     }
 
     let num_files = num_files_with_ratio.num_files.get() as f64;
@@ -274,7 +274,7 @@ fn print_configuration_info(
             },
     }: &Configuration,
     output: &mut impl Write,
-) -> Result<(), Error> {
+) -> Result<(), Report<Error>> {
     writeln!(
         output,
         "{file_count_type} {} {files_maybe_plural} will be generated in approximately {} \
@@ -320,9 +320,9 @@ fn print_configuration_info(
             String::new()
         },
     )
-    .attach_printable("Failed to write to output stream")
+    .attach("Failed to write to output stream")
     .change_context(Error::Io)
-    .attach(ExitCode::from(sysexits::ExitCode::IoErr))
+    .attach_opaque(ExitCode::from(sysexits::ExitCode::IoErr))
 }
 
 #[cfg_attr(
@@ -353,7 +353,7 @@ fn print_stats(GeneratorStats { files, dirs, bytes }: GeneratorStats, output: &m
 }
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
-fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
+fn run_generator(config: Configuration) -> Result<GeneratorStats, Report<Error>> {
     let parallelism = thread::available_parallelism().unwrap_or(NonZeroUsize::new(1).unwrap());
     let mut runtime = tokio::runtime::Builder::new_current_thread();
     #[cfg(all(not(miri), target_os = "linux"))]
@@ -369,7 +369,7 @@ fn run_generator(config: Configuration) -> Result<GeneratorStats, Error> {
         .max_blocking_threads(parallelism.get())
         .build()
         .change_context(Error::RuntimeCreation)
-        .attach(ExitCode::from(sysexits::ExitCode::OsErr))?;
+        .attach_opaque(ExitCode::from(sysexits::ExitCode::OsErr))?;
 
     log!(Level::Info, "Starting config: {config:?}");
     runtime.block_on(run_generator_async(config, parallelism))
@@ -391,7 +391,7 @@ async fn run_generator_async(
         human_info: _,
     }: Configuration,
     parallelism: NonZeroUsize,
-) -> Result<GeneratorStats, Error> {
+) -> Result<GeneratorStats, Report<Error>> {
     macro_rules! run {
         ($generator:expr) => {{
             run(

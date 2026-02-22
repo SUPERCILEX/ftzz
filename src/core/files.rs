@@ -1,6 +1,6 @@
 use std::{fs::create_dir_all, io, io::ErrorKind::NotFound};
 
-use error_stack::{Report, Result, ResultExt};
+use error_stack::{Report, ResultExt};
 
 use crate::{
     core::file_contents::FileContentsGenerator,
@@ -36,7 +36,7 @@ pub fn create_files_and_dirs(
         file_offset,
         mut file_contents,
     }: GeneratorTaskParams<impl FileContentsGenerator>,
-) -> Result<GeneratorTaskOutcome, io::Error> {
+) -> Result<GeneratorTaskOutcome, Report<io::Error>> {
     create_dirs(num_dirs, &mut target_dir)?;
     create_files(num_files, file_offset, &mut target_dir, &mut file_contents).map(|bytes_written| {
         GeneratorTaskOutcome {
@@ -51,12 +51,11 @@ pub fn create_files_and_dirs(
 }
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace"))]
-fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> Result<(), io::Error> {
+fn create_dirs(num_dirs: usize, dir: &mut FastPathBuf) -> Result<(), Report<io::Error>> {
     for i in 0..num_dirs {
         let dir = with_dir_name(i, |s| dir.push(s));
 
-        create_dir_all(&dir)
-            .attach_printable_lazy(|| format!("Failed to create directory {dir:?}"))?;
+        create_dir_all(&dir).attach_with(|| format!("Failed to create directory {dir:?}"))?;
 
         dir.pop();
     }
@@ -72,7 +71,7 @@ fn create_files(
     offset: u64,
     file: &mut FastPathBuf,
     contents: &mut impl FileContentsGenerator,
-) -> Result<u64, io::Error> {
+) -> Result<u64, Report<io::Error>> {
     let mut state = contents.initialize();
     let mut bytes_written = 0;
 
@@ -93,10 +92,9 @@ fn create_files(
 
                     guard.pop();
                     create_dir_all(&*file)
-                        .attach_printable_lazy(|| format!("Failed to create directory {file:?}"))?;
+                        .attach_with(|| format!("Failed to create directory {file:?}"))?;
                 } else {
-                    return Err(Report::new(e))
-                        .attach_printable_lazy(|| format!("Failed to create file {file:?}"));
+                    return Err(Report::new(e)).attach(format!("Failed to create file {file:?}"));
                 }
             }
         }
@@ -111,7 +109,7 @@ fn create_files(
                 false,
                 &mut state,
             )
-            .attach_printable_lazy(|| format!("Failed to create file {file:?}"))?;
+            .attach_with(|| format!("Failed to create file {file:?}"))?;
 
         file.pop();
     }

@@ -10,7 +10,7 @@ use std::{
 use clap::{ArgAction, Args, Parser, ValueHint, builder::ArgPredicate};
 use clap_num::si_number;
 use clap_verbosity_flag::Verbosity;
-use error_stack::ResultExt;
+use error_stack::{Report, ResultExt};
 use ftzz::{Generator, NumFilesWithRatio, NumFilesWithRatioError};
 use io_adapters::WriteExtension;
 
@@ -268,7 +268,7 @@ fn ftzz(
         verbose: _,
         help: _,
     }: Ftzz,
-) -> error_stack::Result<(), CliError> {
+) -> Result<(), Report<CliError>> {
     let stdout = stdout();
     Generator::try_from(options)
         .change_context(CliError::InvalidArgs)?

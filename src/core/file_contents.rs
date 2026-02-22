@@ -1,7 +1,7 @@
 use std::{fs::File, io, io::Read};
 
 use cfg_if::cfg_if;
-use rand::{RngCore, SeedableRng, TryRngCore};
+use rand::{Rng, RngReader, SeedableRng};
 use rand_distr::Normal;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
@@ -207,13 +207,13 @@ impl<'a, R> From<(Option<u8>, &'a mut R)> for BytesKind<'a, R> {
     feature = "tracing",
     tracing::instrument(level = "trace", skip(file, kind))
 )]
-fn write_bytes<'a, R: RngCore + 'static>(
+fn write_bytes<'a, R: Rng + 'static>(
     mut file: File,
     num: u64,
     kind: impl Into<BytesKind<'a, R>>,
 ) -> io::Result<()> {
     let copied = match kind.into() {
-        BytesKind::Random(random) => io::copy(&mut random.read_adapter().take(num), &mut file),
+        BytesKind::Random(random) => io::copy(&mut RngReader(random).take(num), &mut file),
         BytesKind::Fixed(byte) => io::copy(&mut io::repeat(byte).take(num), &mut file),
     }?;
     debug_assert_eq!(num, copied);

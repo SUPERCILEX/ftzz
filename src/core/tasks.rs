@@ -2,7 +2,8 @@
 
 use std::{cmp::min, io, num::NonZeroU64};
 
-use rand::RngCore;
+use error_stack::Report;
+use rand::Rng;
 use rand_distr::Normal;
 use tokio::{task, task::JoinHandle};
 
@@ -22,7 +23,7 @@ pub type QueueResult = Result<QueueOutcome, QueueErrors>;
 
 pub struct QueueOutcome {
     #[cfg(not(feature = "dry_run"))]
-    pub task: JoinHandle<error_stack::Result<GeneratorTaskOutcome, io::Error>>,
+    pub task: JoinHandle<Result<GeneratorTaskOutcome, Report<io::Error>>>,
     #[cfg(feature = "dry_run")]
     pub task: GeneratorTaskOutcome,
 
@@ -92,7 +93,7 @@ fn queue(
     }
 }
 
-fn dirs_to_gen<R: RngCore + ?Sized>(
+fn dirs_to_gen<R: Rng + ?Sized>(
     files_created: u64,
     gen_dirs: bool,
     num_dirs_distr: &Normal<f64>,
@@ -122,7 +123,7 @@ pub struct DynamicGenerator<R> {
     pub bytes: Option<GeneratorBytes>,
 }
 
-impl<R: RngCore + Clone + Send + 'static> TaskGenerator for DynamicGenerator<R> {
+impl<R: Rng + Clone + Send + 'static> TaskGenerator for DynamicGenerator<R> {
     #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(self)))]
     fn queue_gen(
         &mut self,
@@ -181,7 +182,7 @@ pub struct StaticGenerator<R> {
     root_num_files_hack: Option<u64>,
 }
 
-impl<R: RngCore + Clone + Send + 'static> TaskGenerator for StaticGenerator<R> {
+impl<R: Rng + Clone + Send + 'static> TaskGenerator for StaticGenerator<R> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(level = "trace", skip(self, byte_counts_pool))
@@ -287,7 +288,7 @@ impl<R: RngCore + Clone + Send + 'static> TaskGenerator for StaticGenerator<R> {
     }
 }
 
-impl<R: RngCore + Clone + Send + 'static> StaticGenerator<R> {
+impl<R: Rng + Clone + Send + 'static> StaticGenerator<R> {
     pub fn new(
         dynamic: DynamicGenerator<R>,
         files_exact: Option<NonZeroU64>,

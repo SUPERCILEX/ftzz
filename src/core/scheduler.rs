@@ -9,7 +9,7 @@ use std::{
     result,
 };
 
-use error_stack::{Result, ResultExt};
+use error_stack::{Report, ResultExt};
 use rand_distr::Normal;
 use tokio::task::{JoinError, JoinHandle};
 
@@ -48,7 +48,7 @@ impl AddAssign<&GeneratorTaskOutcome> for GeneratorStats {
 
 struct Scheduler<'a> {
     #[cfg(not(feature = "dry_run"))]
-    tasks: &'a mut VecDeque<JoinHandle<Result<GeneratorTaskOutcome, io::Error>>>,
+    tasks: &'a mut VecDeque<JoinHandle<Result<GeneratorTaskOutcome, Report<io::Error>>>>,
     #[cfg(feature = "dry_run")]
     tasks: &'a mut VecDeque<GeneratorTaskOutcome>,
     stats: &'a mut GeneratorStats,
@@ -94,7 +94,7 @@ pub async fn run(
     max_depth: usize,
     parallelism: NonZeroUsize,
     mut generator: impl TaskGenerator + Send,
-) -> Result<GeneratorStats, Error> {
+) -> Result<GeneratorStats, Report<Error>> {
     // Minus 1 because VecDeque adds 1 and then rounds to a power of 2
     let mut tasks = VecDeque::with_capacity(parallelism.get().pow(2) - 1);
     let mut stats = GeneratorStats {
@@ -218,7 +218,7 @@ async fn flush_tasks(
             },
         ..
     }: &mut Scheduler<'_>,
-) -> Result<(), Error> {
+) -> Result<(), Report<Error>> {
     #[cfg(feature = "tracing")]
     tracing::event!(tracing::Level::TRACE, "Flushing pending task queue");
 
@@ -251,19 +251,19 @@ async fn flush_tasks(
 }
 
 fn handle_task_result(
-    #[cfg(not(feature = "dry_run"))] task_result: result::Result<
-        Result<GeneratorTaskOutcome, io::Error>,
+    #[cfg(not(feature = "dry_run"))] task_result: Result<
+        Result<GeneratorTaskOutcome, Report<io::Error>>,
         JoinError,
     >,
     #[cfg(feature = "dry_run")] outcome: GeneratorTaskOutcome,
     stats: &mut GeneratorStats,
-) -> Result<GeneratorTaskOutcome, Error> {
+) -> Result<GeneratorTaskOutcome, Report<Error>> {
     #[cfg(not(feature = "dry_run"))]
     let outcome = task_result
         .change_context(Error::TaskJoin)
-        .attach(ExitCode::from(sysexits::ExitCode::Software))?
+        .attach_opaque(ExitCode::from(sysexits::ExitCode::Software))?
         .change_context(Error::Io)
-        .attach(ExitCode::from(sysexits::ExitCode::IoErr))?;
+        .attach_opaque(ExitCode::from(sysexits::ExitCode::IoErr))?;
     *stats += &outcome;
     Ok(outcome)
 }

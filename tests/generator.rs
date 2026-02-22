@@ -16,7 +16,7 @@ use expect_test::expect_file;
 use ftzz::{Generator, NumFilesWithRatio};
 use io_adapters::WriteExtension;
 use more_asserts::assert_le;
-use rand::Rng;
+use rand::RngExt;
 use rstest::rstest;
 
 use crate::inspect::InspectableTempDir;
