@@ -1,6 +1,5 @@
 use std::{fs::File, io, io::Read};
 
-use cfg_if::cfg_if;
 use rand::{Rng, RngReader, SeedableRng};
 use rand_distr::Normal;
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -39,10 +38,9 @@ impl FileContentsGenerator for NoGeneratedFileContents {
         _: bool,
         (): &mut Self::State,
     ) -> io::Result<u64> {
-        cfg_if! {
-            if #[cfg(any(not(unix), miri))] {
-                File::create(file).map(|_| 0)
-            } else if #[cfg(target_os = "linux")] {
+        cfg_select! {
+            any(not(unix), miri) => File::create(file).map(|_| 0),
+            target_os = "linux" => {
                 use rustix::fs::{mknodat, FileType, Mode};
 
                 let cstr = file.to_cstr_mut();
@@ -55,7 +53,8 @@ impl FileContentsGenerator for NoGeneratedFileContents {
                 )
                 .map_err(io::Error::from)
                 .map(|()| 0)
-            } else {
+            }
+            _ => {
                 use rustix::fs::{openat, OFlags, Mode};
 
                 let cstr = file.to_cstr_mut();

@@ -16,8 +16,6 @@ impl core::marker::Unpin for ftzz::Error
 impl core::marker::UnsafeUnpin for ftzz::Error
 impl core::panic::unwind_safe::RefUnwindSafe for ftzz::Error
 impl core::panic::unwind_safe::UnwindSafe for ftzz::Error
-impl<C> error_stack::context::Context for ftzz::Error where C: core::error::Error + core::marker::Send + core::marker::Sync + 'static
-pub fn ftzz::Error::provide<'a>(&'a self, request: &mut core::error::Request<'a>)
 impl<E> error_stack::report::IntoReport for ftzz::Error where E: core::convert::Into<error_stack::report::Report<E>>
 pub type ftzz::Error::Context = E
 pub fn ftzz::Error::into_report(self) -> error_stack::report::Report<<E as error_stack::report::IntoReport>::Context>
@@ -61,8 +59,6 @@ impl core::marker::Unpin for ftzz::NumFilesWithRatioError
 impl core::marker::UnsafeUnpin for ftzz::NumFilesWithRatioError
 impl core::panic::unwind_safe::RefUnwindSafe for ftzz::NumFilesWithRatioError
 impl core::panic::unwind_safe::UnwindSafe for ftzz::NumFilesWithRatioError
-impl<C> error_stack::context::Context for ftzz::NumFilesWithRatioError where C: core::error::Error + core::marker::Send + core::marker::Sync + 'static
-pub fn ftzz::NumFilesWithRatioError::provide<'a>(&'a self, request: &mut core::error::Request<'a>)
 impl<E> error_stack::report::IntoReport for ftzz::NumFilesWithRatioError where E: core::convert::Into<error_stack::report::Report<E>>
 pub type ftzz::NumFilesWithRatioError::Context = E
 pub fn ftzz::NumFilesWithRatioError::into_report(self) -> error_stack::report::Report<<E as error_stack::report::IntoReport>::Context>

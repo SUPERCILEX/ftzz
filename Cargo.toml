@@ -11,27 +11,26 @@ license = "Apache-2.0"
 rust-version = "1.88"
 
 [dependencies]
-bon = "3.9.0"
+bon = "3.9.1"
 bytesize = "2.3.1"
-cfg-if = "1.0.4"
-clap = { version = "4.5.60", features = ["derive", "wrap_help"] }
+clap = { version = "4.6.1", features = ["derive", "wrap_help"] }
 clap-num = "1.2.0"
 clap-verbosity-flag = { package = "clap-verbosity-flag2", version = "2.1.1" }
-env_logger = { version = "0.11.9", default-features = false, features = ["auto-color"] }
-error-stack = { version = "0.6.0", default-features = false, features = ["std"] }
+env_logger = { version = "0.11.10", default-features = false, features = ["auto-color"] }
+error-stack = { version = "0.7.0", default-features = false, features = ["std"] }
 io-adapters = "0.4.0"
-itoa = "1.0.17"
+itoa = "1.0.18"
 log = { version = "0.4.29", features = ["release_max_level_info"] }
-rand = { version = "0.10.0", default-features = false, features = ["std"] }
+rand = { version = "0.10.1", default-features = false, features = ["std"] }
 rand_distr = "0.6.0"
 rand_xoshiro = "0.8.0"
-sysexits = "0.12.0"
+sysexits = "0.13.0"
 thiserror = "2.0.18"
 thousands = "0.2.0"
-tokio = { version = "1.49.0", features = ["rt"] }
+tokio = { version = "1.52.3", features = ["rt"] }
 tracing = { version = "0.1.44", features = ["log"], optional = true }
 tracing-log = { version = "0.2.0", optional = true }
-tracing-subscriber = { version = "0.3.22", optional = true }
+tracing-subscriber = { version = "0.3.23", optional = true }
 tracing-tracy = { version = "0.11.4", features = ["flush-on-exit"], optional = true }
 tracy-client = { version = "0.18.4", optional = true }
 
@@ -42,14 +41,14 @@ rustix = { version = "1.1.4", features = ["fs", "thread"] }
 criterion = "0.8.2"
 expect-test = "1.5.1"
 more-asserts = "0.3.1"
-rand = "0.10.0"
+rand = "0.10.1"
 rstest = { version = "0.26.1", default-features = false }
-supercilex-tests = "0.4.21"
-tempfile = "3.25.0"
-trycmd = "1.0.0"
+supercilex-tests = "0.4.22"
+tempfile = "3.27.0"
+trycmd = "1.2.0"
 
 [build-dependencies]
-itoa = "1.0.17"
+itoa = "1.0.18"
 
 [features]
 trace = ["tracing", "dep:tracing-log", "dep:tracing-subscriber", "dep:tracing-tracy", "dep:tracy-client"]
