@@ -356,8 +356,8 @@ fn schedule_task(
         // TODO figure out if we can bound this memory usage
         next_dirs.reserve(num_dirs_to_generate);
     }
-    // Allocate a queue without VecDeque since we know the queue length will only
-    // shrink. We want a queue so that the first task that is scheduled
+    // Allocate a queue without VecDeque since we know the queue length will
+    // only shrink. We want a queue so that the first task that is scheduled
     // is the directory we investigate first such that it will hopefully
     // have finished creating its directories (and thus minimize lock
     // contention).
@@ -376,8 +376,8 @@ fn schedule_task(
         let path = with_dir_name(i, |s| {
             let mut buf = path_pool.pop().unwrap_or_else(FastPathBuf::new);
 
-            // Space for the parent dir, the path separator, the target dir, child separator
-            // and name, and a NUL terminator
+            // Space for the parent dir, the path separator, the target dir,
+            // child separator and name, and a NUL terminator
             buf.reserve(
                 (target_dir.capacity() + 1 + s.len() + 1 + expected_file_name_length + 1)
                     .saturating_sub(buf.capacity()),

@@ -41,7 +41,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
         cfg_select! {
             any(not(unix), miri) => File::create(file).map(|_| 0),
             target_os = "linux" => {
-                use rustix::fs::{mknodat, FileType, Mode};
+                use rustix::fs::{FileType, Mode, mknodat};
 
                 let cstr = file.to_cstr_mut();
                 mknodat(
@@ -55,7 +55,7 @@ impl FileContentsGenerator for NoGeneratedFileContents {
                 .map(|()| 0)
             }
             _ => {
-                use rustix::fs::{openat, OFlags, Mode};
+                use rustix::fs::{Mode, OFlags, openat};
 
                 let cstr = file.to_cstr_mut();
                 openat(
@@ -110,11 +110,11 @@ impl FileContentsGenerator for OnTheFlyGeneratedFileContents {
         let num_bytes = sample_truncated(num_bytes_distr, random);
         if num_bytes > 0 || retryable {
             File::create(file).and_then(|f| {
-                // To stay deterministic, we need to ensure `random` is mutated in exactly
-                // the same way regardless of whether or not creating the file fails and
-                // needs to be retried. To do this, we always run num_to_generate() twice
-                // for the initial file creation attempt. Thus, the branching looks like
-                // this:
+                // To stay deterministic, we need to ensure `random` is mutated
+                // in exactly the same way regardless of whether or not creating
+                // the file fails and needs to be retried. To do this, we always
+                // run num_to_generate() twice for the initial file creation
+                // attempt. Thus, the branching looks like this:
                 //
                 // FAILURE
                 // 1. Call num_to_generate() in initial retry-aware if check
@@ -125,8 +125,8 @@ impl FileContentsGenerator for OnTheFlyGeneratedFileContents {
                 // 1. Call num_to_generate() in initial retry-aware if check
                 //    - This value is ignored.
                 // 2. Call write_random_bytes(num_to_generate()) below
-                //    - Notice that num_to_generate can be 0 which is a bummer b/c we can't use
-                //      mknod even though we'd like to.
+                //    - Notice that num_to_generate can be 0 which is a bummer
+                //      b/c we can't use mknod even though we'd like to.
                 let num_bytes = if retryable {
                     sample_truncated(num_bytes_distr, random)
                 } else {

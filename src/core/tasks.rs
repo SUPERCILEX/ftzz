@@ -249,13 +249,13 @@ impl<R: Rng + Clone + Send + 'static> TaskGenerator for StaticGenerator<R> {
         }
         *done = true;
 
-        // TODO Dumping all the remaining files or bytes in the root directory is very
-        // dumb and wrong  1. If there are a lot of files, we're missing out on
-        // performance gains from generating     the files in separate
-        // directories  2. The distribution will be totally wrong
-        //  Ideally we would continue the while loop above until enough files have been
-        // generated,  but I haven't had time to think about how to do so
-        // properly.
+        // TODO Dumping all the remaining files or bytes in the root directory
+        // is very dumb and wrong
+        // 1. If there are a lot of files, we're missing out on performance
+        //    gains from generating the files in separate directories
+        // 2. The distribution will be totally wrong  Ideally we would continue
+        //    the while loop above until enough files have been generated,  but
+        //    I haven't had time to think about how to do so properly.
         if let Some(files) = files_exact {
             self.queue_gen_internal(
                 file,
@@ -350,7 +350,7 @@ impl<R: Rng + Clone + Send + 'static> StaticGenerator<R> {
             if let Some(bytes) = bytes_exact {
                 if *bytes > 0 {
                     let mut byte_counts: Vec<u64> = byte_counts_pool.pop().unwrap_or_default();
-                    debug_assert!(byte_counts.is_empty());
+                    debug_assert_eq!(byte_counts, [] as [u64; 0]);
                     let num_files_usize = num_files.try_into().unwrap_or(usize::MAX);
                     byte_counts.reserve(num_files_usize);
                     let raw_byte_counts = byte_counts
